@@ -8,9 +8,9 @@ The loop:
 
 ```
 course materials  →  spec.md  →  build  →  extract  →  eval  →  iterate
-   notebooks +        /generate-   /start-     /extract-     /eval-spec-vs-build
-   transcripts        spec         a-new-      build-log     /eval-materials-vs-build
-                                   build       (slice the
+   notebooks +        /generate-   /prepare-   /extract-     /eval-spec-vs-build
+   transcripts        spec         build       build-log     /eval-materials-vs-build
+                                               (slice the
                                                session
                                                transcript)
 ```
