@@ -1,0 +1,19 @@
+# Built apps are artifacts; never tracked anywhere in this repo.
+builds/
+
+# Course content is per-user workspace, not part of the harness.
+# Anyone who clones this repo brings their own materials and generates
+# their own spec — nothing under courses/<name>/ ships. Keep the
+# directory itself in the tree via courses/.gitkeep.
+courses/*
+!courses/.gitkeep
+
+# Personal scratch file — kept on disk, not version-controlled.
+notes.md
+
+# Per-user Claude Code permissions allowlist; shared settings live in
+# .claude/settings.json (the project-shared one).
+.claude/settings.local.json
+
+# macOS noise
+.DS_Store
