@@ -2,7 +2,7 @@
 name: extract-build-log
 description: >
   Extracts the build conversation for a recorded run in the
-  spec-build-eval-lab and writes it to evals/<run>/session-log.md. Use
+  spec-build-lab and writes it to evals/<run>/session-log.md. Use
   this skill ANY time the user wants to capture, save, snapshot,
   extract, export, or render the conversation for a specific build run —
   including phrasings like "extract the build log", "save the
@@ -59,6 +59,10 @@ render it as a markdown log at `evals/<run>/session-log.md`.
 5. **Report.** Echo the script's stdout — it prints the path written
    plus a one-line summary of how many turns were extracted and which
    bookends were used.
+6. **Hand off.** Tell the user: "Ready to evaluate run-$ARGUMENTS — I
+   can run /eval-spec-vs-build $ARGUMENTS and /eval-materials-vs-build
+   $ARGUMENTS next. Say 'go ahead' to proceed, or pick one if you only
+   want to run one of them."
 
 ## Don't
 

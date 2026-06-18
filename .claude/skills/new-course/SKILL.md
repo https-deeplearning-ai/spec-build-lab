@@ -1,7 +1,7 @@
 ---
 name: new-course
 description: >
-  Adds a new course to the spec-build-eval-lab. Use this skill ANY time the
+  Adds a new course to the spec-build-lab. Use this skill ANY time the
   user wants to register, scaffold, set up, add, create, init, or start
   tracking a NAMED COURSE in this repo — including phrasings like
   "scaffold a new course called X", "set up a course folder for X",
@@ -38,11 +38,20 @@ the template; it does not read materials and does not generate `spec.md`.
    ```bash
    cp -R templates/course/ "courses/$ARGUMENTS/"
    ```
-5. **Report and hand off.** Tell the user, verbatim style:
-   "Scaffolded courses/$ARGUMENTS/. Drop notebooks into
-   courses/$ARGUMENTS/materials/notebooks/ and transcripts into
-   courses/$ARGUMENTS/materials/transcripts/, then `cd courses/$ARGUMENTS`
-   and run /generate-spec."
+5. **Report and hand off.** Tell the user, in this order:
+   1. "Scaffolded courses/$ARGUMENTS/."
+   2. "Get notebooks + transcripts from
+      https://course-context-lab.vercel.app — that's where this lab's
+      course materials are produced. Download them yourself; I won't
+      WebFetch from there."
+   3. "Tip: once they're downloaded, drag the files from Finder into
+      this terminal window. The terminal pastes their absolute paths,
+      and I can `cp` them into
+      courses/$ARGUMENTS/materials/notebooks/ and
+      courses/$ARGUMENTS/materials/transcripts/ — saves tokens versus
+      having me traverse your filesystem."
+   4. "Then `cd courses/$ARGUMENTS` and run /generate-spec when the
+      materials are in place — say 'go ahead' when you're ready."
 
 ## Don't
 
@@ -50,3 +59,6 @@ the template; it does not read materials and does not generate `spec.md`.
 - Don't `cd` for the user — they choose when to move into the course folder.
 - Don't run from inside an existing course folder. The session is anchored
   at the repo root.
+- Don't WebFetch from `course-context-lab.vercel.app` — point the user at
+  it; let them download manually. The agent doesn't pull course content
+  from the web.

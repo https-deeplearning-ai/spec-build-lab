@@ -1,4 +1,4 @@
-# CLAUDE.md — spec-build-eval-lab
+# CLAUDE.md — spec-build-lab
 
 Project memory for the coding agent working in this repo. The human-facing
 overview is in `README.md`; this file holds the procedural detail.
@@ -28,7 +28,11 @@ supported automatically — see "Building" below.
 
 ## Skills (invoke with `/name`)
 - `/new-course <name>` — run from the repo root. Copies `templates/course/` to
-  `courses/<name>/`. Does NOT generate the spec.
+  `courses/<name>/`. Does NOT generate the spec. After scaffolding, point the
+  user at https://course-context-lab.vercel.app to download notebooks and
+  transcripts manually, and remind them that dragging files from Finder into
+  the terminal pastes the absolute paths so the agent can `cp` them in cheaply.
+  **The agent does NOT WebFetch from that URL** — it's a manual user step.
 - `/generate-spec` — reads `materials/notebooks/` and `materials/transcripts/`,
   follows `.claude/skills/generate-spec/references/spec-generation-guide.md`, and
   writes `spec.md`.

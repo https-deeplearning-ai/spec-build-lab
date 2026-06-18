@@ -1,4 +1,4 @@
-# spec-build-eval-lab
+# spec-build-lab
 
 An exploration harness for one idea: **can a course's materials be turned into a
 build-ready spec that a learner builds a real app from — and how well does the
@@ -22,7 +22,7 @@ expected to change as we learn.
 ## Structure
 
 ```
-spec-build-eval-lab/
+spec-build-lab/
 ├── .claude/
 │   └── skills/
 │       ├── new-course/                # scaffold courses/<name>/ from the template
@@ -99,6 +99,12 @@ evaluated run:
 /new-course langchain-rag                 # -> courses/langchain-rag/
 
 # 2 · add source material by hand
+#     Get notebooks + transcripts at https://course-context-lab.vercel.app
+#     (manual download — the agent does NOT fetch from the URL).
+#     Tip: drag the downloaded files from Finder into the terminal window;
+#     that pastes their absolute paths so the agent can `cp` them straight
+#     into the course folder. Saves tokens vs. having the agent traverse
+#     your filesystem.
 #     notebooks   -> courses/langchain-rag/materials/notebooks/
 #     transcripts -> courses/langchain-rag/materials/transcripts/
 

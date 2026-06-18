@@ -1,7 +1,7 @@
 ---
 name: prepare-build
 description: >
-  Prepares a new build run for a course in the spec-build-eval-lab —
+  Prepares a new build run for a course in the spec-build-lab —
   allocates the run folders, snapshots the spec into a frozen eval copy
   and a working copy, drops a session breadcrumb, and moves into the
   build folder. Does NOT do the building itself; that's the user +

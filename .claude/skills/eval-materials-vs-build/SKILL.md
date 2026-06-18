@@ -2,7 +2,7 @@
 name: eval-materials-vs-build
 description: >
   Scores how faithfully a recorded build run aligned with the course
-  materials, in the spec-build-eval-lab. Use this skill ANY time the user
+  materials, in the spec-build-lab. Use this skill ANY time the user
   asks to evaluate, score, check, judge, or compare a specific build run
   AGAINST THE COURSE — including phrasings like "evaluate run-02 against
   the materials", "score run-02 against the course", "is run-02 faithful
@@ -53,7 +53,11 @@ Compare a recorded run's app against the original course materials.
    - **Course concepts skipped** — what the course emphasized that the
      build ignored.
    - **Score** — judgment on a 0–10 scale, with reasoning.
-6. **Report the path written.**
+6. **Report the path written, then hand off.** After echoing the report
+   path, tell the user: "Course-alignment report written. The companion
+   eval is /eval-spec-vs-build $ARGUMENTS — different reference,
+   different question (spec fidelity, not course alignment). Say 'go
+   ahead' to run it next, or skip if you've already done it."
 
 ## Don't
 

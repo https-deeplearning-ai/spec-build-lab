@@ -2,7 +2,7 @@
 name: eval-spec-vs-build
 description: >
   Scores how faithfully a recorded build run followed its spec.md, in the
-  spec-build-eval-lab. Use this skill ANY time the user asks to evaluate,
+  spec-build-lab. Use this skill ANY time the user asks to evaluate,
   score, check, judge, assess, or compare a specific build run AGAINST
   THE SPEC — including phrasings like "evaluate run-02 against the spec",
   "score run-02 against the spec", "did the build follow the spec",
@@ -54,7 +54,11 @@ Compare a recorded run's app against the spec snapshot it was built from.
    - **Divergences** — things the build did that the spec did not specify.
    - **Missing** — things the spec specified that the build did not do.
    - **Score** — your judgment on a 0–10 scale, with reasoning.
-6. **Report the path written.**
+6. **Report the path written, then hand off.** After echoing the report
+   path, tell the user: "Spec-fidelity report written. The companion
+   eval is /eval-materials-vs-build $ARGUMENTS — different reference,
+   different question (course alignment, not spec fidelity). Say 'go
+   ahead' to run it next, or skip if you've already done it."
 
 ## Don't
 

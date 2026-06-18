@@ -1,7 +1,7 @@
 ---
 name: generate-spec
 description: >
-  Produces spec.md for a course in the spec-build-eval-lab by reading the
+  Produces spec.md for a course in the spec-build-lab by reading the
   course's materials and writing a build-ready specification. Use this skill
   ANY time the user asks to generate, write, produce, build, regenerate,
   create, or run the spec for a course — including phrasings like
