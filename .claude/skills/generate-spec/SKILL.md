@@ -9,11 +9,15 @@ description: >
   from this course", "turn the materials into a spec", "build the spec
   out of materials/", "regenerate spec.md", "run the spec generation",
   "I've added the notebooks, please create the spec", or "/generate-spec".
+  Optionally accepts a git repo (SSH URL or local path) as an argument to
+  auto-ingest the notebooks + helper.py into materials/notebooks/ before
+  generating; without an argument it uses whatever is already in materials/.
   Reads every file under materials/notebooks/ and materials/transcripts/
   and follows references/spec-generation-guide.md. Writes spec.md in the
   current working directory. Must run from inside a course folder
   (courses/<name>/). Do NOT use this skill for editing an existing
   spec.md or for writing product specs unrelated to a course.
+argument-hint: "[repo-ssh-url]"
 allowed-tools: [Read, Write, Glob, Grep, Bash]
 ---
 
@@ -28,18 +32,35 @@ another engineer (or coding agent) can implement end-to-end.
    cwd: `materials/notebooks/`, `materials/transcripts/`, `builds/`,
    `evals/`. If any are missing, refuse with: "Run /generate-spec from
    inside a course folder — `cd courses/<name>` first." Stop.
-2. **Read the guide.** Read
+2. **(Optional) Ingest notebooks + helper.py from a git repo.** If the user
+   supplied a repo argument — an `ssh://…`, `git@…:…`, `https://…`, or a local
+   path / `file://` dir — run the deterministic ingest script from the course
+   folder BEFORE reading materials:
+   ```bash
+   python3 "$CLAUDE_PROJECT_DIR/.claude/skills/generate-spec/scripts/ingest_repo.py" \
+     <repo> --out "materials/notebooks/<course>-context.md" [--ref <branch>]
+   ```
+   Use the course-folder name (cwd basename) for `<course>`. The script clones
+   over the user's SSH key, renders every `.ipynb` cell-by-cell plus a
+   de-duplicated `## Helper Module Context` section, and writes ONLY into
+   `materials/notebooks/`. Relay its one-line summary. If it exits non-zero
+   (clone/SSH failure, nothing to ingest, or a bad `--out`), surface its error
+   and Stop. **If no repo argument was given, skip this step entirely and use
+   whatever is already in `materials/`.** Transcripts are NEVER produced here —
+   they remain a manual drop under `materials/transcripts/`.
+3. **Read the guide.** Read
    `.claude/skills/generate-spec/references/spec-generation-guide.md`
    relative to `$CLAUDE_PROJECT_DIR` (anchor on the repo root, not cwd).
    Note: the guide is currently a stub. Follow it as far as it goes; don't
    apologize for thin output — refining the guide is the whole point of
    the harness's iteration loop.
-3. **Read every material.** Glob `materials/notebooks/**/*` and
+4. **Read every material.** Glob `materials/notebooks/**/*` and
    `materials/transcripts/**/*`, then read each non-empty file. If both
    directories are empty (only `.gitkeep`), refuse with: "No materials
    found. Add notebooks to materials/notebooks/ and transcripts to
-   materials/transcripts/, then re-run." Stop.
-4. **Write spec.md.** Produce a self-contained build-ready spec at
+   materials/transcripts/, then re-run." Stop. (After a Step 2 ingest, the
+   freshly written `<course>-context.md` is picked up here.)
+5. **Write spec.md.** Produce a self-contained build-ready spec at
    `./spec.md` in cwd (overwrite if it exists — this is regeneration, not
    editing). The spec should end with a section telling the builder to
    conclude with an infra/structure diagram and the phrase
@@ -48,12 +69,15 @@ another engineer (or coding agent) can implement end-to-end.
    conversation. It's a UX hint, not a system requirement (the slice can
    also be controlled with `--until="<phrase>"`, and falls back to
    end-of-transcript if no closing match is found).
-5. **Report.** Tell the user the path written and that they can review,
+6. **Report.** Tell the user the path written and that they can review,
    then run /prepare-build when ready.
 
 ## Don't
 
-- Don't write to `builds/`, `evals/`, or `materials/`.
+- Don't write to `builds/`, `evals/`, or `materials/` yourself. The Step 2
+  ingest script is the ONLY permitted writer into `materials/`, and only into
+  `materials/notebooks/`. Never hand-write or edit anything under `materials/`,
+  and never touch `materials/transcripts/`.
 - Don't pull in external knowledge to fill gaps in the materials —
   faithfulness to the course IS what /eval-materials-vs-build measures
   later.

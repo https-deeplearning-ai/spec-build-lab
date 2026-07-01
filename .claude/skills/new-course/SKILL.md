@@ -52,6 +52,11 @@ the template; it does not read materials and does not generate `spec.md`.
       having me traverse your filesystem."
    4. "Then `cd courses/$ARGUMENTS` and run /generate-spec when the
       materials are in place — say 'go ahead' when you're ready."
+   5. "Shortcut for notebooks: if the course code lives in a private GitHub
+      repo you can reach over SSH, you can skip the manual notebook download —
+      run `/generate-spec <repo-ssh-url>` and it will ingest the `.ipynb`
+      files and `helper.py` into materials/notebooks/ for you. Transcripts
+      still come from the site."
 
 ## Don't
 
