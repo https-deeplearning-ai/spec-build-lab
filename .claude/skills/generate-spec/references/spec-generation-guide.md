@@ -1,6 +1,6 @@
 # Spec Generation Guide
 
-**Self-contained, prescriptive guide for generating a learner's takeaway `spec.md` from course materials.** Feed *this guide + the course's concatenated notebook dump + the concatenated transcripts* (+ a short learner intake) to a capable model, and it produces the spec. Nothing else is required — the framing, the inputs, the generation procedure, the deterministic output format, and the self-check are all here.
+**Self-contained, prescriptive guide for generating a learner's takeaway `spec.md` from course materials.** Feed *this guide + the course's concatenated notebook dump + the concatenated transcripts* to a capable model, and it produces the spec. Nothing else is required — the framing, the inputs, the generation procedure, the deterministic output format, and the self-check are all here. **Learner intake is not a generation input**: one `spec.md` is generated for many learners, so intake can't be collected here. Each learner-specific value is emitted as a `[slot]` carrying a course-derived default, and the learner substitutes their own at *build* time.
 
 This guide stands in for three things at once: the **product framing** for the takeaway feature, the **"reusable context package, not snippet reassembly"** idea, and the **spec-quality standard**. Where it says MUST, it is not a preference.
 
@@ -56,13 +56,24 @@ Aim for the smallest set of high-signal instructions that pin the behavior. The 
 
 ## 3. Inputs & the ground-truth rule
 
-Expect three inputs. Verify each is actually present before generating.
+Generation is gated on **two inputs**. Verify each is actually present before generating.
 
 1. **Notebook dump** (required) — notebooks concatenated to Markdown, cell by cell. Source of truth for **parameters, API surface, prompts, configs**.
 2. **Transcripts** (required) — lesson transcripts. Source of truth for **lesson numbering and titles, rationale, spoken trade-offs, failure narration**.
-3. **Learner intake** (required, or placeholder) — short answers to: *Project* (one sentence — what are you building?); *Data/inputs* (what it operates on, where that lives); *Goal* (what "working" means — what retrieval should find, what the output must guarantee); *Model/provider* preference, if any; *Environment* (where it runs, constraints); *Out of scope* (anything explicitly unwanted).
 
-If intake is missing or partial: either ask, or generate with each missing value as a `[bracketed slot]` and open the spec with a **"Complete before handoff"** list naming every slot. Never silently invent the learner's project.
+**Learner intake is a build-time input, not a generation input.** One `spec.md` is generated and delivered to many learners; the learner supplies their own project when they build. So the generator **never has intake, must not ask for it, and must not block on it**. Instead:
+- Emit each learner-specific value as a `[slot]` (§9 labels it *learner intake*). The intake dimensions a learner may later fill are: *Project* (what they're building); *Data/inputs* (what it operates on, where that lives); *Goal* (what "working" means — what retrieval should find, what the output must guarantee); *Model/provider* preference; *Environment* (where it runs, constraints); *Out of scope* (anything explicitly unwanted).
+- **Every `[slot]` MUST carry a course-derived default** so the spec is buildable and evaluatable *as-is*, with zero intake.
+- The default MUST be **self-contained inside `spec.md`** — resolvable at build time without reading anything else. During a build, course `materials/` are off-limits (hook-enforced), so a default that points back at the course cannot be resolved. Bake it in.
+
+### The deterministic course-default (the fallback that fixes inconsistent builds)
+
+A build-from-spec run with **no intake MUST resolve to exactly one target, every time** — the generator decides it, not the building agent. Never leave the default ambiguous between "the course's own example" and "some agnostic project"; that ambiguity is precisely what makes builds diverge run to run. Resolve the default with this precedence:
+
+1. **Prefer the course's example scenario shape** — when the materials clearly afford a concrete example, re-express *its shape* on the self-contained synthetic fixture corpus (§5). Recognizably the course's example, but with facts *you* author (no course data copied — §11, §12.6).
+2. **Else, a generic minimal instantiation** — when the course has no clean toy example, default to the smallest domain-neutral instantiation of the central pattern (§5), still on the synthetic fixture corpus.
+
+Either way, name **one** buildable target. State which precedence branch you used in the slot's default note.
 
 **Ground-truth rule (hard gate).** Only the supplied materials count as course evidence. If you recognize the course from training, that memory is **not** a citable source — courses get refreshed, and recalled lesson numbers, parameters, and library versions are confidently wrong in exactly the ways that matter here. Anything you cannot point to in the supplied files is dropped or relabeled as your own addition (§9). **No files, no generation.**
 
@@ -91,7 +102,7 @@ Keep a scratch **provenance ledger**: each extracted fact → where it came from
 ## 5. Procedure B — derive the build
 
 1. **Name the course's central buildable pattern** as one pipeline (e.g. `load → split → embed+store → retrieve → generate → converse`), with a one-line reason each stage exists.
-2. **Map the learner's intake onto the pattern**: their project = the pattern instantiated with *their* data, *their* goal, *their* model choices, the course's pitfalls to avoid, and the course's API assumptions. That mapping is the spec's skeleton. (This is the difference between "here are some course snippets" and "for my project, use pattern A; my data is B; retrieval goal C; embedding D; chunking must consider E; avoid mistakes F/G/H; here are the course's API assumptions.")
+2. **Instantiate the pattern on the course-default** (§3), and mark the intake seams as `[slots]`. Because the generator has no learner intake, build the spec's skeleton on the deterministic default — the pattern instantiated with the default's data, goal, and model choices (on the synthetic fixture corpus), the course's pitfalls to avoid, and the course's API assumptions. Then mark exactly where a learner substitutes their own at build time: `[project]`, `[data]`, `[goal]`, `[model/provider]`, `[environment]`, `[out of scope]` — each with its course-derived default. That mapping is the spec's skeleton. (This is the difference between "here are some course snippets" and "use pattern A; data is B (default: fixture corpus); retrieval goal C; embedding D; chunking must consider E; avoid mistakes F/G/H; here are the course's API assumptions" — buildable as-is, with `[slots]` a learner can swap.)
 3. **Convert every demonstrated failure mode into a numbered business rule, and every rule into ≥1 acceptance criterion.** A failure mode without a rule is wasted curriculum; a rule without an AC is unverifiable.
 4. **Design a fixture corpus**: small synthetic inputs whose facts *you* author, including one deliberate instance of *each* demonstrated failure mode, so the acceptance criteria run on day one before the learner wires in real data.
 5. **Decide the stack**: pin modern versions as *this build's* choice; record course-era API names separately as perishable search keywords (CTX-D). Carry the pattern forward, not the era's call signatures.
@@ -103,12 +114,24 @@ Keep a scratch **provenance ledger**: each extracted fact → where it came from
 The spec MUST contain these core sections, in this order (this is the seven-section anatomy), followed by the embedded **Course Context Pack**. Sections marked ★ are load-bearing. Use this skeleton:
 
 ```markdown
-# Spec: <Learner's Project> — Standalone Takeaway
+# Spec: <Project> — Standalone Takeaway
+<!-- Title the default target, not a per-learner project the generator can't know:
+     e.g. "<course-example-shape> chatbot" (precedence 1) or "<central-pattern> app"
+     (precedence 2). A learner retitles when they fill [project]. -->
 
 <!-- Opening blockquote MUST state: (a) the file is self-contained — the Course
      Context Pack replaces external course references; (b) (CTX-X) anchors mark
-     course-derived knowledge and [brackets] mark learner-intake values;
+     course-derived knowledge and [brackets] mark learner-intake values, and every
+     [slot] carries a course-derived default so the spec builds as-is with no intake;
      (c) provenance line: generated from <course> notebooks + transcripts on <date>. -->
+
+## Complete before handoff (optional — the spec builds as-is)
+<!-- ALWAYS the first section, NEVER a blocker. A table of the learner-intake [slots],
+     each with a course-derived Default (§3). Lead with: "These are optional learner
+     substitutions. Every slot has a default, so this spec is buildable and evaluatable
+     as-is; replace a slot only when applying to a real project."
+     | Slot | Default (course-derived) | Note |
+     Unfilled slots do NOT block handoff — the defaults ARE the build target. -->
 
 ## 1. Objective
 <One sentence: what it does, for whom, with what guarantee.> (pattern: CTX-A)
@@ -192,7 +215,7 @@ This section is the embedded eighth section of the generated spec — the part t
 Apply throughout the spec so course-derived content is never confused with your additions:
 - **Course-demonstrated** — traceable to the supplied materials; carries a `(CTX-X)` anchor whose entry traces to the ledger.
 - **Project hardening** — a constraint you added that the course did *not* demonstrate (e.g. idempotent re-ingest when the course wipes and rebuilds). Say so explicitly. The takeaway's credibility depends on never putting words in the course's mouth.
-- **Learner intake** — `[bracketed]`.
+- **Learner intake** — `[bracketed]`. Never left empty at generation: every slot carries a course-derived default (§3) so the spec builds as-is; the brackets mark where a learner *may* substitute, not a gap that blocks handoff.
 
 ---
 
@@ -236,6 +259,7 @@ Each occurred in a real run; check for them explicitly.
 4. **Over-attribution.** A hardening choice (e.g. idempotent re-ingest) read as course-taught when the course did the opposite. Label hardening as hardening (§9).
 5. **Memory leakage.** Recognizing the course from training and generating "from it" without the files present produces plausible, wrong, unverifiable output. Enforce the ground-truth gate (§3).
 6. **Snippet reassembly.** The failure this guide exists to prevent: the Context Pack carries concepts, mechanisms, decisions. If a fenced code block from the notebooks appears anywhere in the spec, delete it and write the behavior it implemented.
+7. **Ambiguous default → inconsistent builds.** A spec that leaves the no-intake target unresolved — readable as either "build the course's own carried-in example" or "build some agnostic project" — makes the coding agent pick differently run to run. Fix: resolve **one** deterministic course-default per slot (§3) and bake it in, so every build-from-spec run with no intake lands on the same target.
 
 ---
 
@@ -244,7 +268,8 @@ Each occurred in a real run; check for them explicitly.
 Before delivering, ask: *could an agent rebuild behaviorally-equivalent output from this spec alone* — no course access, no chat history? Use divergence as a diagnostic that points to the exact missing constraint:
 - output shape changes between runs → the §3 contract is too vague;
 - scope grows with unrequested features → the §1 "Not Included" boundary is incomplete;
-- an edge case handled once but not next time → the §5 acceptance criteria don't cover it.
+- an edge case handled once but not next time → the §5 acceptance criteria don't cover it;
+- the built *project* changes between no-intake runs (course example one run, agnostic the next) → the §3 course-default is ambiguous; resolve it to one target.
 
 There is no oracle for spec *correctness* except the user; executable acceptance criteria are the practical proxy. Without them, this is prompt-driven development with extra steps.
 
@@ -276,4 +301,4 @@ Fix, don't annotate.
 
 ## Output
 
-Deliver exactly one file named `spec.md` — the learner's only download. If intake slots remain, the "Complete before handoff" list is the first thing in the file. Do **not** deliver the provenance ledger, mining notes, or any companion file: the single self-contained spec is the product.
+Deliver exactly one file named `spec.md` — the learner's only download. The "Complete before handoff" slots-and-defaults table is always the first section; because every slot carries a course-derived default, the spec is buildable as-is and unfilled slots never block handoff. Do **not** deliver the provenance ledger, mining notes, or any companion file: the single self-contained spec is the product.
