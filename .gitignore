@@ -11,6 +11,12 @@ courses/*
 # Personal scratch file — kept on disk, not version-controlled.
 notes.md
 
+# skill-creator eval run artifacts: per-run generated specs, gradings,
+# benchmark, viewer HTML, and scratch course copies (which include course
+# materials — see courses/* above). Transient; the durable test suite lives
+# in each skill's evals/ directory, which IS tracked.
+.claude/skills/*-workspace/
+
 # Per-user Claude Code permissions allowlist; shared settings live in
 # .claude/settings.json (the project-shared one).
 .claude/settings.local.json

@@ -1,0 +1,40 @@
+{
+  "skill_name": "generate-spec",
+  "notes": "Evaluates the post-fix generate-spec skill for task-output invariants. The fix made learner intake a build-time input (not a generation input) and mandated a single deterministic course-default per [slot]. Each eval runs the skill 3x independently per config to measure determinism (does the no-intake build target stay stable run-to-run?). Baseline = pre-fix skill snapshot (commit 799f3f6). Runs generate into isolated scratch-course copies so tracked spec.md is never mutated.",
+  "evals": [
+    {
+      "id": 0,
+      "name": "langchain-determinism",
+      "prompt": "Generate the spec for this course. The course materials are in materials/notebooks/ and materials/transcripts/. Write spec.md.",
+      "course": "langchain-chat-with-your-data",
+      "precedence_branch_expected": "1 (course has a clear toy example → the default should re-express the course example shape on a synthetic fixture corpus)",
+      "runs_per_config": 3,
+      "expected_output": "A self-contained spec.md that: never asks for/blocks on learner intake; emits learner-specific values as [slots] each with a course-derived default; names exactly ONE buildable target; and that target is the SAME across all 3 runs. No instruction to read materials/ at build time.",
+      "files": [],
+      "assertions": [
+        {"id": "no-intake-block", "text": "The run generated a spec autonomously without requesting learner intake or halting because intake was 'required/missing' (invariant 1)."},
+        {"id": "slots-have-defaults", "text": "Every learner-intake [slot] in the spec carries an explicit course-derived default; no slot is left as a bare unfilled placeholder (invariant 2)."},
+        {"id": "single-build-target", "text": "The spec names exactly ONE buildable default target (a single project title + default project description), not an ambiguous 'course-example-or-agnostic' choice left to the builder (invariant 3a)."},
+        {"id": "deterministic-across-runs", "text": "The single build target is the SAME across all 3 with_skill runs for this course — same project type/shape (invariant 3b, cross-run)."},
+        {"id": "self-contained", "text": "The spec contains no instruction to read course materials/ at build time; it is buildable from spec.md alone (invariant 4)."}
+      ]
+    },
+    {
+      "id": 1,
+      "name": "mcp-determinism",
+      "prompt": "Generate the spec for this course. The course materials are in materials/notebooks/ and materials/transcripts/. Write spec.md.",
+      "course": "mcp-build-rich-context-ai-apps-with-anthropic",
+      "precedence_branch_expected": "either branch acceptable, but must be consistent — tests the fallback path",
+      "runs_per_config": 3,
+      "expected_output": "A self-contained spec.md that: never asks for/blocks on learner intake; emits learner-specific values as [slots] each with a course-derived default; names exactly ONE buildable target; and that target is the SAME across all 3 runs. No instruction to read materials/ at build time.",
+      "files": [],
+      "assertions": [
+        {"id": "no-intake-block", "text": "The run generated a spec autonomously without requesting learner intake or halting because intake was 'required/missing' (invariant 1)."},
+        {"id": "slots-have-defaults", "text": "Every learner-intake [slot] in the spec carries an explicit course-derived default; no slot is left as a bare unfilled placeholder (invariant 2)."},
+        {"id": "single-build-target", "text": "The spec names exactly ONE buildable default target (a single project title + default project description), not an ambiguous 'course-example-or-agnostic' choice left to the builder (invariant 3a)."},
+        {"id": "deterministic-across-runs", "text": "The single build target is the SAME across all 3 with_skill runs for this course — same project type/shape (invariant 3b, cross-run)."},
+        {"id": "self-contained", "text": "The spec contains no instruction to read course materials/ at build time; it is buildable from spec.md alone (invariant 4)."}
+      ]
+    }
+  ]
+}
