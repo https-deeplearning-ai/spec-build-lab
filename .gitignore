@@ -27,3 +27,10 @@ notes.md
 
 # macOS noise
 .DS_Store
+
+# IDE noise
+.idea/
+
+# Python bytecode (from running skill scripts)
+__pycache__/
+*.pyc
