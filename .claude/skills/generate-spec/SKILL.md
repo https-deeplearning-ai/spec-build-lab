@@ -51,9 +51,10 @@ another engineer (or coding agent) can implement end-to-end.
 3. **Read the guide.** Read
    `.claude/skills/generate-spec/references/spec-generation-guide.md`
    relative to `$CLAUDE_PROJECT_DIR` (anchor on the repo root, not cwd).
-   Note: the guide is currently a stub. Follow it as far as it goes; don't
-   apologize for thin output — refining the guide is the whole point of
-   the harness's iteration loop.
+
+   Follow it fully — it is the prescriptive contract for the spec's
+   content, structure, and quality. Do not restate or summarize its rules
+   here; defer to the guide so the two files can't drift.
 4. **Read every material.** Glob `materials/notebooks/**/*` and
    `materials/transcripts/**/*`, then read each non-empty file. If both
    directories are empty (only `.gitkeep`), refuse with: "No materials
@@ -62,7 +63,9 @@ another engineer (or coding agent) can implement end-to-end.
    freshly written `<course>-context.md` is picked up here.)
 5. **Write spec.md.** Produce a self-contained build-ready spec at
    `./spec.md` in cwd (overwrite if it exists — this is regeneration, not
-   editing). The spec should end with a section telling the builder to
+   editing). What the spec must contain and how it handles learner input
+   are governed entirely by the guide — don't duplicate those rules here.
+   The spec should end with a section telling the builder to
    conclude with an infra/structure diagram and the phrase
    "This is the infra/structure diagram of this app" — `/extract-build-log`
    uses that phrase as its default closing bookend when slicing the
