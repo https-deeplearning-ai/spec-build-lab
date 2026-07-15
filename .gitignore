@@ -1,12 +1,14 @@
 # Built apps are artifacts; never tracked anywhere in this repo.
 builds/
 
-# Course content is per-user workspace, not part of the harness.
-# Anyone who clones this repo brings their own materials and generates
-# their own spec — nothing under courses/<name>/ ships. Keep the
-# directory itself in the tree via courses/.gitkeep.
-courses/*
-!courses/.gitkeep
+# Course folders are tracked, but only the spec and the source materials
+# ship: courses/<name>/spec.md and courses/<name>/materials/. Everything
+# else per course (builds/, evals/, scratch) stays local. Ignoring at
+# depth two (courses/*/*) instead of courses/* lets the negations work —
+# git can't re-include files whose parent directory is ignored.
+courses/*/*
+!courses/*/spec.md
+!courses/*/materials/
 
 # Personal scratch file — kept on disk, not version-controlled.
 notes.md

@@ -196,6 +196,6 @@ against the spec it was actually built from, not a spec you regenerated later.
   on demand. There is no `Stop` hook, no `.active-run` pointer, no
   `build-complete` marker — `evals/run-NN/.session` is a write-once breadcrumb
   recording which transcript to slice.
-- `builds/` is gitignored (built apps are artifacts). This repo version-controls
-  `spec.md`, `materials/`, and `evals/` — the record of what happened and how it
-  scored.
+- Per course, only `spec.md` and `materials/` are version-controlled. Everything
+  else under `courses/<name>/` — `builds/` (built apps are artifacts) and
+  `evals/` — is gitignored and stays local.

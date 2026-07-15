@@ -123,8 +123,7 @@ would leak course content into the docs themselves.
   for now.
 
 ## Per-run layout
-- `builds/run-NN/` — the built app, only. Clean; may have its own git. This repo
-  gitignores `builds/`.
+- `builds/run-NN/` — the built app, only. Clean; may have its own git.
 - `evals/run-NN/` — everything recorded or judged about the run: `.session` (the
   breadcrumb dropped at allocation, hidden), `spec.md` (the snapshot taken at
   allocation), `session-log.md` (produced by `/extract-build-log`),
@@ -132,6 +131,9 @@ would leak course content into the docs themselves.
 - `evals/run-NN/` is generated to match the build. The run number is the join key
   between a build and its evaluation — keep them aligned. Evals require an explicit
   `run-NN`; if none is given, list the runs in `builds/` and ask — never default.
+- **Version control:** per course, only `spec.md` and `materials/` are tracked.
+  Everything else under `courses/<name>/` — `builds/`, `evals/`, scratch — is
+  gitignored and stays local to the machine that ran the build.
 
 ## Run numbering
 `run-NN` is per course (`run-01`, `run-02`, …). Every new build is a new run —
