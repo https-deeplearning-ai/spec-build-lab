@@ -256,10 +256,11 @@ A Decision Ledger that no one is shown is worthless. A build agent's default beh
 
 - **Imperative and build-agent-addressed.** "You are the build agent. Before writing ANY code, you MUST…" — not a passive "review before build" header (which reads as a note to a human skimming and gets skipped).
 - **First.** It is spec section `## 0`, ahead of everything including the Decision Ledger, visually isolated.
+- **An express lane for the as-is builder, asked first.** The gate's FIRST question offers exactly two paths: build the course-default takeaway **as-is** (every Ledger row resolves to its Default), or **customize** the decisions row by row. Choosing as-is skips the per-row questions entirely — the agent prints the full resolved-decision checklist (every row = its Ledger default) and begins building; choosing customize enters the one-question-per-row loop. This is NOT an escape clause (§12.10): the user gave an explicit answer that covers every row — the same "defaults are fine" reply the determinism argument already sanctions — and the printed checklist still makes completeness visible. What stays forbidden is proceeding on *silence*.
 - **Presents EVERY Ledger row.** Do not have the gate re-filter or tier rows — the §5.5 surfacing bar already decided what became a row, so every row is by construction worth showing. (Never key the gate on row numbers; row identities are course-specific.)
 - **One question per row — do not depend on a channel's item cap.** Interactive question tools cap how many questions fit in one call (Claude Code's `AskUserQuestion` allows at most a few), and a Ledger can have many rows. If the gate says "present every row" without saying *how*, the agent improvises — batching inconsistently, or (worse) presenting a first batch, getting a reply, and treating the build as unblocked while the rest are never asked (§12.11). Fix the mechanism deterministically: **one row = one question**, looped until every row is asked. One-per-row has no batch boundary to mis-track and its completeness is a plain count (N rows ⇒ N questions). **Never hardcode a numeric cap** ("4") into the gate — that is one environment's limit; state the capacity-relative rule instead so it holds for an uncapped or plain-text channel too.
 - **Checklist-echo gates the build, not "a reply happened".** Keying resumption on "the user replied" fails the moment many rows exist: a reply to *some* rows satisfies it, and the rest are buried. Require a **visible artifact** instead — before any code, the agent prints a checklist of every row with its resolved value. A completion-driven agent cannot produce that checklist without having resolved every row, and the user/reviewer can *see* completeness. A printed artifact beats an internal "did I ask N times?" count precisely because the same agent that skips rows is the one that would judge the count.
-- **Labels each row's value "course default", never "recommended".** The default is factual provenance (what the course did / the §3 precedence branch), not advice about *this* learner's project — the generator has no learner context and must not imply the default is best for them. The gate must carry this labeling instruction **explicitly, naming the forbidden label**: a structured question tool's own conventions may tell the agent to tag an option "(Recommended)" (Claude Code's `AskUserQuestion` does exactly this), and weak wording ("with the course default marked") loses to the tool's convention — observed in a real run.
+- **Labels the course's actual choice "(course default)"; the build agent's own "(Recommended)" flag may coexist.** "(course default)" is factual provenance — what the course actually did — and must always mark the option the course actually used. On a **substitution row** (§3 dependency-precedence branch 1) that is the course-faithful **Options** entry, NOT the substituted Ledger Default: labeling the substitute "(course default)" misattributes it (observed in real learner feedback — a SQLite+Chroma default presented as the course's choice when the course ran Oracle). Separately, the build agent may mark an option "(Recommended)" per its own judgment or its question tool's convention (Claude Code's `AskUserQuestion` suggests exactly this) — that is advice about *this* learner's project, a different claim from provenance, and it is allowed. The two labels compose: when the agent's recommended option differs from the course's choice, both labels appear, each on its own option; when the recommended option IS the course's choice, use the single combined label **"(Recommended - course default)"**. A recommendation never removes or moves the "(course default)" label.
 - **A hard stop, with no escape clause.** Presenting the decisions must end the agent's turn: it stops and waits for the user's reply before writing any code or touching any file. Do **not** give it a "proceed if there's no response" release valve — that is the loophole that re-opens §12.10: the agent *always* trivially has "no response" the instant it finishes presenting, so it reads the valve as immediate permission and the ask becomes theater. A narrower "proceed if launched non-interactively" escape is the same hole, smaller — drop it too; a completion-driven agent steers into whatever escape exists. Determinism is **not** at risk from waiting: it comes from every row having one course-derived default (§3, Known-Trap #7), so a user who replies "defaults are fine" lands on the identical target. Waiting changes *when* the agent proceeds, never *what* it builds. (If a genuinely headless harness cannot answer, the absent reply stalls that build — the harness's constraint to resolve by pre-answering, not a hole the spec should pre-drill.)
 - **Structured tool required when available; still portable.** If the environment has an interactive structured-question tool (Claude Code's `AskUserQuestion` or an equivalent), the gate MUST require using it — it is the reliability lever, not a mere suggestion. Name specific tools only as *examples* of the class, never as a hard dependency: a non-Claude agent (Codex, Cursor, plain chat) with no such tool must still comply by listing the rows in its reply and asking. So the rule is "use a structured question tool **if you have one**, else ask in plain text" — mechanism-*required* where possible, mechanism-*agnostic* in fallback.
 
@@ -275,26 +276,33 @@ not because they are the right choice for this person's project.
 
 1. **Use a structured question tool if you have one.** If your environment offers an
    interactive structured-question tool (e.g. Claude Code's `AskUserQuestion`, or the equivalent
-   in yours), you MUST use it to present the decisions — do not paraphrase them into a prose
+   in yours), you MUST use it for the questions below — do not paraphrase them into a prose
    paragraph. Only if no such tool exists, list the rows in your reply and ask the user to
    respond to each.
-2. **Present the Ledger ONE ROW AT A TIME — one question per row.** For each row ask a single
-   question: the **Decision** as the prompt, its **Options** as the choices with the **course
-   default** marked — append "(course default)" to that option's label, NEVER "(Recommended)";
-   if your question tool's own guidance suggests a "Recommended" labeling convention, do not
-   use it here (the default is factual course provenance, not advice for this person's
-   project). Put any realizations beyond the tool's option slots (or the free-form case)
-   under the tool's "Other"/free-text. Ask about **every** row. A per-call item limit is NEVER a
-   reason to drop, skip, merge, or silently default a row — make as many separate calls as there
-   are rows.
-3. **Presenting the decisions ENDS YOUR TURN — stop here; write no code, create or edit no file,
-   take no other build action.** Keep asking, one row at a time, until **every** row has an
-   answer (a chosen option, or an explicit "use the course default"). Answers to *some* rows do
-   NOT release the build; "no reply yet" is not an answer — wait for the user.
-4. **Before the first line of code, print a resolved-decision checklist** — every Ledger row
-   with its final value (the user's choice, or "course default"). Begin implementation ONLY
+2. **First question — build as-is, or customize?** Ask exactly one question with two options:
+   build the course-default takeaway **as-is** (every Ledger row resolves to its Default), or
+   **customize** the decisions row by row. If the user chooses as-is, skip step 3 — go straight
+   to the step-5 checklist and build. If the user chooses customize, continue with step 3.
+3. **Present the Ledger ONE ROW AT A TIME — one question per row.** For each row ask a single
+   question: the **Decision** as the prompt, its **Options** as the choices. Append
+   "(course default)" to the option the course actually used — on a substitution row that is
+   the course-faithful Options entry, not the Ledger Default. You may also mark an option
+   "(Recommended)" per your own judgment or your question tool's convention; when your
+   recommended option IS the course's actual choice, merge the labels into
+   "(Recommended - course default)". A recommendation never removes or moves the
+   "(course default)" label. Put any realizations beyond the tool's option slots (or the
+   free-form case) under the tool's "Other"/free-text. Ask about **every** row. A per-call item
+   limit is NEVER a reason to drop, skip, merge, or silently default a row — make as many
+   separate calls as there are rows.
+4. **Presenting any of these questions ENDS YOUR TURN — stop here; write no code, create or edit
+   no file, take no other build action.** Keep asking, one row at a time, until **every** row has
+   an answer (a chosen option, an explicit "use the course default", or the step-2 as-is answer,
+   which resolves every row at once). Answers to *some* rows do NOT release the build; "no reply
+   yet" is not an answer — wait for the user.
+5. **Before the first line of code, print a resolved-decision checklist** — every Ledger row
+   with its final value (the user's choice, or its Ledger default). Begin implementation ONLY
    after this complete checklist is shown; if any row is unresolved you are not done — return to
-   step 2. Build on the checklist's values.
+   step 3. Build on the checklist's values.
 ```
 
 ---
@@ -380,7 +388,7 @@ Each occurred in a real run; check for them explicitly.
 7. **Ambiguous default → inconsistent builds.** A spec that leaves the no-intake target unresolved — readable as either "build the course's own carried-in example" or "build some agnostic project" — makes the coding agent pick differently run to run. Fix: resolve **one** deterministic default per Decision Ledger row (§3, §5.5) and bake it in, so every build-from-spec run with no intake lands on the same target.
 8. **Contract-instead-of-default.** A Ledger row whose "default" is actually a *contract* ("any store that supports vector similarity and exact lookup") or a *menu* ("e.g. SQLite / pgvector / Oracle") names no single target — so the build agent picks, and two builds diverge. This is the exact failure observed when one generation baked a concrete local store and another wrote a menu. Fix: a default is **one buildable target**; the alternatives live in the **Options** column, not the Default. For a heavy-dependency row, apply the §3 dependency precedence and state the branch.
 9. **Live decision buried as prose.** A design-structural, course-argued, or course-contradicted decision (store type, a narrated architecture trade-off, a contradicted metric or `k`) written only as a CTX-C paragraph is never *surfaced* — no one is asked to decide, and the generator silently resolves it (often inconsistently run to run). Fix: promote it to a Decision Ledger row (§5.5 surfacing bar); leave only the durable background in CTX-C, cross-referenced to the row.
-10. **Silent-default build.** Even a perfect Decision Ledger is never shown to the learner if nothing tells the *build* agent to present it. Because every row carries a complete default, the build never *blocks*, so a build agent proceeds silently on defaults and the learner sees no decision at all — the worst failure, since the decisions are on the page and still invisible. Fix: the spec MUST open with the §0 pre-build gate (§6.0) — an imperative, build-agent-addressed instruction to present every Ledger row and then **hard stop** (end the turn; write no code and touch no file until the user replies). **The gate MUST NOT carry a "proceed if there's no response" escape** — that re-opens this very trap: the agent *always* trivially has "no response" the moment it finishes presenting, so it reads the escape as immediate permission and the ask becomes theater. A narrower "proceed if launched non-interactively" escape is the same hole, smaller; omit it. A visible Ledger without the §0 hard-stop gate — or a gate with an escape clause — is a defect.
+10. **Silent-default build.** Even a perfect Decision Ledger is never shown to the learner if nothing tells the *build* agent to present it. Because every row carries a complete default, the build never *blocks*, so a build agent proceeds silently on defaults and the learner sees no decision at all — the worst failure, since the decisions are on the page and still invisible. Fix: the spec MUST open with the §0 pre-build gate (§6.0) — an imperative, build-agent-addressed instruction to present every Ledger row and then **hard stop** (end the turn; write no code and touch no file until the user replies). **The gate MUST NOT carry a "proceed if there's no response" escape** — that re-opens this very trap: the agent *always* trivially has "no response" the moment it finishes presenting, so it reads the escape as immediate permission and the ask becomes theater. A narrower "proceed if launched non-interactively" escape is the same hole, smaller; omit it. The §6.0 express lane is NOT such an escape: choosing "build as-is" is an explicit user reply that resolves every row to its default — the trap is proceeding on *silence*, never proceeding on an answer. A visible Ledger without the §0 hard-stop gate — or a gate with an escape clause — is a defect.
 11. **Partial-present build.** A distinct failure from §12.10, triggered by *many* rows plus a
     per-call-capped question tool (e.g. Claude Code's `AskUserQuestion` takes only a few
     questions per call; a Ledger may have a dozen-plus rows). The agent presents a first batch,
@@ -418,7 +426,8 @@ Fix, don't annotate.
 
 **Decision Ledger**
 - [ ] The spec opens with the `## 0. Before you build — REQUIRED` gate (§6.0), positioned **before** the Decision Ledger.
-- [ ] The gate is imperative and addressed to the build agent, and instructs it to present **every** Ledger row with its value labeled **"course default"** (not "recommended").
+- [ ] The gate is imperative and addressed to the build agent, and instructs it to present **every** Ledger row, labeling the option the course actually used **"(course default)"** — on a substitution row the course-faithful Options entry, never the substituted Default — with the agent's own "(Recommended)" flag allowed and merged into "(Recommended - course default)" when both land on the same option (§6.0).
+- [ ] The gate opens with the **as-is / customize express-lane question** (§6.0); the as-is path skips the per-row questions but still prints the full resolved-decision checklist.
 - [ ] The gate is a **hard stop**: it tells the build agent that presenting the decisions ends its turn — write no code and touch no file — with **no "proceed if there's no response" (or "proceed if non-interactive") escape clause** (§12.10).
 - [ ] The gate requires a **structured question tool when the environment has one** (e.g. `AskUserQuestion`), named as an example of the class, not a hard dependency; a non-Claude agent (Codex, Cursor, plain chat) can still comply by listing rows in its reply.
 - [ ] The gate presents **one question per Ledger row** and states that a per-call item limit is never a reason to drop/merge/default a row — **no numeric cap is hardcoded** (§12.11).
