@@ -75,7 +75,9 @@ A build-from-spec run with **no intake MUST resolve to exactly one target, every
 1. **Prefer the course's example scenario shape** — when the materials clearly afford a concrete example, re-express *its shape* on the self-contained synthetic fixture corpus (§5). Recognizably the course's example, but with facts *you* author (no course data copied — §11, §12.6).
 2. **Else, a generic minimal instantiation** — when the course has no clean toy example, default to the smallest domain-neutral instantiation of the central pattern (§5), still on the synthetic fixture corpus.
 
-**For a *technique* or *dependency* row whose course realization is a heavy dependency** (a cloud DB, a hosted service, a keyed API, a GPU-class model — anything that cannot be baked into `spec.md` and run without external setup), resolve with this precedence:
+**For a *technique* or *dependency* row whose course realization is a heavy dependency** (a cloud DB, a hosted service, a keyed API, a GPU-class model — anything that cannot be baked into `spec.md` and run without external setup), resolve with this precedence.
+
+**The heavy bar, precisely:** a realization is heavy only if it needs a credential/key, a paid account, admin- or container-level setup, or special hardware. **Mere network access is NOT heavy** — a keyless, setup-free public API stays the default; mark the acceptance criteria that need it `live` (excluded from the offline run) so the fixture-based oracle still runs on day one. Fixtures substitute for *data*; they do not displace the course's own *tools*. (Left unstated, this bar made two generations of the same course resolve the same row differently — one kept the course's keyless API tools, the other substituted local stand-ins.)
 
 1. **Substitute the lightest self-contained realization that preserves the row's invariant** — e.g. an embedded local store standing in for a cloud vector DB, when the course teaches a *pattern* that the dependency merely happens to realize. The course's actual technology is still listed among the row's **Options**, never erased.
 2. **UNLESS the specific technology *is* the taught subject** — a course *about* that exact product (e.g. "Building on Oracle Vector Search") — in which case reproduce it as the default, with baked-in setup instructions, and note the setup cost.
@@ -339,6 +341,8 @@ But author each Decision Ledger row's **Invariant** field so it can *become* tha
 
 **Acceptance criteria (§5)** define the **fixture corpus first** — name each synthetic file and quote the exact facts it contains, including one deliberate instance of every demonstrated failure mode. Then a Given/When/Then table with concrete inputs and asserted outputs. Each AC traces back to a business rule; each business rule reaches ≥1 AC. The fixtures make the oracle runnable before the learner has real data, and the building agent MUST NOT modify fixtures to make a test pass.
 
+**Invariants are oracle-bound too.** Every Decision Ledger row with a non-empty Invariant must be exercised by ≥1 AC — through the row's default realization is fine (e.g. an "all memory survives process restarts" invariant needs an AC that actually starts a new process against the same stores). A row whose invariant genuinely cannot be tested states why in the row itself. An invariant with no AC is an untested guarantee: a build can violate the spec's central promise while passing every test.
+
 ---
 
 ## 9. Provenance labels
@@ -428,6 +432,7 @@ Fix, don't annotate.
 - [ ] Every course-attributed claim traces to a ledger entry in the supplied files; anything that doesn't is removed or relabeled as project hardening.
 - [ ] CTX-E lesson numbering matches the transcripts, not notebook filenames or memory.
 - [ ] Parameter values cite the exact config they came from; no "course defaults" hand-waving.
+- [ ] Every working parameter mined in Pass A lands somewhere in the spec (a Ledger default, a body value, or CTX-C) — walk the scratch provenance ledger; none silently dropped.
 - [ ] Version claims match the notebooks' actual install lines; era stated honestly if unpinned.
 
 **Decision Ledger**
@@ -447,6 +452,8 @@ Fix, don't annotate.
 - [ ] Every row whose Default is the course's example realization (demo data, example tools) says so in its Decision/Default cell and marks it as expected to be swapped when the learner's project differs.
 - [ ] No row's Default or Invariant restates another row's decided value; cross-references only (§5.5).
 - [ ] Each row's Invariant is written precisely enough to serve as an integration contract (§ Integration note); learner-context rows carry only the pattern's §3 capability requirements (empty when the pattern demands nothing, never invented).
+- [ ] Every non-empty row Invariant is exercised by ≥1 AC, or the row states why it cannot be (§8).
+- [ ] Where several §5.5 routes applied to one row, the lower-precedence evidence (e.g. a contradiction behind a design-argued row) is still carried in that row's Default note or Trade-off — never dropped (§5.5).
 - [ ] Owner labels are present and used only as metadata — no row's default or surfacing depends on its owner.
 
 **Anatomy**
