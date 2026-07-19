@@ -124,10 +124,12 @@ The **Decision Ledger** is the spec's second section (§6, right after the §0 p
 - **Category** — the §5.5 entry route that admitted the row (`design-argued | design-structural | realization | contradicted | learner`). Exactly one label, chosen by the precedence in the surfacing bar below; it determines the row's position in the fixed row order.
 - **Decision** — short name (e.g. "persistent store", "memory-core topology", "project").
 - **Invariant** — what MUST hold to preserve the taught pattern. For learner-context rows it carries only the pattern's capability requirements on that dimension (§3) — typically empty for project/data/goal/out-of-scope, never invented. Write it precisely: this field doubles as the contract a future integration must satisfy.
-- **Options** — realizations that satisfy the invariant, from course-faithful to tech-agnostic. The course's own technology always appears here even when it is not the default.
-- **Default (course-derived)** — **exactly one** buildable target (§3). For heavy-dependency rows, resolved by the §3 dependency precedence, with the branch stated.
+- **Options** — realizations that satisfy the invariant, from course-faithful to tech-agnostic. The course's own technology always appears here even when it is not the default — and when it is not the default (a §3 branch-1 substitution), tag that entry **"(course default)"** in the cell text, so the §6.0 gate's labeling duty is deterministic: the build agent must never have to infer which option the course actually used.
+- **Default (course-derived)** — **exactly one** buildable target (§3). For heavy-dependency rows, resolved by the §3 dependency precedence, with the branch stated. When the default is the course's *example realization* — a domain-specific instantiation (its demo data, its example tools) rather than the pattern itself — the Decision or Default cell must say so and mark it as expected to be swapped when the learner's project (the project row) differs: the invariant, not the example, is what must survive.
 - **Trade-off** — what switching costs (carries the course's *spoken* trade-offs: re-embedding, re-tuning, lateral-or-worse results).
 - **Owner** — a label only: `learner`, `course`, or `course+learner` (§9). Metadata; never gates behavior.
+
+**No cross-row restating.** A row's Default or Invariant must never restate another row's decided value (a `k`, a distance strategy) — cross-reference the owning row instead ("k: pinned in row N"). A restated value makes two rows read as the same question when the §0 gate presents them one at a time, and the copies drift when one row changes.
 
 **Procedure:** (a) walk each stage of the pattern (step 1); (b) list its decision points; (c) sweep Pass B's mined trade-offs for course-argued decisions that are not tied to a single stage (e.g. an architecture-maturity progression or a taxonomy the course argues through); (d) for each surfaced decision (see the bar below) write the seven fields; (e) apply the §3 dependency precedence for any heavy-dependency row; (f) add the six §3 learner-context rows, each Invariant holding only the pattern's capability requirements on that dimension (empty when none) — learner rows still get a course-derived default (e.g. project defaults to the §3 example-shape target); (g) assign each row's Category and sort the table into the fixed row order (see the bar below).
 
@@ -143,7 +145,7 @@ When several routes apply, Category records the highest-precedence one: `design-
 
 Everything else — a single-valued parameter the course sets once, never varies, and never argues (a chunk size, a token-estimate heuristic, a max-iteration cap) — stays a **defaulted value in the spec body**, not a Ledger row. It still carries its value and provenance; it is simply not promoted. Do not drown the Ledger in low-stakes rows; do not bury a design or contradicted decision in prose (that is the failure §12.9 and the old CTX-C mis-home caused).
 
-**Row order (fixed).** The table is grouped by Category — **design (`design-argued`, `design-structural`) → `realization` → `learner` → `contradicted`** — with pattern-pipeline order within each group. This is presentation order only (the derivation procedure may construct rows in any sequence), and it replaces the previously unspecified order. The §0 gate presents rows in table order, so the highest-judgment decisions reach the human first.
+**Row order (fixed).** The table is grouped by Category — **`learner` → design (`design-argued`, `design-structural`) → `realization` → `contradicted`** — with pattern-pipeline order within each group. This is presentation order only (the derivation procedure may construct rows in any sequence). The ordering principle is **context first, dependents after**: the §0 gate presents rows in table order, so the learner's project/data/goal answers exist in the conversation before the design and realization rows whose right answer for *this* learner depends on them (a store choice depends on the environment; a toolset on the project; seed data on the learner's data), and the build agent can frame those later questions in the learner's own terms (§6.0). Contradicted rows come last because they depend on realization choices (an index type depends on the chosen store). Ordering by importance instead ("highest-judgment first") buys nothing here — the gate hard-requires every row answered and checklist-echoed, so coverage never depends on position; position should buy context.
 
 ---
 
@@ -185,10 +187,12 @@ The spec MUST contain these core sections, in this order (this is the seven-sect
      Columns: | # | Category | Decision | Invariant (must hold; blank unless the pattern imposes a capability requirement, §3) | Default (course-derived) | Options | Trade-off | Owner |
      - Category is the §5.5 entry route (design-argued | design-structural | realization |
        contradicted | learner) — one label, highest precedence when several apply.
-     - Rows are grouped in the fixed §5.5 row order: design → realization → learner →
-       contradicted, pipeline order within each group.
+     - Rows are grouped in the fixed §5.5 row order: learner → design → realization →
+       contradicted, pipeline order within each group (context first, dependents after).
      - Default names EXACTLY ONE buildable target (§3) — never a menu or "any X" (§12.8).
-     - Heavy-dependency rows state which §3 precedence branch was taken and why.
+     - Heavy-dependency rows state which §3 precedence branch was taken and why; on a
+       substitution row, the course's own technology in Options carries the literal tag
+       "(course default)".
      - design-argued rows carry the course's narrated argument + lesson citation in Trade-off.
      - Owner is a label only (learner / course / course+learner, §9); it never changes behavior.
      - Unfilled rows do NOT block handoff — the defaults ARE the build target. -->
@@ -290,10 +294,12 @@ not because they are the right choice for this person's project.
    "(Recommended)" per your own judgment or your question tool's convention; when your
    recommended option IS the course's actual choice, merge the labels into
    "(Recommended - course default)". A recommendation never removes or moves the
-   "(course default)" label. Put any realizations beyond the tool's option slots (or the
-   free-form case) under the tool's "Other"/free-text. Ask about **every** row. A per-call item
-   limit is NEVER a reason to drop, skip, merge, or silently default a row — make as many
-   separate calls as there are rows.
+   "(course default)" label. Use the answers already given (project, data, goal, …) to frame
+   later questions and describe options in the person's own terms — but never skip a row, drop
+   or alter an Option, or move the "(course default)" label because of an earlier answer. Put
+   any realizations beyond the tool's option slots (or the free-form case) under the tool's
+   "Other"/free-text. Ask about **every** row. A per-call item limit is NEVER a reason to drop,
+   skip, merge, or silently default a row — make as many separate calls as there are rows.
 4. **Presenting any of these questions ENDS YOUR TURN — stop here; write no code, create or edit
    no file, take no other build action.** Keep asking, one row at a time, until **every** row has
    an answer (a chosen option, an explicit "use the course default", or the step-2 as-is answer,
@@ -436,8 +442,10 @@ Fix, don't annotate.
 - [ ] Every design-structural, course-argued, or course-contradicted decision (§5.5 bar) is a Ledger row; none is left buried as CTX-C prose (§12.9). Conversely, single-valued, never-argued, uncontradicted params are body defaults, not rows.
 - [ ] Every row's Category field carries exactly one valid value (design-argued / design-structural / realization / contradicted / learner), chosen by the §5.5 precedence.
 - [ ] Every `design-argued` row cites, in its Trade-off cell, the lesson whose narration argued the trade-off.
-- [ ] Row order follows the fixed grouping (design → realization → learner → contradicted; pipeline order within groups).
-- [ ] Each heavy-dependency row records which §3 dependency-precedence branch was taken and why; the course's own technology appears in that row's Options.
+- [ ] Row order follows the fixed grouping (learner → design → realization → contradicted; pipeline order within groups).
+- [ ] Each heavy-dependency row records which §3 dependency-precedence branch was taken and why; the course's own technology appears in that row's Options, tagged "(course default)" when it is not the Default.
+- [ ] Every row whose Default is the course's example realization (demo data, example tools) says so in its Decision/Default cell and marks it as expected to be swapped when the learner's project differs.
+- [ ] No row's Default or Invariant restates another row's decided value; cross-references only (§5.5).
 - [ ] Each row's Invariant is written precisely enough to serve as an integration contract (§ Integration note); learner-context rows carry only the pattern's §3 capability requirements (empty when the pattern demands nothing, never invented).
 - [ ] Owner labels are present and used only as metadata — no row's default or surfacing depends on its owner.
 
