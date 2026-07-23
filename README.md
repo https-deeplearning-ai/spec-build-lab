@@ -196,6 +196,8 @@ against the spec it was actually built from, not a spec you regenerated later.
   on demand. There is no `Stop` hook, no `.active-run` pointer, no
   `build-complete` marker — `evals/run-NN/.session` is a write-once breadcrumb
   recording which transcript to slice.
-- Per course, only `spec.md` and `materials/` are version-controlled. Everything
-  else under `courses/<name>/` — `builds/` (built apps are artifacts) and
-  `evals/` — is gitignored and stays local.
+- Per course, only `spec.md`, `materials/`, and an optional
+  `spec.coding-agent-lab.md` (a tracked variant of the canonical spec, for
+  exploring a Decision Ledger change without touching `spec.md`) are
+  version-controlled. Everything else under `courses/<name>/` — `builds/`
+  (built apps are artifacts) and `evals/` — is gitignored and stays local.

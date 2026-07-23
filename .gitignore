@@ -1,14 +1,19 @@
 # Built apps are artifacts; never tracked anywhere in this repo.
 builds/
 
-# Course folders are tracked, but only the spec and the source materials
-# ship: courses/<name>/spec.md and courses/<name>/materials/. Everything
-# else per course (builds/, evals/, scratch) stays local. Ignoring at
-# depth two (courses/*/*) instead of courses/* lets the negations work —
-# git can't re-include files whose parent directory is ignored.
+# Course folders are tracked, but only the canonical spec, an optional
+# variant spec, and the source materials ship: courses/<name>/spec.md,
+# courses/<name>/spec.coding-agent-lab.md, and courses/<name>/materials/.
+# The variant file is a tracked exploration copy of the canonical spec
+# (e.g. testing a Decision Ledger change) — same name across every course,
+# so this one negation covers all of them without a per-experiment edit.
+# Everything else per course (builds/, evals/, scratch) stays local.
+# Ignoring at depth two (courses/*/*) instead of courses/* lets the
+# negations work — git can't re-include files whose parent directory is ignored.
 courses/*/*
 !courses/*/spec.md
 !courses/*/materials/
+!courses/*/spec.coding-agent-lab.md
 
 # Personal scratch file — kept on disk, not version-controlled.
 notes.md
