@@ -131,9 +131,13 @@ would leak course content into the docs themselves.
 - `evals/run-NN/` is generated to match the build. The run number is the join key
   between a build and its evaluation — keep them aligned. Evals require an explicit
   `run-NN`; if none is given, list the runs in `builds/` and ask — never default.
-- **Version control:** per course, only `spec.md` and `materials/` are tracked.
-  Everything else under `courses/<name>/` — `builds/`, `evals/`, scratch — is
-  gitignored and stays local to the machine that ran the build.
+- **Version control:** per course, only `spec.md`, `materials/`, and an optional
+  `spec.coding-agent-lab.md` are tracked. The latter is a variant of the canonical
+  spec for exploring a Decision Ledger change (e.g. removing an Options entry)
+  without touching `spec.md` itself — same filename across every course, so it
+  needs no per-experiment `.gitignore` edit. Everything else under
+  `courses/<name>/` — `builds/`, `evals/`, scratch — is gitignored and stays
+  local to the machine that ran the build.
 
 ## Run numbering
 `run-NN` is per course (`run-01`, `run-02`, …). Every new build is a new run —
