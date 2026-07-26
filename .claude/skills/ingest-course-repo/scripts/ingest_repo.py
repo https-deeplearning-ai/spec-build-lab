@@ -3,13 +3,19 @@
 
 Usage:
     python3 ingest_repo.py <repo> --out <path.md> [--ref <branch/tag/sha>]
-                           [--title <str>] [--helper-name helper.py] [--keep-clone]
+                           [--subdir <path>] [--title <str>]
+                           [--helper-name helper.py] [--keep-clone]
 
 Clones <repo> (SSH URL, https, or a local path / file:// for testing) over the
 caller's git credentials, then renders every notebook (.ipynb) cell-by-cell into
 the same shape as a hand-downloaded course context dump, followed by a
 de-duplicated "Helper Module Context" section built from the repo's helper.py
 module(s).
+
+--subdir scopes everything to one repo-relative directory and switches the
+clone to partial + sparse, so a single course can be pulled out of a
+multi-gigabyte monorepo without fetching the rest. Omitted, the whole repo is
+discovered exactly as before.
 
 The generated markdown is written to --out, which MUST live under a course's
 materials/notebooks/ directory. transcripts/ are never touched — they remain a
@@ -32,6 +38,7 @@ import argparse
 import ast
 import hashlib
 import json
+import os
 import re
 import shutil
 import subprocess
@@ -52,11 +59,17 @@ def is_local_repo(repo: str) -> Path | None:
     return p if p.is_dir() else None
 
 
-def clone_repo(repo: str, ref: str | None, dest: Path) -> Path:
+def clone_repo(repo: str, ref: str | None, dest: Path,
+               subdir: str | None = None) -> Path:
     """Clone `repo` into `dest`. A local dir is copied, not cloned.
 
     Shallow-clones by default. When `ref` looks like a commit SHA we do a full
     clone then checkout, since --depth 1 can't resolve an arbitrary SHA.
+
+    When `subdir` is given the clone is partial (--filter=blob:none) and
+    sparse, so blobs are fetched only for that subtree. That's what makes
+    pulling one course out of a multi-gigabyte monorepo tractable; without it
+    the behaviour is byte-for-byte what it was before.
     """
     local = is_local_repo(repo)
     if local is not None:
@@ -67,20 +80,29 @@ def clone_repo(repo: str, ref: str | None, dest: Path) -> Path:
         return dest
 
     ref_is_sha = bool(ref and _SHA_RE.match(ref))
+    sparse = ["--filter=blob:none", "--sparse"] if subdir else []
     if ref and not ref_is_sha:
-        cmd = ["git", "clone", "--depth", "1", "--branch", ref, repo, str(dest)]
+        cmd = ["git", "clone", "--depth", "1", *sparse, "--branch", ref,
+               repo, str(dest)]
     elif not ref:
-        cmd = ["git", "clone", "--depth", "1", repo, str(dest)]
+        cmd = ["git", "clone", "--depth", "1", *sparse, repo, str(dest)]
     else:
-        cmd = ["git", "clone", repo, str(dest)]
+        # An arbitrary SHA can't be shallow-cloned. With --filter the full
+        # clone stays metadata-only, so this is still cheap on a big repo.
+        cmd = ["git", "clone", *sparse, repo, str(dest)]
     _run_git(cmd, repo)
+    if subdir:
+        _run_git(["git", "-C", str(dest), "sparse-checkout", "set", subdir], repo)
     if ref_is_sha:
         _run_git(["git", "-C", str(dest), "checkout", ref], repo)
     return dest
 
 
 def _run_git(cmd: list[str], repo: str) -> None:
-    proc = subprocess.run(cmd, capture_output=True, text=True)
+    # Ingestion reads notebooks and helper modules, never LFS payloads
+    # (datasets, weights). Skipping the smudge filter keeps checkouts small.
+    env = {**os.environ, "GIT_LFS_SKIP_SMUDGE": "1"}
+    proc = subprocess.run(cmd, capture_output=True, text=True, env=env)
     if proc.returncode != 0:
         tail = (proc.stderr or proc.stdout or "").strip().splitlines()[-4:]
         detail = "\n  ".join(tail)
@@ -275,14 +297,22 @@ def render_helpers(defs: list[Def], conflicts: set[str], labels: list[str],
 # ── Document assembly ────────────────────────────────────────────────────
 
 _MAP_NOTE = (
-    "> Generated from a git repo by ingest_repo.py. Lesson numbers are inferred "
+    "> Generated from {source} by ingest_repo.py. Lesson numbers are inferred "
     "from notebook order and are a convenience label only — the transcripts under "
     "materials/transcripts/ are authoritative for lesson numbering and titles."
 )
 
 
+def source_label(repo: str, ref: str | None, subdir: str | None) -> str:
+    """Provenance string for the document header — repo, subdir, ref."""
+    label = f"`{repo}`"
+    if subdir:
+        label += f" (subdirectory `{subdir}`)"
+    return label + f" @ {ref or 'default branch'}"
+
+
 def build_markdown(title: str, notebooks: list[tuple[str, str, int, list[dict]]],
-                   helper_section: str) -> str:
+                   helper_section: str, source: str) -> str:
     """Assemble title → Lesson Map → notebook sections → helper section."""
     parts = [f"# {title}", "", "---", "", "## Lesson Map", ""]
     if notebooks:
@@ -290,7 +320,7 @@ def build_markdown(title: str, notebooks: list[tuple[str, str, int, list[dict]]]
             parts.append(f"- {rel} → Lesson {no}: {ntitle}")
     else:
         parts.append("- (no .ipynb files found)")
-    parts += ["", _MAP_NOTE, ""]
+    parts += ["", _MAP_NOTE.format(source=source), ""]
     for rel, ntitle, no, cells in notebooks:
         parts.append("---")
         parts.append("")
@@ -330,6 +360,9 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     p.add_argument("--out", "-o", required=True, type=Path,
                    help="destination .md under a course's materials/notebooks/")
     p.add_argument("--ref", default=None, help="branch/tag/commit (default: repo default)")
+    p.add_argument("--subdir", default=None,
+                   help="repo-relative dir to ingest; enables a sparse, "
+                        "blobless clone (use for monorepos)")
     p.add_argument("--title", default=None, help="document H1 (default: from --out name)")
     p.add_argument("--helper-name", default="helper.py",
                    help="filename treated as a helper module (default: helper.py)")
@@ -346,7 +379,13 @@ def main(argv: list[str]) -> int:
 
     tmp = Path(tempfile.mkdtemp(prefix="ingest-repo-"))
     try:
-        root = clone_repo(args.repo, args.ref, tmp / "repo")
+        clone_root = clone_repo(args.repo, args.ref, tmp / "repo", args.subdir)
+        root = clone_root / args.subdir if args.subdir else clone_root
+        if not root.is_dir():
+            sys.exit(
+                f"error: subdir {args.subdir!r} not found in {args.repo}"
+                f"@{args.ref or 'default'}"
+            )
 
         nb_paths = find_notebooks(root)
         notebooks: list[tuple[str, str, int, list[dict]]] = []
@@ -378,7 +417,8 @@ def main(argv: list[str]) -> int:
 
         title = args.title or derive_title(out)
         title_note = "" if args.title else " (heuristic)"
-        document = build_markdown(title, notebooks, helper_section)
+        source = source_label(args.repo, args.ref, args.subdir)
+        document = build_markdown(title, notebooks, helper_section, source)
         out.write_text(document, encoding="utf-8")
     finally:
         if not args.keep_clone:
@@ -389,7 +429,8 @@ def main(argv: list[str]) -> int:
         f"{len(helper_paths)} helper file(s) → {len(kept)} unique def(s) "
         f"({len(conflicts)} name-conflict(s), {symlinks_collapsed} symlink(s) "
         f"collapsed), title {title!r}{title_note}, "
-        f"from {args.repo}@{args.ref or 'default'}."
+        f"from {args.repo}{f' [{args.subdir}]' if args.subdir else ''}"
+        f"@{args.ref or 'default'}."
     )
     return 0
 

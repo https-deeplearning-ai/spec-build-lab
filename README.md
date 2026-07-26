@@ -26,10 +26,11 @@ spec-build-lab/
 ├── .claude/
 │   └── skills/
 │       ├── new-course/                # scaffold courses/<name>/ from the template
+│       ├── ingest-course-repo/        # optional extra: course repo → materials/notebooks/from-repo/
+│       │   └── scripts/ingest_repo.py
 │       ├── generate-spec/             # materials → spec.md (uses the guide below)
-│       │   ├── references/
-│       │   │   └── spec-generation-guide.md
-│       │   └── scripts/ingest_repo.py # optional: git repo → materials/notebooks/ context dump
+│       │   └── references/
+│       │       └── spec-generation-guide.md
 │       ├── prepare-build/             # allocate builds/run-NN/ + drop .session breadcrumb (auto-fires on build intent)
 │       ├── extract-build-log/         # slice the conversation from the session transcript
 │       │   └── scripts/extract.py
@@ -61,7 +62,7 @@ the repo root.
 | You're working in… | What happens there | What you run |
 |---|---|---|
 | repo root | manage courses | `/new-course` |
-| `courses/<name>/` | spec + extract + evaluation | `/generate-spec`, `/prepare-build`, `/extract-build-log`, `/eval-spec-vs-build`, `/eval-materials-vs-build` |
+| `courses/<name>/` | spec + extract + evaluation | `/ingest-course-repo` (optional), `/generate-spec`, `/prepare-build`, `/extract-build-log`, `/eval-spec-vs-build`, `/eval-materials-vs-build` |
 | `courses/<name>/builds/run-NN/` | actual app development | the build itself — install deps, run the dev server, optional app-level `git init` |
 
 So `cd courses/<name>/` to work on a course; once a build starts, you and the
@@ -76,6 +77,7 @@ which is what `/extract-build-log` slices.
 flowchart TD
     NC["<b>/new-course</b><br/>scaffold courses/NAME/"]
     MAT(["add materials:<br/>notebooks + transcripts"])
+    ICR["<b>/ingest-course-repo</b><br/>optional extra: course repo →<br/>materials/notebooks/from-repo/"]
     GS["<b>/generate-spec</b><br/>materials → spec.md"]
     PB["<b>/prepare-build</b><br/>allocate builds/run-NN/,<br/>snapshot spec → evals/run-NN/spec.md,<br/>drop .session breadcrumb"]
     OP(["you + coding agent<br/>build the app in builds/run-NN/"])
@@ -85,6 +87,8 @@ flowchart TD
     IT(["iterate"])
 
     NC --> MAT --> GS --> PB --> OP --> EBL
+    MAT -. optional .-> ICR
+    ICR -. adds to materials .-> GS
     OP --> ESB & EMB
     ESB --> IT
     EMB --> IT
@@ -108,17 +112,15 @@ evaluated run:
 #     your filesystem.
 #     notebooks   -> courses/langchain-rag/materials/notebooks/
 #     transcripts -> courses/langchain-rag/materials/transcripts/
-#
-#     Notebook shortcut: if the course code lives in a git repo, skip the
-#     manual notebook download — pass the repo to /generate-spec in step 3
-#     and it ingests the .ipynb files + helper.py for you (see "Ingesting
-#     notebooks from a git repo" below). Transcripts still come from the site.
 
 # 3 · move into the course and generate the spec
 cd courses/langchain-rag
+
+#     optional extra — adds the course's real code + helper.py on top of
+#     the site download (see "Ingesting a course repo" below):
+/ingest-course-repo https://github.com/deeplearningai-eng/courses/tree/main/course_10
+
 /generate-spec                            # -> courses/langchain-rag/spec.md
-#     …or, with the notebook shortcut:
-/generate-spec git@github.com:org/course-repo.git   # ingest, then generate
 
 # 4 · start a build (call it explicitly)
 /prepare-build                        # -> builds/run-01/  (the app lives here)
@@ -145,26 +147,40 @@ cd ../..                                  # back up to courses/langchain-rag
 /prepare-build                        # -> builds/run-02/, evals/run-02/spec.md, ...
 ```
 
-## Ingesting notebooks from a git repo
+## Ingesting a course repo
 
-`/generate-spec` optionally takes a git repo as its argument. When given one, it
-runs a deterministic ingest step **before** reading materials:
+`/ingest-course-repo` is an **optional extra**, not a shortcut. Materials still
+come from https://course-context-lab.vercel.app — both the notebooks `.md` and
+the transcripts. What this adds on top is the course's real, runnable code and
+its `helper.py` definitions, which the site dump doesn't carry.
 
 ```text
-/generate-spec <repo>                     # e.g. git@github.com:org/course-repo.git
+cd courses/<name>
+/ingest-course-repo https://github.com/deeplearningai-eng/courses/tree/main/course_10
 ```
 
-What it does, exactly (`generate-spec/scripts/ingest_repo.py`, stdlib-only):
+For DeepLearning.AI courses, browse https://github.com/deeplearningai-eng/courses
+to find yours and paste the URL of its **folder**. That repo is a ~3.4 GB
+monorepo holding every course, so a course-scoped URL is required — passing the
+bare repo root is refused.
 
-1. **Clones the repo** shallowly using your own git credentials — so a private
-   repo works as long as *you* can reach it. Accepted forms:
+What it does, exactly (`ingest-course-repo/scripts/ingest_repo.py`, stdlib-only):
+
+1. **Clones the repo** using your own git credentials — so a private repo works
+   as long as *you* can reach it. Accepted forms:
+   - **GitHub tree URL** — `…/tree/<ref>/<path>`, parsed into repo + `--ref` +
+     `--subdir`. This is the form to use for the monorepo.
    - **SSH** — `git@github.com:org/repo.git` or `ssh://…` (uses your SSH key)
    - **HTTPS** — `https://github.com/org/repo.git`
    - **Local path** — an existing directory or `file://` URL is copied, not
      cloned (handy for testing or repos you already have on disk)
-   A `--ref <branch|tag|sha>` can pin what gets ingested.
-2. **Renders every `.ipynb`** in the repo cell-by-cell into a single markdown
-   file at `materials/notebooks/<course>-context.md` — the same shape as a
+
+   With a `--subdir` the clone is **sparse and blobless**, so only that one
+   course's files are fetched — pulling `course_10` out of the 3.4 GB monorepo
+   transfers about 9 MB and takes a few seconds. LFS payloads are skipped;
+   ingestion reads notebooks and helper modules, never datasets.
+2. **Renders every `.ipynb`** in scope cell-by-cell into a single markdown file
+   at `materials/notebooks/from-repo/<course>-context.md` — the same shape as a
    hand-downloaded course context dump.
 3. **Appends a de-duplicated "Helper Module Context" section** from the repo's
    `helper.py` module(s): each unique top-level def/class appears once,
@@ -172,13 +188,18 @@ What it does, exactly (`generate-spec/scripts/ingest_repo.py`, stdlib-only):
    different-body collision keeps both variants flagged inline — nothing is
    silently dropped.
 
-Scope guarantees: the script writes **only** into `materials/notebooks/`;
-`materials/transcripts/` is never touched and remains a manual download from
-the course site. Lesson numbering in the output is inferred from sorted
-notebook order — a convenience label, not authentic platform numbering (the
-transcripts stay authoritative for that). The ingest is idempotent: re-running
-overwrites the context file cleanly. Without a repo argument, `/generate-spec`
-behaves as before and uses whatever is already in `materials/`.
+The `from-repo/` subfolder matters: a hand-downloaded context dump is named
+`<course>-context.md` too, so a flat write would silently overwrite it. Both
+files coexist and `/generate-spec` reads both — the site dump stays
+authoritative for lesson numbering and titles, the ingested file carries the
+code.
+
+Scope guarantees: the script writes **only** into
+`materials/notebooks/from-repo/`; `materials/transcripts/` is never touched and
+remains a manual download from the course site. Lesson numbering in the output
+is inferred from sorted notebook order — a convenience label, not authentic
+platform numbering. The ingest is idempotent: re-running overwrites its own
+output file cleanly and leaves everything else alone.
 
 `/prepare-build` is the expected, explicit step — it will also fire on its own
 if you simply start building, but the documented flow is to call it. The spec eval
