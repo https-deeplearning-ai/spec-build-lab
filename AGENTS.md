@@ -14,10 +14,10 @@ Launch the session once at the repo root and stay there. Within this one session
 your working directory moves:
 
 - repo root → `/new-course`.
-- `courses/<name>/` → `/generate-spec`, `/prepare-build`,
-  `/extract-build-log`, `/eval-spec-vs-build`, `/eval-materials-vs-build`. `cd`
-  here before running them; they act on the current course. Relative paths below
-  are from this folder.
+- `courses/<name>/` → `/ingest-course-repo` (optional), `/generate-spec`,
+  `/prepare-build`, `/extract-build-log`, `/eval-spec-vs-build`,
+  `/eval-materials-vs-build`. `cd` here before running them; they act on the
+  current course. Relative paths below are from this folder.
 - `courses/<name>/builds/run-NN/` → the actual app development (install deps, run
   services, optional app-level `git init`). `cd` here to build.
 
@@ -33,6 +33,16 @@ supported automatically — see "Building" below.
   transcripts manually, and remind them that dragging files from Finder into
   the terminal pastes the absolute paths so the agent can `cp` them in cheaply.
   **The agent does NOT WebFetch from that URL** — it's a manual user step.
+- `/ingest-course-repo <url>` — run from a course folder. **Optional extra**,
+  never a replacement for the manual download: it renders a course repo's
+  `.ipynb` files and `helper.py` into
+  `materials/notebooks/from-repo/<course>-context.md`, adding the course's real
+  code on top of the site dump. Takes a course-scoped repo URL — for
+  DeepLearning.AI courses that's a folder URL under
+  https://github.com/deeplearningai-eng/courses, a ~3.4 GB monorepo where a
+  bare-root URL is refused. **The agent does NOT WebFetch that index** — the
+  user browses it and pastes a URL; the agent only clones what it's handed.
+  Writes nothing under `materials/transcripts/`, which stays a manual download.
 - `/generate-spec` — reads `materials/notebooks/` and `materials/transcripts/`,
   follows `.Codex/skills/generate-spec/references/spec-generation-guide.md`, and
   writes `spec.md`.

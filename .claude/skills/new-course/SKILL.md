@@ -52,10 +52,12 @@ the template; it does not read materials and does not generate `spec.md`.
       having me traverse your filesystem."
    4. "Then `cd courses/$ARGUMENTS` and run /generate-spec when the
       materials are in place — say 'go ahead' when you're ready."
-   5. "Shortcut for notebooks: if the course code lives in a private GitHub
-      repo you can reach over SSH, you can skip the manual notebook download —
-      run `/generate-spec <repo-ssh-url>` and it will ingest the `.ipynb`
-      files and `helper.py` into materials/notebooks/ for you. Transcripts
+   5. "Optional extra: if you also want the course's real code, find the
+      course at https://github.com/deeplearningai-eng/courses and run
+      `/ingest-course-repo <course-folder-URL>` before /generate-spec — it
+      adds the `.ipynb` files and `helper.py` under
+      courses/$ARGUMENTS/materials/notebooks/from-repo/. This is an addition
+      to step 2, not a replacement: the notebooks `.md` and the transcripts
       still come from the site."
 
 ## Don't
