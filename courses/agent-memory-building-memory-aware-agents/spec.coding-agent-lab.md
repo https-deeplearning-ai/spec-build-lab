@@ -2,18 +2,15 @@
 
 > **This file is self-contained.** The embedded Course Context Pack (CTX-A…CTX-E, at the end)
 > replaces all external course references — nothing in this spec requires access to the course
-> platform, its notebooks, or its transcripts. `(CTX-X)` anchors mark course-derived knowledge.
+> platform, its notebooks, or its transcripts. `(CTX-X)` anchors — **CTX** for *context* — mark
+> course-derived knowledge, each pointing at the pack section that justifies it.
 > The **Decision Ledger** below holds every point where the build could diverge, each pinned to
-> one course-derived default, so the spec is buildable and evaluatable **as-is with zero intake**;
+> one course-derived default, so **no gap blocks the build** and §5 can evaluate it as-is. The
+> defaults make the spec complete; they do **not** make the §0 interview optional — "build as-is"
+> is a choice the person makes, never one the agent makes on their behalf.
 > `[bracketed]` values mark where a learner *may* substitute their own choice.
 > *Provenance: generated from the "Agent Memory: Building Memory-Aware Agents" course notebooks +
 > transcripts on 2026-07-20.*
->
-> **Variant note:** this file is a variant of the canonical `spec.md` in this course folder.
-> Oracle AI Database 26ai has been removed as a selectable Options entry in Ledger rows **D14**
-> (persistent store) and **D5** (environment) — it is no longer offered as something to build.
-> The course's actual use of Oracle remains recorded as provenance in D14's Default note, §1,
-> §2, and CTX-D; only the build-time *choice* was removed, not the historical fact.
 
 ## 0. Before you build — REQUIRED (do this first)
 
@@ -22,11 +19,14 @@ in the Decision Ledger (next section) to the person you are building for. Do **n
 this because the defaults look complete — the defaults exist so the build is *reproducible*,
 not because they are the right choice for this person's project.
 
-1. **Use a structured question tool if you have one.** If your environment offers an
-   interactive structured-question tool (e.g. Claude Code's `AskUserQuestion`, or the equivalent
-   in yours), you MUST use it for the questions below — do not paraphrase them into a prose
-   paragraph. Only if no such tool exists, list the rows in your reply and ask the user to
-   respond to each.
+1. **Ask with structured multiple-choice questions.** Every question below is asked in one
+   format, never as a prose paragraph: a short **header** naming the decision, the row's
+   **Decision** text as the question, and its **Options** as selectable choices — each option
+   carrying a one-line description of what choosing it means for the build. Render it with
+   whatever your environment provides for offering selectable options — an interactive question
+   tool, a chat UI's own option markup, or plain text if it has neither — and follow that
+   environment's formatting rules where it has them. This spec fixes what the question contains,
+   not how it is marked up.
 2. **First question — build as-is, or customize?** Ask exactly one question with two options:
    build the course-default takeaway **as-is** (every Ledger row resolves to its Default), or
    **customize** the decisions row by row. If the user chooses as-is, skip step 3 — go straight
@@ -62,10 +62,10 @@ when you have reason to prefer another option.
 
 | # | Category | Decision | Invariant (must hold) | Default (course-derived) | Options | Trade-off | Owner |
 |---|----------|----------|-----------------------|--------------------------|---------|-----------|-------|
-| D1 | learner | `[project]` — what the agent is for. Default is the **course's example realization** (its running demo scenario), expected to be swapped when your project differs — the invariants, not the example, are what must survive. | — | A **memory-aware agentic research assistant**: a CLI/REPL chat agent that finds, saves, and discusses research papers across sessions, remembering prior findings and preferences (§3 project precedence, branch 1: the course's example scenario shape re-expressed on the synthetic fixture corpus of §5). | Course example shape: research assistant (course default); any domain assistant needing persistence (support bot, coding copilot, ops runbook agent) | Swapping the project keeps every memory mechanism; only the toolset (D15) and seed data (D2) change with it. | learner |
+| D1 | learner | `[project]` — what the agent is for. The default **retrofits this memory core onto a chat application that already exists**; swap it when your project differs — the invariants, not the example, are what must survive. | — | A **memory-aware research assistant created by giving persistent memory to an existing chat application**: one that already holds a conversation but keeps its history only in process memory, so it forgets everything on restart (CTX-B1). **Modify that application in place** — keep its interface and the address it already serves — and replace its ephemeral history with the seven memory stores of D7. Do **not** scaffold a second application alongside it: when you are done, the same interface is served from the same place, now backed by the memory core. The §5 fixture corpus seeds the knowledge base. | Retrofit an existing chat application (default); a fresh standalone CLI/REPL chat agent, built from nothing (course default); any domain assistant needing persistence (support bot, coding copilot, ops runbook agent) | Swapping the project keeps every memory mechanism; only the toolset (D15) and seed data (D2) change with it. Retrofitting means inheriting the existing application's structure — read it before planning the change. | learner |
 | D2 | learner | `[data/inputs]` — what the agent operates on. Default is a fixture stand-in for the **course's example data**; swap when D1 changes. | — | The **synthetic fixture corpus of §5** (two authored paper-notes files + one authored 12-message seed conversation), ingested at setup. | Fixture corpus (default); the learner's own documents/threads; the course streamed 100 records of a public arXiv dataset and live arXiv PDFs (course default) | Real corpora need the same ingest path (embed + metadata); large corpora may need an ANN index (see §2). | learner |
 | D3 | learner | `[goal]` — what "working" means. | — | **Cross-session continuity**: the agent answers follow-ups without re-doing discovery, keeps context under budget via recoverable summarization, and can still recover the thread's first question after summarizing (the §5 oracle). | Continuity guarantee (default); latency/cost targets; retrieval-precision targets | Stricter retrieval goals push toward reranking/hybrid search — out of course scope (§1 Not Included). | learner |
-| D4 | learner | `[model/provider]` — the LLM behind reasoning, summarization, augmentation, extraction. | Must support **native (OpenAI-style) tool calling** and a system role; its context-window size must be known to the budget monitor (R6). | **OpenAI**, per the materials: `gpt-5-mini` for the agent loop, `gpt-5` for docstring augmentation and entity extraction. Requires `OPENAI_API_KEY` (§2); LLM-dependent ACs are tagged `scripted` or `live` so the offline oracle still runs (§5). *Note (course-contradicted, carried here):* the L4 notebook's token-limit map lists only `gpt-5-mini: 256000` while `helper.py`'s lists only `gpt-5: 256000`, and helper function defaults say `gpt-5` where the L5 loop calls `gpt-5-mini` — the materials never reconcile the two; this spec pins the loop to `gpt-5-mini` with a 256,000-token budget (the L5 loop's actual call path). | OpenAI gpt-5-mini + gpt-5 (course default); any tool-calling model (Anthropic, local via an OpenAI-compatible server) | Changing provider means re-checking the tool-call message shapes and the token budget in R6; prompts (summarization, extraction) may need re-tuning. | learner |
+| D4 | learner | `[model/provider]` — the LLM behind reasoning, summarization, augmentation, extraction. | Must support **native (OpenAI-style) tool calling** and a system role; its context-window size must be known to the budget monitor (R6). | **OpenAI**: `gpt-5.6-luna` for the agent loop, `gpt-5.6-terra` for docstring augmentation and entity extraction — the two roles the course filled with `gpt-5-mini` and `gpt-5`. Read the key and any provider base URL **from the environment at runtime**, never from a committed file (§2). LLM-dependent ACs are tagged `scripted` or `live` so the offline oracle still runs (§5). The budget monitor (R6) needs one number for the loop model's context window: **256,000 tokens** — the course's configured value, carried forward; verify it for the model you pin and change it in its single config point (R15) if it differs. | OpenAI gpt-5.6-luna + gpt-5.6-terra (default); Anthropic claude-sonnet-5 + claude-sonnet-4-6 — capable, but reached through an Anthropic-shaped endpoint, so it needs that SDK and its tool-call message shape rather than the OpenAI-style calls §3 specifies; the course's gpt-5-mini + gpt-5 (course default); any other model meeting the invariant | Changing provider means re-checking the tool-call message shapes and the token budget in R6; prompts (summarization, extraction) may need re-tuning. | learner |
 | D5 | learner | `[environment]` — where it runs. | **All seven memory stores must survive process restarts** (memory is external to the model and persistent). | Local machine, Python 3.11+, single on-disk database file (realization: D14). First run needs network to download the embedding model; no Docker, no admin setup. | Local single file (default); any server environment | A shared/server environment adds connection management the course's local pattern doesn't cover. | learner |
 | D6 | learner | `[out-of-scope]` — anything explicitly unwanted. | — | Nothing beyond §1 "Not Included". | Add exclusions freely | Exclusions only shrink scope; they never relax the D5/D7 invariants. | learner |
 | D7 | design-argued | **Memory-core topology** — which memory types exist and their storage class. | Seven memory types, each with a dedicated store: **conversational + tool-log memory retrievable by exact key (thread) in chronological order; knowledge-base, workflow, toolbox, entity, and summary memory retrievable by semantic similarity.** | The course's seven stores: `CONVERSATIONAL_MEMORY` and `TOOL_LOG_MEMORY` as SQL-style tables; `SEMANTIC_MEMORY` (knowledge base), `WORKFLOW_MEMORY`, `TOOLBOX_MEMORY`, `ENTITY_MEMORY`, `SUMMARY_MEMORY` as vector stores — all fronted by one memory-manager abstraction (CTX-A, CTX-C1). | Seven-store split (course default); fewer stores (e.g. fold entity into KB); more (add semantic cache) | Lesson 3 argues the split: conversation needs *exact* retrieval by thread id, "not similarity search", while knowledge/workflow/toolbox/entity/summary need meaning-based lookup; collapsing stores loses the retrieval strategy matched to each type. | course |
@@ -75,8 +75,8 @@ when you have reason to prefer another option.
 | D11 | design-argued | **Tool-description augmentation** — what text gets embedded for each tool. | The text embedded for retrieval must be **rich enough to separate tools semantically** (retrieval is keyed on descriptions, not names). | Augmented registration as the course does for most tools: an LLM rewrites the docstring using the function's source, plus ~5 synthetic example queries; name + augmented description + signature + queries form the embedding text. Registration is idempotent per tool name (R5). | LLM-augmented descriptions (course default); raw docstrings only (the course registered its arXiv candidate-search tool unaugmented) | Lesson 4 argues augmentation buys higher separability and recall in the embedding space at the cost of one LLM call per registration; weak one-line docstrings retrieve poorly. | course+learner |
 | D12 | design-argued | **Tool-result flow: full log + bounded excerpt** — what the model sees of a tool's output. | Every tool execution is **fully persisted** (args, complete result, status, errors) outside the context window; the model receives only a **bounded excerpt with an id pointer** back to the full record. | Persist every call to the tool-log store; pass at most 3,000 characters of the result to the model, appending a truncation notice naming the log id when cut (R10). | Log + bounded excerpt (course default); pass full outputs into context; discard raw outputs | Lesson 6 calls this context offloading — "move large payload handling out of the model context and into memory infrastructure"; skipping the log loses the audit trail and the JIT retrieval path, while full outputs blow up the window (CTX-B6). | course |
 | D13 | design-argued | **Search-and-store acquisition** — what acquisition tools do with what they find. | Any tool that acquires external content **persists its results to knowledge-base memory with source metadata in the same call**, before/independent of what the model does with them. | Course pattern: search/fetch tools write each result (or chunk) into the knowledge base with source metadata (title, source id, timestamps, chunk indices), so information discovered once is retrievable in later turns without re-searching. | Search-and-store (course default); return-only tools (results live and die in one turn) | Lesson 4 argues this is how the agent "learns from its searches" — repeat questions stop costing API calls; the cost is knowledge-base growth and possible staleness of stored search results. | course |
-| D14 | realization | **Persistent store (the Agent Memory Core)** — the database behind all seven stores. | **One persistent database is the memory core**: it serves both the exact-key/chronological stores and the semantic-similarity stores (topology: D7), and survives restarts (D5). | **SQLite** (single on-disk file, Python stdlib driver): SQL tables for conversational + tool-log memory; the five vector stores as tables holding text, JSON metadata, and the embedding, searched by exact similarity at fixture scale (indexing & distance strategy: §2). The lightest self-contained realization — zero setup, no admin bootstrap, no container (course provenance: the course itself ran Oracle AI Database 26ai in Docker with admin/tablespace setup and a dedicated DB user; not offered as a build option in this variant — see CTX-D for the historical record). | SQLite single-file (default); Postgres + pgvector; any DB offering both exact and vector retrieval | Switching stores means migrating schemas and re-embedding nothing (embeddings are store-agnostic) but re-implementing the store adapters. | course+learner |
-| D15 | realization | **External acquisition toolset** — which live tools the default agent registers. | At least one **agent-triggered external acquisition tool** exists and follows search-and-store (D13). | The course's **keyless arXiv tools only**: a candidate-search tool returning structured JSON (id, title, authors, published, abstract) and a deep-ingest tool (fetch PDF → text → chunk → store to KB), plus a local current-time utility and the summary tools (expand, summarize-and-store) and self-lookup (`read_toolbox`). *§3 dependency precedence, branch 1* — the course's Tavily web search needs an API key (heavy); arXiv access is keyless and setup-free, so it stays (its ACs are tagged `live`), while Tavily becomes an option. These are the **course's example tools** — swap them when `[project]` (D1) differs. | Course toolset incl. Tavily web search with `TAVILY_API_KEY` (course default); keyless arXiv-only toolset (default); the learner's own domain tools | Dropping Tavily loses general web search (the agent only acquires from arXiv); adding it back is one keyed client + one registered tool following D13. | course+learner |
+| D14 | realization | **Persistent store (the Agent Memory Core)** — the database behind all seven stores. | **One persistent database is the memory core**: it serves both the exact-key/chronological stores and the semantic-similarity stores (topology: D7), and survives restarts (D5). | **SQLite** (single on-disk file, Python stdlib driver): SQL tables for conversational + tool-log memory; the five vector stores as tables holding text, JSON metadata, and the embedding, searched by exact similarity at fixture scale (indexing & distance strategy: §2). The lightest self-contained realization — zero setup, no admin bootstrap, no container (course provenance: the course itself ran Oracle AI Database 26ai in Docker with admin/tablespace setup and a dedicated DB user; that stack is recorded in CTX-D as history, not offered here as something to build). | SQLite single-file (default); Postgres + pgvector; any DB offering both exact and vector retrieval | Switching stores means migrating schemas and re-embedding nothing (embeddings are store-agnostic) but re-implementing the store adapters. | course+learner |
+| D15 | realization | **External acquisition toolset** — which live tools the default agent registers. | At least one **agent-triggered external acquisition tool** exists and follows search-and-store (D13). | The course's **keyless arXiv tools only**: a candidate-search tool returning structured JSON (id, title, authors, published, abstract) and a deep-ingest tool (fetch PDF → text → chunk → store to KB), plus a local current-time utility and the summary tools (expand, summarize-and-store) and self-lookup (`read_toolbox`). The course's Tavily web search needs an API key, so it becomes an option rather than the default; arXiv access is keyless and setup-free, so it stays (its ACs are tagged `live`). These are the **course's example tools** — swap them when `[project]` (D1) differs. | Keyless arXiv-only toolset (course default); course toolset incl. Tavily web search with `TAVILY_API_KEY` (requires a key this lab environment does not provide); the learner's own domain tools | Dropping Tavily loses general web search (the agent only acquires from arXiv); adding it back is one keyed client + one registered tool following D13. | course+learner |
 
 ## 1. Objective
 
@@ -88,17 +88,26 @@ resolve without repeating discovery and long threads never overflow the model's 
 
 ### Not Included ★
 
-- **Multi-user support, auth, or any UI beyond a CLI/REPL chat loop.**
+- **Multi-user support, auth, or any UI beyond the single-user chat interface of D1** — no
+  dashboards, admin panels, or memory-inspection screens. On the default retrofit path that
+  means the chat surface the app already has; on a from-scratch path, one chat loop and nothing
+  more.
 - **Short-term-memory subsystems the course names but never builds**: semantic caching of LLM
   responses and session scratchpads beyond the live context window.
 - **Hybrid (lexical+vector) search** — the course's store manager exposes a hybrid-search hook
   but never exercises it; excluded here.
 - **Reranking models, graph-traversal retrieval, memory decay/forgetting policies, and
   embedding-model fine-tuning** — mentioned as concepts in the lessons, never implemented.
-- **Oracle-specific operations** (tablespace admin, DB user provisioning, vector-memory pools) —
-  they belong to the course's store realization, not the pattern (D14).
-- **Integration into an existing codebase** — this spec targets the standalone takeaway only;
-  the Ledger's Invariant column is written to serve as the future integration contract.
+- **Database administration belonging to a particular store** (tablespace admin, DB user
+  provisioning, vector-memory pools, container bootstrap) — that work belongs to whichever
+  database realizes D14, not to the memory pattern. The course's own store required all of it;
+  the default store requires none.
+- **Rebuilding or redesigning the app you are retrofitting** — D1 has you modify an existing
+  chat app in place, but only its *memory layer* is in scope: swapping ephemeral history for the
+  memory core, and adding the loop, tools, and write-backs this spec defines. Its visual design,
+  framework, and interaction model stay as they are. Porting these mechanisms into a *different*
+  application later is likewise out of scope — the Ledger's Invariant column is written to serve
+  as that integration contract.
 - `[out-of-scope]` — learner exclusions (D6; default: none).
 
 ## 2. Tech Stack & Versions
@@ -112,7 +121,7 @@ resolve without repeating discovery and long threads never overflow the model's 
 | LLM | OpenAI SDK (current stable) | Ledger **D4**. `OPENAI_API_KEY` required for scripted-interface parity and live ACs. |
 | arXiv access | `arxiv` + `pymupdf` (current stable) | Ledger **D15**. The course reached arXiv through LangChain community wrappers — those names are perishable, see CTX-D. |
 | Dependency pins | Pin exact versions **at build time** to current stable in a lockfile you generate | **Honest era note: the course's `requirements.txt` installs everything unpinned** (no versions at all, LangChain-family + `oracledb` + `openai` + `tavily-python` era); do not invent course pins. Era-specific import names → CTX-D. |
-| Secrets | `.env` file loaded at startup; `OPENAI_API_KEY` (required), `TAVILY_API_KEY` (only if D15 is switched) | Never hardcoded and never committed. (The course notebooks hardcode local DB credentials — do not reproduce that.) |
+| Secrets | Read from the **process environment** at runtime: `OPENAI_API_KEY` (required), any provider base-URL variable your endpoint needs, and `TAVILY_API_KEY` only if D15 is switched | Never hardcoded, never committed, never sent to the browser — a backend reads them and calls the provider. Where the environment is not already populated, a gitignored `.env` loaded at startup is the usual way to fill it; the values still reach the code as environment variables. (The course notebooks hardcode local DB credentials — do not reproduce that.) |
 
 Default store names (single-valued course constants; body defaults, not Ledger rows):
 `CONVERSATIONAL_MEMORY`, `SEMANTIC_MEMORY` (knowledge base), `WORKFLOW_MEMORY`,
@@ -288,8 +297,9 @@ hardening (added by this spec; the course did not demonstrate it — said so exp
     → AC11
 12. **R12 — Non-blocking entity extraction.** [C] After the user query and after the final
     answer, entities (PERSON/PLACE/SYSTEM, from at most the first 500 characters of text) are
-    extracted via the LLM and written to entity memory; any extraction failure is swallowed —
-    it must never fail the turn. → AC15
+    extracted via the LLM and written to entity memory; [H] an entity the model cannot place in
+    those three classes is stored as `UNKNOWN` (§3) rather than dropped. Any extraction failure
+    is swallowed — it must never fail the turn. → AC15
 13. **R13 — Bounded agent loop.** [C] The loop runs at most 10 iterations; if no final answer
     is produced by then, the turn ends with a fixed inability message, which is still persisted
     per R1 (prevents CTX-B8). → AC12
@@ -350,7 +360,8 @@ Modes: **Offline** (no network after the one-time embedding-model download), **S
 | AC20 | Live-keyed | `OPENAI_API_KEY` set; fresh thread | Turns: "Find the MemGPT paper" → "Save the content of the paper" → "Summarize the conversation so far using your tool" → "What was my first question?" | Turn 2 resolves "the paper" from conversation memory without re-asking; turn 3 stores a summary and marks rows; turn 4's answer names the first question, having expanded the summary (R1, R2, R9, R16; D4 invariant — real native tool calling against the default provider) — the course's own end-to-end demonstration sequence (CTX-E, Lesson 6) |
 
 Every business rule reaches ≥1 AC and every AC traces to a rule (mapping inline above). Every
-demonstrated failure mode appears as rule + fixture + AC + CTX-B entry (§10 four-way encoding).
+demonstrated failure mode is encoded four ways — as a business rule, a fixture, an acceptance
+criterion, and a CTX-B catalog entry.
 
 ## 6. Boundaries
 
@@ -377,9 +388,13 @@ demonstrated failure mode appears as rule + fixture + AC + CTX-B entry (§10 fou
 ## 7. Test Plan & Self-Verification
 
 ```bash
+# On the D1 retrofit path, reuse the environment the app already runs in and add
+# only what is missing. Create one only if it has none:
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt        # generate a lockfile; pins are this build's choice (§2)
-cp .env.example .env                   # set OPENAI_API_KEY (required only for live-keyed)
+
+# Credentials come from the process environment (§2). If OPENAI_API_KEY is not
+# already exported, populate it — e.g. a gitignored .env loaded at startup.
 
 pytest -q -m "not live"                # AC1–AC18: offline + scripted (first run downloads the embedding model)
 pytest -q -m "live"                    # AC19 (keyless network), AC20 (needs OPENAI_API_KEY)
