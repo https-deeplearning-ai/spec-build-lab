@@ -62,7 +62,7 @@ Generation is gated on **two inputs**. Verify each is actually present before ge
 2. **Transcripts** (required) — lesson transcripts. Source of truth for **lesson numbering and titles, rationale, spoken trade-offs, failure narration**.
 
 **Learner intake is a build-time input, not a generation input.** One `spec.md` is generated and delivered to many learners; the learner supplies their own project when they build. So the generator **never has intake, must not ask for it, and must not block on it**. Instead, every point where a build could diverge — including the learner-context dimensions — becomes a **Decision Ledger** row (§5.5), each carrying a course-derived default. Specifically:
-- The learner-context dimensions are Ledger rows whose Invariant carries only the pattern's *capability requirements* on that dimension — empty when the pattern demands nothing (typically project, data, goal, out-of-scope), a small capability contract when it does (e.g. Model/provider: *must support native tool calling*; Environment: *memory must survive process restarts*), always derived from the materials, never invented. The course has no opinion on the learner's *selection*, only on what the selection must be capable of. The dimensions: *Project* (what they're building); *Data/inputs* (what it operates on, where that lives); *Goal* (what "working" means — what retrieval should find, what the output must guarantee); *Model/provider* preference; *Environment* (where it runs, constraints); *Out of scope* (anything explicitly unwanted). These are marked `[bracketed]` in the spec body (§9 labels them *learner intake*).
+- The learner-context dimensions are Ledger rows whose Invariant carries only the pattern's *capability requirements* on that dimension — empty when the pattern demands nothing (typically project, data, goal, scope-boundary), a small capability contract when it does (e.g. Model/provider: *must support native tool calling*; Environment: *memory must survive process restarts*), always derived from the materials, never invented. The course has no opinion on the learner's *selection*, only on what the selection must be capable of. The dimensions: *Project* (what they're building); *Data/inputs* (what it operates on, where that lives); *Goal* (what "working" means — what retrieval should find, what the output must guarantee); *Model/provider* preference; *Environment* (where it runs, constraints); *Scope boundary* (what the build leaves out — disclosed to the learner, who may ask for an item back or add exclusions of their own). These are marked `[bracketed]` in the spec body (§9 labels them *learner intake*).
 - **Every Ledger row — learner-context or otherwise — MUST carry a course-derived default** so the spec is buildable and evaluatable *as-is*, with zero intake.
 - The default MUST be **self-contained inside `spec.md`** — resolvable at build time without reading anything else. During a build, course `materials/` are off-limits (hook-enforced), so a default that points back at the course cannot be resolved. Bake it in.
 
@@ -125,7 +125,7 @@ The **Decision Ledger** is the spec's second section (§6, right after the §0 p
 **Each row carries seven fields:**
 - **Category** — the §5.5 entry route that admitted the row (`design-argued | design-structural | realization | contradicted | learner`). Exactly one label, chosen by the precedence in the surfacing bar below; it determines the row's position in the fixed row order.
 - **Decision** — short name (e.g. "persistent store", "memory-core topology", "project").
-- **Invariant** — what MUST hold to preserve the taught pattern. For learner-context rows it carries only the pattern's capability requirements on that dimension (§3) — typically empty for project/data/goal/out-of-scope, never invented. Write it precisely: this field doubles as the contract a future integration must satisfy.
+- **Invariant** — what MUST hold to preserve the taught pattern. For learner-context rows it carries only the pattern's capability requirements on that dimension (§3) — typically empty for project/data/goal/scope-boundary, never invented. Write it precisely: this field doubles as the contract a future integration must satisfy.
 - **Options** — realizations that satisfy the invariant, from course-faithful to tech-agnostic. The course's own technology always appears here even when it is not the default — and when it is not the default (a §3 branch-1 substitution), tag that entry **"(course default)"** in the cell text, so the §6.0 gate's labeling duty is deterministic: the build agent must never have to infer which option the course actually used.
 - **Default (course-derived)** — **exactly one** buildable target (§3). For heavy-dependency rows, resolved by the §3 dependency precedence, with the branch stated. When the default is the course's *example realization* — a domain-specific instantiation (its demo data, its example tools) rather than the pattern itself — the Decision or Default cell must say so and mark it as expected to be swapped when the learner's project (the project row) differs: the invariant, not the example, is what must survive.
 - **Trade-off** — what switching costs (carries the course's *spoken* trade-offs: re-embedding, re-tuning, lateral-or-worse results).
@@ -141,11 +141,20 @@ The **Decision Ledger** is the spec's second section (§6, right after the §0 p
 - **`design-argued`** (course-argued) — the transcripts/slides explicitly present an alternative and argue a trade-off ("you could do X, but we do Y because Z"). Detection source: Pass B's mined spoken trade-offs (§4) — what the instructor argued about is what the course teaches *as a decision*. This route applies **even when the course's choice would otherwise be encoded as an invariant**: weaken the Invariant field to what must truly hold, make the argued position the Default, and carry the course's narrated argument — with its lesson citation — in the Trade-off cell. The default is always the course's argued position, so no-intake determinism (§3, §12.7/§12.8) is unaffected.
 - **`contradicted`** (course-contradicted) — the course itself set it inconsistently across lessons or between signature/docstring/call site (e.g. cosine in one lesson, euclidean in another; `k=3` in a signature but `5` in the call). Self-contradiction is the strongest signal a human should see the choice, even if the stakes look low.
 - **`realization`** — a heavy-dependency decision surfaced by the §3 dependency precedence (the row states which branch was taken and why).
-- **`learner`** — the learner-context dimensions (§3): project, data/inputs, goal, model/provider, environment, out-of-scope.
+- **`learner`** — the learner-context dimensions (§3): project, data/inputs, goal, model/provider, environment, scope-boundary.
 
 When several routes apply, Category records the highest-precedence one: `design-argued > design-structural > realization > contradicted` (learner-context rows are always `learner`). Lower-precedence evidence is never dropped: if a design row's value is also course-contradicted, the contradiction — with both citations — still appears in that row's Default note or Trade-off cell.
 
 Everything else — a single-valued parameter the course sets once, never varies, and never argues (a chunk size, a token-estimate heuristic, a max-iteration cap) — stays a **defaulted value in the spec body**, not a Ledger row. It still carries its value and provenance; it is simply not promoted. Do not drown the Ledger in low-stakes rows; do not bury a design or contradicted decision in prose (that is the failure §12.9 and the old CTX-C mis-home caused).
+
+**The scope-boundary row (what the out-of-scope dimension becomes).** Subtraction is the wrong verb for this dimension in standalone-takeaway mode: the deliverable is fixed and pinned by the acceptance criteria, and every subtraction a learner would plausibly want is already an Options pick on some other row. What the dimension *can* carry is the inverse — the build's exclusion list, shown to the learner, who may ask for something back. So write it as a **scope-boundary row**:
+
+- Its **Decision** cell instructs the gate to present the §1 "Not Included" list *inside the question*. §1 is not a Ledger row, so the gate — which presents only rows, one at a time — otherwise never renders it, and the learner is asked to amend a list they have never seen. This is the row's whole job; a Default that merely points at §1 does not do it.
+- Its **Default** is keep-as-is: every §1 exclusion stands, the full acceptance set is built.
+- Its **Options** offer restoration *without naming what the learner should want back* — they name it. Two options (keep / bring something back) plus the question tool's free-text is enough; a single-option cell cannot be asked at all, since structured question tools require at least two.
+- Classify each excluded item by a **handling rule**, so the agent's answer is determinate rather than improvised: *additive and owned by no other row* → restorable at the gate; *named by the course but never built* → buildable, but say plainly that the spec supplies no parameters and no acceptance criteria for it; *owned by another row* (a store capability, a keyed tool) → defer to that row, never decide the same thing twice; *outside the delivered build mode* (e.g. integration into an existing codebase) → unavailable.
+
+A genuine additional exclusion still reaches the agent through free-text, and must name the acceptance criteria it retires.
 
 **Row order (fixed).** The table is grouped by Category — **`learner` → design (`design-argued`, `design-structural`) → `realization` → `contradicted`** — with pattern-pipeline order within each group. This is presentation order only (the derivation procedure may construct rows in any sequence). The ordering principle is **context first, dependents after**: the §0 gate presents rows in table order, so the learner's project/data/goal answers exist in the conversation before the design and realization rows whose right answer for *this* learner depends on them (a store choice depends on the environment; a toolset on the project; seed data on the learner's data), and the build agent can frame those later questions in the learner's own terms (§6.0). Contradicted rows come last because they depend on realization choices (an index type depends on the chosen store). Ordering by importance instead ("highest-judgment first") buys nothing here — the gate hard-requires every row answered and checklist-echoed, so coverage never depends on position; position should buy context.
 
@@ -180,7 +189,7 @@ The spec MUST contain these core sections, in this order (this is the seven-sect
 
 ## Decision Ledger (§0 above requires the build agent to present these before building)
 <!-- The second section (after §0). ONE table holding every design-critical
-     decision (§5.5): the learner-context dimensions (project/data/goal/out-of-scope) AND
+     decision (§5.5): the learner-context dimensions (project/data/goal/scope-boundary) AND
      the design (structural/argued), realization, and contradicted technique & dependency
      decisions. This REPLACES the old fixed six-slot list. Lead with: "These are the points
      where this build could diverge. Every row has a course-derived default, so the spec is
@@ -203,7 +212,9 @@ The spec MUST contain these core sections, in this order (this is the seven-sect
 <One sentence: what it does, for whom, with what guarantee.> (pattern: CTX-A)
 ### Not Included            ★
 <Explicit out-of-scope list: the learner's exclusions + everything past course scope.
- Without this, the agent adds plausible features nobody asked for.>
+ Without this, the agent adds plausible features nobody asked for. This list is what the
+ scope-boundary Ledger row presents at the gate (§5.5), so write each item so it reads
+ clearly on its own in a question.>
 
 ## 2. Tech Stack & Versions
 <Table: component | pinned choice | note. Where a component's choice is a Decision Ledger
@@ -454,6 +465,7 @@ Fix, don't annotate.
 - [ ] Each row's Invariant is written precisely enough to serve as an integration contract (§ Integration note); learner-context rows carry only the pattern's §3 capability requirements (empty when the pattern demands nothing, never invented).
 - [ ] Every non-empty row Invariant is exercised by ≥1 AC, or the row states why it cannot be (§8).
 - [ ] Where several §5.5 routes applied to one row, the lower-precedence evidence (e.g. a contradiction behind a design-argued row) is still carried in that row's Default note or Trade-off — never dropped (§5.5).
+- [ ] The scope-boundary row presents the §1 "Not Included" list inside its question and offers restoration, not only subtraction; its Options hold at least two entries, and no option pre-names what the learner should want back (§5.5).
 - [ ] Owner labels are present and used only as metadata — no row's default or surfacing depends on its owner.
 
 **Anatomy**
