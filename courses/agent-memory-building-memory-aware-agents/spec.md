@@ -7,7 +7,8 @@
 > one course-derived default, so the spec is buildable and evaluatable **as-is with zero intake**;
 > `[bracketed]` values mark where a learner *may* substitute their own choice.
 > *Provenance: generated from the "Agent Memory: Building Memory-Aware Agents" course notebooks +
-> transcripts on 2026-07-20.*
+> transcripts on 2026-07-20; guide @ `d2aa03b`; hand-evolved per guide-pins-v2 (this line is
+> replaced on regeneration).*
 
 ## 0. Before you build — REQUIRED (do this first)
 
@@ -101,7 +102,7 @@ resolve without repeating discovery and long threads never overflow the model's 
 |---|---|---|
 | Language | Python 3.11+ | Course-era Python version is not stated in the materials. |
 | Persistent store | SQLite (stdlib `sqlite3`), one on-disk file | Decision Ledger **D14** — learners change it there, not here. |
-| Vector search | Exact (brute-force) similarity at fixture scale — add an ANN index only when corpora grow | One distance strategy — **cosine** — used consistently across all stores, write & read (R15). Both are tunable levers, not decisions: the course used both cosine and euclidean across lessons (tables wiped between them; near-equivalent for normalized embeddings) and built its ANN index (IVF/HNSW) only for the cloud store. |
+| Vector search | Exact (brute-force) similarity at fixture scale — add an ANN index only when corpora grow | One distance strategy — **cosine** *(selection branch 1: spoken-teaching value — the Lesson-3 narration names cosine)* — used consistently across all stores, write & read (R15). Both are tunable levers, not decisions: the course used both cosine and euclidean across lessons (tables wiped between them; near-equivalent for normalized embeddings) and built its ANN index (IVF/HNSW) only for the cloud store. |
 | Embeddings | `sentence-transformers/paraphrase-mpnet-base-v2` (768-dim, local CPU) | The course's single embedding model for all stores and both write/read paths (CTX-C5). First run downloads it (keyless network). |
 | LLM | OpenAI SDK (current stable) | Ledger **D4**. `OPENAI_API_KEY` required for scripted-interface parity and live ACs. |
 | arXiv access | `arxiv` + `pymupdf` (current stable) | Ledger **D15**. The course reached arXiv through LangChain community wrappers — those names are perishable, see CTX-D. |
@@ -300,6 +301,10 @@ hardening (added by this spec; the course did not demonstrate it — said so exp
     priority (current question > latest conversation > knowledge-base evidence > older
     summaries/workflows), requires expanding a summary before relying on detail that exists only
     there, and requires stating uncertainty instead of asserting unsupported claims. → AC13, AC20
+17. **R17 — Store provisioning.** [C] Initializing the memory manager on an empty data directory
+    creates all seven declared stores with their §3 schemas — the two relational tables with
+    their columns, the five vector stores with text, metadata, and embedding fields — before any
+    turn runs (CTX-C1). → AC21
 
 ## 5. Acceptance Criteria ★ (the oracle)
 
@@ -342,11 +347,12 @@ Modes: **Offline** (no network after the one-time embedding-model download), **S
 | AC18 | Scripted | A tool registered with augmentation on; scripted LLM returns enriched text + 5 queries | Registration completes | The stored description equals the enriched text (not the raw docstring) and the embedded text contains the 5 synthetic queries (R5; D11 invariant) |
 | AC19 | Live-keyless | Network available | The arXiv candidate-search tool runs with query "agent memory" | A JSON array returns; every element has `arxiv_id`, `entry_id`, `title`, `authors`, `published`, `abstract` (abstract ≤2,500 chars) (R14; D15 invariant) |
 | AC20 | Live-keyed | `OPENAI_API_KEY` set; fresh thread | Turns: "Find the MemGPT paper" → "Save the content of the paper" → "Summarize the conversation so far using your tool" → "What was my first question?" | Turn 2 resolves "the paper" from conversation memory without re-asking; turn 3 stores a summary and marks rows; turn 4's answer names the first question, having expanded the summary (R1, R2, R9, R16; D4 invariant — real native tool calling against the default provider) — the course's own end-to-end demonstration sequence (CTX-E, Lesson 6) |
+| AC21 | Offline | An empty data directory | The memory manager initializes, before any turn runs | All seven stores exist with their declared §3 schemas: `CONVERSATIONAL_MEMORY` and `TOOL_LOG_MEMORY` as relational tables with their columns; `SEMANTIC_MEMORY`, `WORKFLOW_MEMORY`, `TOOLBOX_MEMORY`, `ENTITY_MEMORY`, `SUMMARY_MEMORY` each holding text, metadata, and embedding fields (R17; D7/D14 invariants) |
 
 Every business rule reaches ≥1 AC and every AC traces to a rule (mapping inline above). Every
 demonstrated failure mode appears as rule + fixture + AC + CTX-B entry (§10 four-way encoding).
 
-## 6. Boundaries
+## 6. Standing Permissions (in force for the entire build)
 
 **Always**
 - Persist every user query and final answer (R1) and write a tool-log record for every tool call (R10).
@@ -354,10 +360,11 @@ demonstrated failure mode appears as rule + fixture + AC + CTX-B entry (§10 fou
 - Use the same embedding model for every store and for both write and read paths (CTX-C5).
 - Load secrets from the environment; keep the DB file out of version control.
 
-**Ask First** (course-spoken trade-offs — anything here forces rework or was shown lateral-or-worse)
+**Ask First** (course-spoken trade-offs — anything here forces rework, or changes a behavior guarantee that no acceptance criterion tests)
 - **Changing the embedding model** — every vector store must be re-embedded; the course stresses the query-time model must match the ingest-time model (Lesson 2's RAG walkthrough).
 - **Changing distance strategy or adding/altering a vector index after data exists** (see §2) — the course wipes and rebuilds all tables between lessons precisely to avoid inconsistent-strategy corruption.
 - **Raising the toolbox retrieval count or passing all tools to the model** (R4) — Lesson 4 shows this degrades tool selection and bloats context; providers recommend ~10–20 tools max.
+- **Moving any operation across the deterministic/agent-triggered line** (changing the decided value of D8) — the swap silently changes a behavior guarantee no AC tests; Lesson 3 argues each side's costs aloud: determinism buys reliability and completeness, agent triggering buys signal-to-noise and cost control.
 - **Rewriting the summarization prompt structure** (R8) — Lesson 5: summarization is lossy and "the prompting technique you use … will determine the quality of the output".
 - **Switching the store realization** (D14) or **enabling Tavily web search** (D15) — migration/setup cost and a new secret respectively.
 
@@ -379,7 +386,7 @@ pytest -q -m "not live"                # AC1–AC18: offline + scripted (first r
 pytest -q -m "live"                    # AC19 (keyless network), AC20 (needs OPENAI_API_KEY)
 ```
 
-The building agent MUST report results **per acceptance criterion** (AC1…AC20) with cited
+The building agent MUST report results **per acceptance criterion** (AC1…AC21) with cited
 evidence: the test command run, the pass/fail output line, and file paths of artifacts examined
 (e.g. the DB file inspected for AC1, the captured model input for AC13). "Should pass" /
 "looks correct" are treated as failures — they mean it wasn't run. If a live AC cannot run
