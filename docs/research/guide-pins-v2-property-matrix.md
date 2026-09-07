@@ -68,6 +68,28 @@ Two-for-two on everything except two complementary wobbles:
 - B2: store = SQLite-only tier 1 ✓, N4/N5/N11/N12 ✓, existence AC-1 ✓ — but kept a sanitized tool-exposure row (13 rows): **N6 ✗** (Rule B's litmus counted "static toolset when small" — the taught mechanism's degenerate case — as a second side).
 - N10 ✗ (the two wobbles). Round-3 guide fixes: degenerate-case clause on Rule B's litmus; "judge tiers at declared default scale" clause on the §3 tier rule.
 
+## Round 3 (guide `73c37ef`; regen-A3 13 rows / regen-B3 12 rows) — FINAL
+
+- **B3: full pass, 25/25.** ~20 properties file-verified in-session (ledger shape, existence AC1,
+  restart rule, cosine+euclidean dual citation, k=5 branch-2 lever, 256k/128k, chars÷4,
+  max_iterations 10, 3,000/2,000 bounds, 6,000/4,000 caps, 8-hex ids, 8–12-word labels,
+  PERSON/PLACE/SYSTEM schema enum, four headings, Tavily omit + "(course default)" + honest fake,
+  tier-1 store with declared-scale reasoning, AF1–AF8 incl. AF4/AF5, gate hard-stop + one-per-row,
+  CTX-A–E, transcript-authoritative numbering, `73c37ef` pin, "Standing Permissions", fixture ban,
+  rule↔AC bidirectional refs); remainder verified by targeted grep this round. **Scoring note (N2):**
+  two fixture Ask-First subjects are covered by stronger mechanisms in the 12-row shape —
+  pass-all-tools is rule-forbidden (outranks Ask First); no index exists at tier 1 (entry moot;
+  destructive resets = AF7). Judged pass.
+- **A3: 24/25** — the tool-exposure subject re-entered as a `design-structural` row (file-verified),
+  its third distinct route across rounds (A1 argued-sanitized → B2 argued → A3 structural) → residual
+  F6; A3 otherwise converged (tier-1 store, zero contradicted rows, Tavily omit) [report].
+- **Outcome:** owner accepted one-full-pass + residuals-filed (pass bar relaxed from two-for-two,
+  2026-09-07); **B3 adopted** as the course spec.
+
+**Evidence discipline:** claims above are [verified] (file/git checked this session) unless marked
+[report] (subagent self-report). A2's properties rest on its report only; A1/B1/B2/A3/B3 ledgers and
+key rows were file-verified.
+
 ### Findings
 - **F1 (both; guide defect):** Rule A's stakes test lacks a timing anchor — "forces rework" was read as *any later change* forces rework, which every data-touching lever satisfies, so nothing demotes. Fix: evaluate stakes at initial choice time; later-change cost is §6's business.
 - **F2 (A; two seeds):** the §5.5 procedure's "architecture-maturity progression" example seeded a row the course argues only as narrative; and Rule B's litmus ("shown working as an acceptable alternative") let a sanitized tool-exposure row back in via "static toolset viable when small".
