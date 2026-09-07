@@ -97,6 +97,7 @@ Notebooks give you *what and how-configured*; transcripts give you *why and what
 **Pass A — Notebooks.** Extract:
 - Every working parameter (chunk sizes, overlaps, k-values, temperatures, paths) **with its exact location**, distinguishing exploratory-notebook configs from the course's end-to-end *application* config. When both exist, the app config is the recommended starting point (exception: a *contradicted near-equivalent lever* resolves by the §5.5 lever-value rule instead); record the rest as alternatives with their context. Never call a value "the default" if the materials contain more than one config.
 - The API surface actually used: namespaces, class/function names, model names — and whether installs are **version-pinned**. State the era honestly (e.g. "installs unpinned, pre-1.0 namespace"). Never invent pins the notebook doesn't contain.
+- **Course-declared identifiers and constants** (store/table names, type enums, fixed labels the notebooks declare). Those that participate in a contract or schema stay **binding** in the spec; the rest land in **CTX as provenance** — a short name-map to the course's own terms — never as binding values. They exist so a learner can map the spec's concepts back to what the lessons show on screen; dropping them entirely severs that bridge.
 - Deliberately planted failure demonstrations (a duplicated input file, a query designed to fail) — these are curriculum, not accidents → they become rules.
 - Behavior-encoding prompts (e.g. a grounding instruction like "if you don't know, say you don't know") → become business rules, expressed as the *behavior*, not the prompt text.
 
@@ -146,6 +147,8 @@ The **Decision Ledger** is the spec's second section (§6, right after the §0 p
 - **`learner`** — the learner-context dimensions (§3): project, data/inputs, goal, model/provider, environment, scope-boundary.
 
 When several routes apply, Category records the highest-precedence one: `design-argued > design-structural > realization > contradicted` (learner-context rows are always `learner`). Lower-precedence evidence is never dropped: if a design row's value is also course-contradicted, the contradiction — with both citations — still appears in that row's Default note or Trade-off cell.
+
+**No route admits a non-decision.** Every route admits *decisions*, and a decision requires at least two legitimate options. When every alternative to the taught side is a course-warned anti-pattern or its degenerate case (the `design-argued` bake-in rule), there is no decision left to surface — the subject enters the Ledger through **no** route, `design-structural` included, even where its guarantee would pass the structural litmus: the guarantee lives in a business rule and its AC, and the warned side lives in the Trade-off/CTX narrative. (Left unstated, one baked-in subject re-entered the Ledger through three different route readings across successive regenerations.)
 
 Everything else — a single-valued parameter the course sets once, never varies, and never argues (a chunk size, a token-estimate heuristic, a max-iteration cap) — stays a **defaulted value in the spec body**, not a Ledger row. It still carries its value and provenance; it is simply not promoted. Do not drown the Ledger in low-stakes rows; do not bury a design decision or a stakes-passing contradicted decision in prose (that is the failure §12.9 and the old CTX-C mis-home caused).
 
@@ -456,6 +459,8 @@ Fix, don't annotate.
 - [ ] Parameter values cite the exact config they came from; no "course defaults" hand-waving.
 - [ ] Every working parameter mined in Pass A lands somewhere in the spec (a Ledger default, a body value, or CTX-C) — walk the scratch provenance ledger; none silently dropped.
 - [ ] Every mined contradiction is surfaced with both sides' sources (where the value is declared, and in CTX-C) and was routed through the §5.5 stakes test; a contradiction resolved as a body default states how §5.5 selected its value.
+- [ ] Course-declared constants are carried per §4: contract-participating ones binding, the rest as CTX provenance; none silently dropped.
+- [ ] Every Ledger row survives the §5.5 non-decision precondition; no baked-in subject re-entered as a row through any route.
 - [ ] Version claims match the notebooks' actual install lines; era stated honestly if unpinned.
 
 **Decision Ledger**
@@ -477,7 +482,7 @@ Fix, don't annotate.
 - [ ] Each row's Invariant is written precisely enough to serve as an integration contract (§ Integration note); learner-context rows carry only the pattern's §3 capability requirements (empty when the pattern demands nothing, never invented).
 - [ ] Every non-empty row Invariant is exercised by ≥1 AC, or the row states why it cannot be (§8).
 - [ ] Where several §5.5 routes applied to one row, the lower-precedence evidence (e.g. a contradiction behind a design-argued row) is still carried in that row's Default note or Trade-off — never dropped (§5.5).
-- [ ] The scope-boundary row presents the §1 "Not Included" list inside its question and offers restoration, not only subtraction; its Options hold at least two entries, and no option pre-names what the learner should want back (§5.5).
+- [ ] The scope-boundary row meets all four of §5.5's scope-boundary requirements (presentation, default, options, handling rules) — checked against that section, not from memory.
 - [ ] Owner labels are present and used only as metadata — no row's default or surfacing depends on its owner.
 
 **Anatomy**
