@@ -61,6 +61,13 @@ tighten the specific guide rule, regenerate; never hand-patch the regen output.
 | N8, N9 | present | present | Title + guide pin in both |
 | N10 | **fail** | **fail** | Row-set variance A↔B (15 vs 13; maturity row; tool-exposure row; web-search row framing) |
 
+## Round 2 (guide `e2db8be`; regen-A2 12 rows / regen-B2 13 rows)
+
+Two-for-two on everything except two complementary wobbles:
+- A2: **exact 12-row target** (N6 ✓, N4/N5 ✓ zero contradicted rows, N11 ✓, N12 ✓ Tavily omitted w/ honest stand-in + "(course default)" in Options) — but store = SQLite + Chroma (tier 2 for vectors): **N7 ✗** (judged "satisfies" at aspirational scale).
+- B2: store = SQLite-only tier 1 ✓, N4/N5/N11/N12 ✓, existence AC-1 ✓ — but kept a sanitized tool-exposure row (13 rows): **N6 ✗** (Rule B's litmus counted "static toolset when small" — the taught mechanism's degenerate case — as a second side).
+- N10 ✗ (the two wobbles). Round-3 guide fixes: degenerate-case clause on Rule B's litmus; "judge tiers at declared default scale" clause on the §3 tier rule.
+
 ### Findings
 - **F1 (both; guide defect):** Rule A's stakes test lacks a timing anchor — "forces rework" was read as *any later change* forces rework, which every data-touching lever satisfies, so nothing demotes. Fix: evaluate stakes at initial choice time; later-change cost is §6's business.
 - **F2 (A; two seeds):** the §5.5 procedure's "architecture-maturity progression" example seeded a row the course argues only as narrative; and Rule B's litmus ("shown working as an acceptable alternative") let a sanitized tool-exposure row back in via "static toolset viable when small".
