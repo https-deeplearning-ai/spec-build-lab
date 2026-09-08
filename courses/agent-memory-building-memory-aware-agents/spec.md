@@ -1,13 +1,10 @@
-# Spec: Memory-Aware Research Assistant — Standalone Takeaway
+# Spec: Memory-Aware Research Agent — Standalone Takeaway
 
-> **This file is self-contained.** The embedded Course Context Pack (CTX-A…CTX-E, at the end)
-> replaces all external course references — nothing in this spec requires access to the course
-> platform, its notebooks, or its transcripts. `(CTX-X)` anchors mark course-derived knowledge.
-> The **Decision Ledger** below holds every point where the build could diverge, each pinned to
-> one course-derived default, so the spec is buildable and evaluatable **as-is with zero intake**;
-> `[bracketed]` values mark where a learner *may* substitute their own choice.
-> *Provenance: generated from the "Agent Memory: Building Memory-Aware Agents" course notebooks +
-> transcripts on 2026-07-20.*
+> **This file is self-contained.** The embedded **Course Context Pack** (bottom of this file) replaces all external course references — nothing here requires access to the course platform, notebooks, or transcripts. `(CTX-X)` anchors mark course-derived knowledge. The **Decision Ledger** below holds every point where this build could diverge, each pinned to one course-derived default, so the spec builds as-is with zero intake.
+>
+> **Provenance:** generated from the *Agent Memory: Building Memory-Aware Agents* course notebooks (notebook dump incl. `helper.py` and `requirements.txt`) + lesson transcripts, on 2026-09-07. Generation guide version: repo commit `a7de8ef`.
+
+---
 
 ## 0. Before you build — REQUIRED (do this first)
 
@@ -48,6 +45,8 @@ not because they are the right choice for this person's project.
    after this complete checklist is shown; if any row is unresolved you are not done — return to
    step 3. Build on the checklist's values.
 
+---
+
 ## Decision Ledger (§0 above requires the build agent to present these before building)
 
 These are the points where this build could diverge. Every row has a course-derived default, so
@@ -55,537 +54,564 @@ the spec is buildable and evaluatable as-is; change a row only when applying to 
 when you have reason to prefer another option.
 
 | # | Category | Decision | Invariant (must hold) | Default (course-derived) | Options | Trade-off | Owner |
-|---|----------|----------|-----------------------|--------------------------|---------|-----------|-------|
-| D1 | learner | `[project]` — what the agent is for. Default is the **course's example realization** (its running demo scenario), expected to be swapped when your project differs — the invariants, not the example, are what must survive. | — | A **memory-aware agentic research assistant**: a CLI/REPL chat agent that finds, saves, and discusses research papers across sessions, remembering prior findings and preferences (§3 project precedence, branch 1: the course's example scenario shape re-expressed on the synthetic fixture corpus of §5). | Course example shape: research assistant (course default); any domain assistant needing persistence (support bot, coding copilot, ops runbook agent) | Swapping the project keeps every memory mechanism; only the toolset (D15) and seed data (D2) change with it. | learner |
-| D2 | learner | `[data/inputs]` — what the agent operates on. Default is a fixture stand-in for the **course's example data**; swap when D1 changes. | — | The **synthetic fixture corpus of §5** (two authored paper-notes files + one authored 12-message seed conversation), ingested at setup. | Fixture corpus (default); the learner's own documents/threads; the course streamed 100 records of a public arXiv dataset and live arXiv PDFs (course default) | Real corpora need the same ingest path (embed + metadata); large corpora may need an ANN index (see §2). | learner |
-| D3 | learner | `[goal]` — what "working" means. | — | **Cross-session continuity**: the agent answers follow-ups without re-doing discovery, keeps context under budget via recoverable summarization, and can still recover the thread's first question after summarizing (the §5 oracle). | Continuity guarantee (default); latency/cost targets; retrieval-precision targets | Stricter retrieval goals push toward reranking/hybrid search — out of course scope (§1 Not Included). | learner |
-| D4 | learner | `[model/provider]` — the LLM behind reasoning, summarization, augmentation, extraction. | Must support **native (OpenAI-style) tool calling** and a system role; its context-window size must be known to the budget monitor (R6). | **OpenAI**, per the materials: `gpt-5-mini` for the agent loop, `gpt-5` for docstring augmentation and entity extraction. Requires `OPENAI_API_KEY` (§2); LLM-dependent ACs are tagged `scripted` or `live` so the offline oracle still runs (§5). *Note (course-contradicted, carried here):* the L4 notebook's token-limit map lists only `gpt-5-mini: 256000` while `helper.py`'s lists only `gpt-5: 256000`, and helper function defaults say `gpt-5` where the L5 loop calls `gpt-5-mini` — the materials never reconcile the two; this spec pins the loop to `gpt-5-mini` with a 256,000-token budget (the L5 loop's actual call path). | OpenAI gpt-5-mini + gpt-5 (course default); any tool-calling model (Anthropic, local via an OpenAI-compatible server) | Changing provider means re-checking the tool-call message shapes and the token budget in R6; prompts (summarization, extraction) may need re-tuning. | learner |
-| D5 | learner | `[environment]` — where it runs. | **All seven memory stores must survive process restarts** (memory is external to the model and persistent). | Local machine, Python 3.11+, single on-disk database file (realization: D14). First run needs network to download the embedding model; no Docker, no admin setup. | Local single file (default); the course ran a Dockerized Oracle instance (course default — see D14); any server environment | A shared/server environment adds connection management the course's local pattern doesn't cover. | learner |
-| D6 | learner | `[out-of-scope]` **Scope boundary** — what this build leaves out, and whether the learner wants any of it back. Present the §1 "Not Included" list inside the question itself, so the learner is choosing against something they can see; do not pre-select what they might restore. If they choose to amend, capture which items, then apply: additive and owned by no other row → restore it; named by the course but never built (semantic caching, scratchpads, reranking, graph retrieval, decay, fine-tuning) → buildable, but state that this spec supplies no parameters and no acceptance criteria for it; hybrid search and Oracle-specific operations → defer to D14, do not decide here; integration into an existing codebase → unavailable in this build mode. | — | **Keep as-is** — every §1 exclusion stands; build the full §5 acceptance set (AC1–AC20). | Keep as-is (default; no "(course default)" applies — the course has no opinion on this dimension); bring something back — the learner names it | Anything restored is additive: it must not change behavior AC1–AC20 assert, and it ships with no acceptance criteria and no Context Pack guidance — the learner owns its verification. An exclusion the learner adds may shrink the build but never deletes another row's Invariant. Either amendment belongs in the §0 step-5 checklist. | learner |
-| D7 | design-argued | **Memory-core topology** — which memory types exist and their storage class. | Seven memory types, each with a dedicated store: **conversational + tool-log memory retrievable by exact key (thread) in chronological order; knowledge-base, workflow, toolbox, entity, and summary memory retrievable by semantic similarity.** | The course's seven stores: `CONVERSATIONAL_MEMORY` and `TOOL_LOG_MEMORY` as SQL-style tables; `SEMANTIC_MEMORY` (knowledge base), `WORKFLOW_MEMORY`, `TOOLBOX_MEMORY`, `ENTITY_MEMORY`, `SUMMARY_MEMORY` as vector stores — all fronted by one memory-manager abstraction (CTX-A, CTX-C1). | Seven-store split (course default); fewer stores (e.g. fold entity into KB); more (add semantic cache) | Lesson 3 argues the split: conversation needs *exact* retrieval by thread id, "not similarity search", while knowledge/workflow/toolbox/entity/summary need meaning-based lookup; collapsing stores loses the retrieval strategy matched to each type. | course |
-| D8 | design-structural | **Deterministic vs agent-triggered operation split** — which memory operations the harness runs every turn vs which the model may invoke. | Context-building reads (conversation, KB, workflow, entity, summary-index) and post-turn writes (conversation, workflow) run **deterministically every turn**; judgment operations (expand a summary, summarize-and-store, external search, entity writes) are **also exposed as model-invocable tools**. | The course's classification (CTX-C2): deterministic = the five preload reads + conversation/workflow writes + the >80% budget check; agent-triggered = `expand_summary`, `summarize_and_store`, external search, deep paper ingest; `read_toolbox` is both. *Note (course-contradicted, carried here):* the Lesson 3/L2-notebook classification table marks entity **writes** and `read_summary_context` agent-triggered, yet the Lesson 6 loop runs both deterministically (entity extraction after query and answer; summary-index read in every preload) — this spec follows the Lesson 6 working loop. | Course split (course default); fully agent-managed memory; fully hardcoded memory | Moving reads/writes to model discretion risks "forgot to save" gaps and the chicken-and-egg problem (CTX-B7); hardcoding judgment ops (e.g. always summarize) wastes tokens and clutters memory (CTX-C2). | course |
-| D9 | design-argued | **Partitioned context window + memory-aware system prompt** — how assembled memory is presented to the model. | The model input carries the question first, then **one labeled segment per memory type**, and the model instructions name each segment, its usage guidance, and a conflict-priority order (R16). | Markdown-heading partition in fixed order: `# Question`, then `## Conversation Memory`, `## Knowledge Base Memory`, `## Workflow Memory`, `## Entity Memory`, `## Summary Memory`, each segment self-describing ("what this memory is / how you should leverage it"). | Partitioned + self-describing (course default); one mixed context block; structured JSON context | Lesson 6 argues markdown headings let the model exploit its latent grasp of hierarchical structure, giving "structured, role-specific context instead of one mixed block"; a mixed block loses per-store semantics. | course |
-| D10 | design-argued | **Context-window reduction strategy** — what happens when the context outgrows its budget. | Reduction must be **recoverable**: whatever is compressed out of the live context stays retrievable in full from the store via an id-addressable link. | The course's combined pipeline: threshold-triggered (deterministic, >80% of budget) and tool-triggered (agent-invoked) **summarization with write-back links** — summarize unsummarized thread messages, store the summary, mark the exact source rows with the `summary_id`, keep only a summary reference in context, and expand on demand (JIT) via the expand tool (CTX-C3). | Recoverable summarize-and-link (course default); pure lossy summarization; pure compaction (offload raw content by id, no summary) | Lesson 5 argues the trade-off aloud: summarization "will always be a lossy technique", while compaction keeps everything but preloads nothing useful — the shipped design pairs a lossy summary for the live window with a lossless database path back to the originals. | course |
-| D11 | design-argued | **Tool-description augmentation** — what text gets embedded for each tool. | The text embedded for retrieval must be **rich enough to separate tools semantically** (retrieval is keyed on descriptions, not names). | Augmented registration as the course does for most tools: an LLM rewrites the docstring using the function's source, plus ~5 synthetic example queries; name + augmented description + signature + queries form the embedding text. Registration is idempotent per tool name (R5). | LLM-augmented descriptions (course default); raw docstrings only (the course registered its arXiv candidate-search tool unaugmented) | Lesson 4 argues augmentation buys higher separability and recall in the embedding space at the cost of one LLM call per registration; weak one-line docstrings retrieve poorly. | course+learner |
-| D12 | design-argued | **Tool-result flow: full log + bounded excerpt** — what the model sees of a tool's output. | Every tool execution is **fully persisted** (args, complete result, status, errors) outside the context window; the model receives only a **bounded excerpt with an id pointer** back to the full record. | Persist every call to the tool-log store; pass at most 3,000 characters of the result to the model, appending a truncation notice naming the log id when cut (R10). | Log + bounded excerpt (course default); pass full outputs into context; discard raw outputs | Lesson 6 calls this context offloading — "move large payload handling out of the model context and into memory infrastructure"; skipping the log loses the audit trail and the JIT retrieval path, while full outputs blow up the window (CTX-B6). | course |
-| D13 | design-argued | **Search-and-store acquisition** — what acquisition tools do with what they find. | Any tool that acquires external content **persists its results to knowledge-base memory with source metadata in the same call**, before/independent of what the model does with them. | Course pattern: search/fetch tools write each result (or chunk) into the knowledge base with source metadata (title, source id, timestamps, chunk indices), so information discovered once is retrievable in later turns without re-searching. | Search-and-store (course default); return-only tools (results live and die in one turn) | Lesson 4 argues this is how the agent "learns from its searches" — repeat questions stop costing API calls; the cost is knowledge-base growth and possible staleness of stored search results. | course |
-| D14 | realization | **Persistent store (the Agent Memory Core)** — the database behind all seven stores. | **One persistent database is the memory core**: it serves both the exact-key/chronological stores and the semantic-similarity stores (topology: D7), and survives restarts (D5). | **SQLite** (single on-disk file, Python stdlib driver): SQL tables for conversational + tool-log memory; the five vector stores as tables holding text, JSON metadata, and the embedding, searched by exact similarity at fixture scale (indexing & distance strategy: §2). *§3 dependency precedence, branch 1* — the course's Oracle AI Database 26ai runs in Docker with admin/tablespace setup and a dedicated DB user, i.e. container-level setup (heavy); the taught subject is the memory pattern, which Oracle realizes but does not define, so the lightest self-contained realization is substituted. | Oracle AI Database 26ai via `langchain-oracledb`/OracleVS, Dockerized, with admin bootstrap and hybrid-search capability (course default); SQLite single-file (default); Postgres + pgvector; any DB offering both exact and vector retrieval | Switching stores means migrating schemas and re-embedding nothing (embeddings are store-agnostic) but re-implementing the store adapters; Oracle restores the course's exact stack incl. its vector indexes and hybrid search, at the cost of Docker + admin setup. | course+learner |
-| D15 | realization | **External acquisition toolset** — which live tools the default agent registers. | At least one **agent-triggered external acquisition tool** exists and follows search-and-store (D13). | The course's **keyless arXiv tools only**: a candidate-search tool returning structured JSON (id, title, authors, published, abstract) and a deep-ingest tool (fetch PDF → text → chunk → store to KB), plus a local current-time utility and the summary tools (expand, summarize-and-store) and self-lookup (`read_toolbox`). *§3 dependency precedence, branch 1* — the course's Tavily web search needs an API key (heavy); arXiv access is keyless and setup-free, so it stays (its ACs are tagged `live`), while Tavily becomes an option. These are the **course's example tools** — swap them when `[project]` (D1) differs. | Course toolset incl. Tavily web search with `TAVILY_API_KEY` (course default); keyless arXiv-only toolset (default); the learner's own domain tools | Dropping Tavily loses general web search (the agent only acquires from arXiv); adding it back is one keyed client + one registered tool following D13. | course+learner |
+|---|---|---|---|---|---|---|---|
+| D1 | learner | **Project** `[project]` — the Default is the course's *example realization* (a research-assistant scenario), expected to be swapped when the learner's own project differs; the invariants, not the example, must survive | — | A memory-aware **research-assistant chat agent** (terminal chat over per-thread sessions), re-expressing the course's example scenario shape ("an agentic research assistant that helps users investigate complex topics over multiple sessions", CTX-E L3) on the §5 synthetic fixture corpus. §3-precedence **branch 1**: the materials clearly afford a concrete example shape; all fixture facts are authored here — no course data is copied | Course-example shape (default); the learner's own project (free text at the gate) | Swapping the project means re-seeding the KB fixtures, retitling, and re-reading D2/D3; the pattern and every invariant are unchanged | learner |
+| D2 | learner | **Data / inputs** `[data]` — Default is the course-shaped *example* seed, expected to be swapped for the learner's real corpus | — | The §5 **synthetic fixture corpus** (3 authored knowledge-base documents, 1 seeded 30-message conversation, fixture tools). Course provenance (what the course did, not advice): it streamed 100 records of public arXiv paper metadata plus on-demand fetched arXiv papers (CTX-C10, CTX-E L3/L4) | Fixture corpus (default); live arXiv ingestion (course demo path — keyless public API, network; ACs touching it are `live`); the learner's own documents | Real data adds network/latency and does not run the offline oracle; fixtures keep every AC runnable on day one. Changing embedded data after ingest → re-ingest (see Ask First AF2) | learner |
+| D3 | learner | **Goal** `[goal]` — what "working" means | — | **Cross-session continuity**: after the §5 scripted demo sequence, the agent answers a question about earlier turns (including turns already summarized away) using only persisted memory — the course's own closing demo shape ("what was my first question?", CTX-E L6) | Default continuity goal; a learner-defined retrieval/continuity goal (free text) | A different goal re-weights which memory types matter; ACs 1–25 pin the default goal only | learner |
+| D4 | learner | **Model / provider** `[model]` | The model MUST be reachable through an OpenAI-style chat-completions interface and MUST support **native tool/function calling** | **OpenAI hosted API**: `gpt-5-mini` for the agent loop + `gpt-5` for background memory operations (summarization, tool-docstring augmentation, entity extraction) — the end-to-end app's configuration (loop default in the L5 app notebook; helper defaults for memory ops). The materials are split on naming: the L4 notebook's local token-limit map keys `gpt-5-mini` while `helper.py`'s keys `gpt-5` (same 256 000 value both sides) — both sources cited in CTX-C6. Keyed API ⇒ ACs needing it are marked `live` | OpenAI gpt-5 family **(course default)**; any OpenAI-compatible endpoint (hosted or locally served) meeting the invariant | Weaker models degrade summary fidelity, entity extraction, and tool selection; a different model changes the token-limit body default (§4 R4) | learner |
+| D5 | learner | **Environment** `[environment]` | **All memory must survive process restarts** — the course's core promise ("persists across sessions", CTX-E L6/L7) | Local single-machine run, Python ≥ 3.11 (this build's pin — *project hardening*: the materials state no Python version and install unpinned, see §2) | Local machine (default); container; always-on server | Environments without a durable filesystem break the invariant and force a hosted store (see D11 Options) | learner |
+| D6 | learner | **Scope boundary** `[scope-boundary]` — *gate instruction:* when asking this row, present the §1 "Not Included" list **verbatim inside the question** (§1 is not a Ledger row; this row is the only way the learner ever sees the exclusion list before being asked to amend it) | — | **Keep as-is**: every §1 exclusion stands; the full acceptance set is built | (a) Keep the boundary as-is (default); (b) bring an excluded item back — free text names which; each §1 item carries a handling rule that determines the answer. A genuinely new exclusion also arrives via free text and MUST name the ACs it retires | Restoring a "named-but-never-built" item adds work the spec supplies no parameters or ACs for; restoring a row-owned item re-opens that row | learner |
+| D7 | design-argued | **Memory-core topology** | An external persistent store exists and a **single manager abstraction** mediates every memory read/write (the agent code never touches storage directly) | The full **seven-type segmented topology**: conversational, knowledge-base, workflow, toolbox, entity, summary, tool-log — one store each, unified behind the memory manager (CTX-A) | Seven-type topology (default — the course's argued position); **conversational-memory-only** (the course's Lesson-2 baseline, demonstrated working for chat continuity and then deliberately built beyond — a legitimate reduced-scope choice); any subset in between | Lesson 2 argues the trade-off aloud: conversational-only gives continuity but "conversation windows are finite, user relationships are not", "not all valuable information is in a single conversation", and "agents need structured, queryable knowledge, not just chat logs" (CTX-E L2). Dropping a type removes its context segment, its persistence rules, and its ACs | course+learner |
+| D8 | design-structural | **Deterministic vs agent-triggered operation split** — who triggers each memory operation: the harness (code) or the model (tool call) | Context-assembly reads and the persistence writes continuity depends on run **deterministically every turn**, never at model discretion; judgment-requiring operations are exposed to the model **as tools** | The end-to-end app's split (§4 R3/R11–R13, R14): deterministic each turn — read conversational/KB/workflow/entity/summary-context at loop start, write user + assistant conversational rows, write workflow after tool-using runs, write a tool log after every call, extract entities from query and answer (non-fatally), and offload at the >80 % threshold; agent-triggered tools — `read_toolbox`, `arxiv_search_candidates`, `fetch_and_save_paper_to_kb_db`, `get_current_time`, `expand_summary`, `summarize_and_store`. Contradiction note (lower-precedence evidence, both sides cited in CTX-C4): the Lesson-3 classification table marks `read_summary_context` and `write_entity` agent-triggered-only, while the Lesson-6 app runs both deterministically — the app's behavior is the default. Summarization is deliberately **both** deterministic (threshold) and agent-callable — narrated in Lesson 6 | The app split (default); moving individual operations between the two categories (e.g. agent-discretionary entity writes, per the Lesson-3 table) | Deterministic ops buy predictability, continuity, and "no forgotten saves" at token/latency cost; agent-triggered ops buy relevance and cost control but risk missed saves and the chicken-and-egg problem ("you need memory to know which memory you need") — argued in Lessons 3 and 6 (CTX-C4) | course+learner |
+| D9 | design-argued | **Context-window reduction strategy** | Context usage is monitored every turn and reduced before overflow; the current question is **never** summarized away | **Recoverable compaction** (the course's built mechanism): summarize the thread's unsummarized rows, persist the summary (id + description + summary + full source text, thread-scoped), mark the exact source rows with the `summary_id`, replace only the conversation segment with a stub + `[Summary ID: …]` reference, and expose `expand_summary` for on-demand recovery (§4 R7) | Recoverable compaction (default); **pure lossy summarization** (summary replaces context, no back-link — presented by the course as a legitimate technique with an explicit warning that it "will always lose a little bit of information", Lesson 5); pure compaction (offload raw content under an ID + description, no summary) | Lesson 5 argues it aloud: summarization is inherently lossy; compaction preserves recoverability at the cost of storage and an extra retrieval hop (CTX-C3). Choosing lossy-only retires ACs 11–12's recovery assertions | course+learner |
+| D10 | design-argued | **Tool-description augmentation at registration** | Tool retrieval is **semantic**: keyed on the stored description text embedded at registration, not on exact tool names | **LLM augmentation ON by default** at registration (original docstring + function source → enriched description + 5 synthetic trigger queries, all folded into the embedding text), overridable per tool. The course registered a mix (most tools augmented; `arxiv_search_candidates` deliberately raw). Contradiction note (CTX-C7): `get_current_time` is registered `augment=True` in the Lesson-4 notebook cell but `augment=False` in the helper's common-tools registration used by the Lesson-6 app | Augmented (default — the course's argued position); raw docstrings (course-demonstrated working: the unaugmented arXiv tool was still retrieved first in the Lesson-4 validation query) | Lesson 4 argues it aloud: augmentation buys higher separability and recall in the embedding space at the cost of LLM calls per registration (CTX-C5) | course+learner |
+| D11 | realization | **Persistent memory store** — heavy-dependency substitution row | One durable store layer provides **both** (a) exact-key, time-ordered relational access (conversation rows by `thread_id`; tool logs) **and** (b) semantic-similarity retrieval with metadata filtering over embedded text for the five vector memory types. (Durability across restarts: owned by D5) | **SQLite via Python's stdlib `sqlite3`** — one database file, seven tables carrying the §4 canonical store names; embedding vectors stored per row; similarity computed **exactly, in process (brute-force cosine)** at the declared fixture scale. §3 dependency precedence **branch 1** (substitution): the course teaches a memory *pattern* that Oracle realizes; Oracle is not the taught subject — the course's own close is "take these patterns, adapt them to your own use case" (CTX-E L7). "Lightest" decided by tier: **tier 1** (ships with the standard distribution) satisfies the invariant at the declared default scale, because exact brute-force similarity meets the retrieval contract on fixture-sized data; no indexing tier is required at that scale — scaling realizations live in Options | Oracle AI Database 26ai + LangChain `OracleVS` + IVF vector index **(course default)**; SQLite stdlib (Default); an embedded vector library (tier 2) once the corpus outgrows brute force; a locally served / hosted vector DB (tier 3) | Switching stores forces re-ingestion and re-implementation of the metadata filters; Oracle adds container + admin setup (Docker, admin credentials) but brings IVF/HNSW indexing and hybrid search at scale — the course's Lesson-3 rationale for indexing (CTX-C1, CTX-C2) | course+learner |
+| D12 | realization | **Web-search tool** (course realization: Tavily) — keyed-tool row | If a web-search tool is enabled it MUST be toolbox-registered and follow the **search-and-store** pattern: results persisted to knowledge-base memory with title/url/score/query/timestamp metadata, never returned only ephemerally (§4 R17) | **Omitted.** §3 keyed-tool rule: Tavily needs an API key (heavy), and it is *not* the only carrier of the taught search-and-store behavior — the keyless arXiv tool `fetch_and_save_paper_to_kb_db` also persists fetched external content to the knowledge base — so the deterministic default is omission, with the keyless course tools carrying the behavior | Tavily via `TAVILY_API_KEY` **(course default)**; an honestly-labeled local stand-in (a fake `search_web_local` tool serving canned fixture results, whose registered description MUST say it is a fake standing in for a real web-search service); omit (Default) | Omission removes open-web reach (the agent is limited to arXiv + its own memory); the stand-in keeps the pattern exercisable offline but only answers from fixtures; Tavily restores the course demo exactly at the cost of a key | course+learner |
+
+**Contradicted group: empty.** Every mined course contradiction failed the §5.5 stakes test
+(each is a near-equivalent lever whose up-front choice changes no structure, semantics, or
+guarantee). Each is resolved as a **body default** carrying its in-place contradiction note,
+its lever-value branch citation, and a *post-build lever* label — see §4 R4/R16 notes and the
+"Post-build levers" list at the end of §4, with background in CTX-C6–C9.
+
+---
 
 ## 1. Objective
 
-Build a persistent, memory-aware research assistant: a chat agent that, for a working engineer,
-**remembers across sessions** — conversations, acquired knowledge, past workflows, entities, and
-summaries — by treating an external database as its memory core, so that follow-up requests
-resolve without repeating discovery and long threads never overflow the model's context window
-(pattern: CTX-A).
+Build a persistent, memory-aware research-assistant agent that reads from and writes to seven
+typed memory stores on every turn, manages its own context-window budget by recoverable
+summarization, selects tools by semantic retrieval instead of context-stuffing, and therefore
+answers follow-up questions across sessions from memory rather than from scratch (pattern:
+CTX-A).
 
 ### Not Included ★
 
-- **Multi-user support, auth, or any UI beyond a CLI/REPL chat loop.**
-- **Short-term-memory subsystems the course names but never builds**: semantic caching of LLM
-  responses and session scratchpads beyond the live context window.
-- **Hybrid (lexical+vector) search** — the course's store manager exposes a hybrid-search hook
-  but never exercises it; excluded here.
-- **Reranking models, graph-traversal retrieval, memory decay/forgetting policies, and
-  embedding-model fine-tuning** — mentioned as concepts in the lessons, never implemented.
-- **Oracle-specific operations** (tablespace admin, DB user provisioning, vector-memory pools) —
-  they belong to the course's store realization, not the pattern (D14).
-- **Integration into an existing codebase** — this spec targets the standalone takeaway only;
-  the Ledger's Invariant column is written to serve as the future integration contract.
-- `[out-of-scope]` — learner exclusions (D6; default: none).
+Each item carries its §5.5 handling rule in brackets, so the D6 gate answer is determinate.
+
+1. **Web search (Tavily or other)** — [owned by Ledger row D12 — defer to that row; never decide twice].
+2. **Hybrid (lexical + vector) search** — named by the course (a knowledge-base vectorizer preference is defined but never invoked) and never built [buildable, but this spec supplies no parameters and no acceptance criteria for it].
+3. **Reranking of retrieval results** — named in the course's RAG overview, never built [buildable; no parameters or ACs supplied].
+4. **Semantic cache** (short-term memory form) — named in Lesson 2, never built [buildable; no parameters or ACs supplied].
+5. **Memory decay / merge / strengthen / forget operations** — named as judgment questions ("should I strengthen, update, merge, or decay this memory?"), never built [buildable; no parameters or ACs supplied].
+6. **Vector indexing at scale (IVF/HNSW) and Oracle-specific features** — [owned by Ledger row D11's Options — defer to that row].
+7. **Bulk course-demo data ingestion** (streamed arXiv-metadata dataset) — [owned by Ledger row D2 — defer to that row].
+8. **Fine-tuning embedding models / continual-learning pipelines** — named as memory-engineering disciplines, never built [buildable; no parameters or ACs supplied].
+9. **Multi-user auth, concurrency, or a web/GUI frontend** — past course scope (*project hardening* exclusion) [additive and owned by no other row — restorable at the gate; note the spec supplies no ACs for it].
+10. **Integration into an existing codebase** — [outside the delivered build mode (standalone takeaway) — unavailable].
+
+The agent must not add features beyond this boundary on its own initiative.
+
+---
 
 ## 2. Tech Stack & Versions
 
 | Component | Pinned choice | Note |
 |---|---|---|
-| Language | Python 3.11+ | Course-era Python version is not stated in the materials. |
-| Persistent store | SQLite (stdlib `sqlite3`), one on-disk file | Decision Ledger **D14** — learners change it there, not here. |
-| Vector search | Exact (brute-force) similarity at fixture scale — add an ANN index only when corpora grow | One distance strategy — **cosine** — used consistently across all stores, write & read (R15). Both are tunable levers, not decisions: the course used both cosine and euclidean across lessons (tables wiped between them; near-equivalent for normalized embeddings) and built its ANN index (IVF/HNSW) only for the cloud store. |
-| Embeddings | `sentence-transformers/paraphrase-mpnet-base-v2` (768-dim, local CPU) | The course's single embedding model for all stores and both write/read paths (CTX-C5). First run downloads it (keyless network). |
-| LLM | OpenAI SDK (current stable) | Ledger **D4**. `OPENAI_API_KEY` required for scripted-interface parity and live ACs. |
-| arXiv access | `arxiv` + `pymupdf` (current stable) | Ledger **D15**. The course reached arXiv through LangChain community wrappers — those names are perishable, see CTX-D. |
-| Dependency pins | Pin exact versions **at build time** to current stable in a lockfile you generate | **Honest era note: the course's `requirements.txt` installs everything unpinned** (no versions at all, LangChain-family + `oracledb` + `openai` + `tavily-python` era); do not invent course pins. Era-specific import names → CTX-D. |
-| Secrets | `.env` file loaded at startup; `OPENAI_API_KEY` (required), `TAVILY_API_KEY` (only if D15 is switched) | Never hardcoded and never committed. (The course notebooks hardcode local DB credentials — do not reproduce that.) |
+| Language | Python ≥ 3.11 | This build's pin (*project hardening* — see honesty note below). Environment: Ledger D5 |
+| Persistent store | SQLite (stdlib `sqlite3`) | Ledger row **D11** — learners change it there, not here |
+| LLM | OpenAI API: `gpt-5-mini` (agent loop), `gpt-5` (memory ops) | Ledger row **D4**. Key via `OPENAI_API_KEY`; ACs needing it are `live` |
+| Embeddings | `sentence-transformers` model `paraphrase-mpnet-base-v2` (768-dim) | Course-demonstrated in all lessons; keyless, runs locally (one-time model download). Post-build lever — changing it after ingest forces re-embedding (AF2) |
+| arXiv access | Keyless public arXiv API (metadata + PDF text extraction) | Keyless public API stays the default per the mere-network rule; ACs touching it are `live` |
+| Text chunking | Recursive character splitting, chunk_size 1500 / overlap 200 | Course-demonstrated values (deep-ingestion tool). Implementation library is the agent's choice |
+| Testing | `pytest` | *Project hardening* — the course ran verification cells, not a test framework |
+| Secrets | Environment variables (`.env` supported), never hardcoded, never committed | The course's lab DB credentials that appear in the materials are course-lab artifacts, not values to reuse (CTX-D) |
 
-Default store names (single-valued course constants; body defaults, not Ledger rows):
-`CONVERSATIONAL_MEMORY`, `SEMANTIC_MEMORY` (knowledge base), `WORKFLOW_MEMORY`,
-`TOOLBOX_MEMORY`, `ENTITY_MEMORY`, `SUMMARY_MEMORY`, `TOOL_LOG_MEMORY` — identical in every
-course notebook that declares them.
+**Install/pin honesty (the one required note):** the course's `requirements.txt` installs
+**everything unpinned** — no version pins exist anywhere in the materials, and the Python
+version placeholder is unfilled. Do not invent pins "from the course". Pin current stable
+versions as *this build's* choice at build time, and treat every era-specific name
+(`langchain-oracledb`, `OracleVS`, `HuggingFaceEmbeddings` import path, `gpt-5` family) as a
+perishable search keyword per **CTX-D**, not a guaranteed import.
+
+---
 
 ## 3. Input/Output Contracts ★
 
-Core memory records and the agent turn result. These are the shapes tests assert against;
-implementations may add fields but MUST NOT violate these.
+The core objects, as JSON Schema. Storage may add columns; these fields and constraints are
+binding. The seven store names, the entity `type` enum, the four summary headings, the
+`[Summary ID: …]` reference format, and the context-segment headings are **course-declared,
+contract-participating constants** and are binding (CTX-E maps them to lessons).
 
 ```json
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "memory-aware-agent/contracts",
   "$defs": {
-    "ConversationRecord": {
+    "StoreName": {
+      "enum": ["CONVERSATIONAL_MEMORY", "SEMANTIC_MEMORY", "WORKFLOW_MEMORY",
+               "TOOLBOX_MEMORY", "ENTITY_MEMORY", "SUMMARY_MEMORY", "TOOL_LOG_MEMORY"]
+    },
+    "ConversationRow": {
       "type": "object",
       "required": ["id", "thread_id", "role", "content", "timestamp"],
       "properties": {
-        "id": { "type": "string", "minLength": 1 },
-        "thread_id": { "type": "string", "minLength": 1 },
-        "role": { "type": "string", "enum": ["user", "assistant"] },
-        "content": { "type": "string" },
-        "timestamp": { "type": "string", "format": "date-time" },
-        "metadata": { "type": "object" },
-        "summary_id": {
-          "type": ["string", "null"],
-          "pattern": "^[0-9a-f]{8}$",
-          "description": "null until consolidated; set once, to the id of the summary that absorbed this row"
-        }
+        "id": {"type": "string", "minLength": 1},
+        "thread_id": {"type": "string", "minLength": 1},
+        "role": {"enum": ["user", "assistant"]},
+        "content": {"type": "string", "minLength": 1},
+        "timestamp": {"type": "string", "format": "date-time"},
+        "metadata": {"type": "object"},
+        "summary_id": {"type": ["string", "null"], "pattern": "^[0-9a-f]{8}$"}
       }
     },
-    "ToolLogRecord": {
+    "ToolLogRow": {
       "type": "object",
-      "required": ["id", "thread_id", "tool_name", "tool_args", "result", "result_preview", "status", "timestamp"],
+      "required": ["id", "thread_id", "tool_name", "result", "status", "timestamp"],
       "properties": {
-        "id": { "type": "string" },
-        "thread_id": { "type": "string" },
-        "tool_call_id": { "type": ["string", "null"] },
-        "tool_name": { "type": "string" },
-        "tool_args": { "type": "string", "description": "JSON-serialized arguments" },
-        "result": { "type": "string", "description": "FULL untruncated output" },
-        "result_preview": { "type": "string", "description": "≤ 2000 bytes UTF-8-safe truncation of result" },
-        "status": { "type": "string", "enum": ["success", "failed"] },
-        "error_message": { "type": ["string", "null"] },
-        "metadata": { "type": "object" },
-        "timestamp": { "type": "string", "format": "date-time" }
+        "id": {"type": "string"},
+        "thread_id": {"type": "string"},
+        "tool_call_id": {"type": ["string", "null"]},
+        "tool_name": {"type": "string"},
+        "tool_args": {"type": "string", "description": "JSON-serialized arguments"},
+        "result": {"type": "string", "description": "FULL, untruncated tool output"},
+        "result_preview": {"type": "string", "description": "<= 2000 UTF-8 bytes of result"},
+        "status": {"enum": ["success", "failed"]},
+        "error_message": {"type": ["string", "null"]},
+        "metadata": {"type": "object", "properties": {"iteration": {"type": "integer", "minimum": 1}}},
+        "timestamp": {"type": "string", "format": "date-time"}
       },
-      "if": { "properties": { "status": { "const": "failed" } } },
-      "then": { "required": ["error_message"] }
+      "if": {"properties": {"status": {"const": "failed"}}},
+      "then": {"required": ["error_message"]}
     },
     "SummaryRecord": {
       "type": "object",
-      "required": ["id", "summary", "description", "full_content"],
+      "required": ["id", "description", "summary", "full_content"],
       "properties": {
-        "id": { "type": "string", "pattern": "^[0-9a-f]{8}$" },
-        "summary": { "type": "string", "description": "structured text containing the four R8 headings" },
-        "description": { "type": "string", "minLength": 8, "description": "specific 8–12-word label; never a generic 'Conversation summary'" },
-        "full_content": { "type": "string", "description": "the exact source transcript that was summarized" },
-        "thread_id": { "type": ["string", "null"] }
-      }
-    },
-    "WorkflowRecord": {
-      "type": "object",
-      "required": ["query", "steps", "answer_excerpt", "num_steps", "success", "timestamp"],
-      "properties": {
-        "query": { "type": "string" },
-        "steps": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
-        "answer_excerpt": { "type": "string", "maxLength": 200 },
-        "num_steps": { "type": "integer", "minimum": 1 },
-        "success": { "type": "boolean" },
-        "timestamp": { "type": "string", "format": "date-time" }
+        "id": {"type": "string", "pattern": "^[0-9a-f]{8}$"},
+        "description": {"type": "string", "minLength": 8,
+          "not": {"enum": ["conversation summary", "summary", "chat summary", "thread summary"]},
+          "$comment": "case-insensitive rejection of these generic labels is enforced by R6"},
+        "summary": {"type": "string",
+          "pattern": "### Technical Information[\\s\\S]*### Emotional Context[\\s\\S]*### Entities & References[\\s\\S]*### Action Items & Decisions"},
+        "full_content": {"type": "string", "minLength": 1},
+        "thread_id": {"type": ["string", "null"]}
       }
     },
     "EntityRecord": {
       "type": "object",
       "required": ["name", "type", "description"],
       "properties": {
-        "name": { "type": "string", "minLength": 1 },
-        "type": { "type": "string", "enum": ["PERSON", "PLACE", "SYSTEM", "UNKNOWN"] },
-        "description": { "type": "string" }
+        "name": {"type": "string", "minLength": 1},
+        "type": {"enum": ["PERSON", "PLACE", "SYSTEM", "UNKNOWN"]},
+        "description": {"type": "string"}
       }
     },
-    "RetrievedToolSchema": {
+    "WorkflowRecord": {
+      "type": "object",
+      "required": ["query", "steps", "answer_excerpt", "num_steps", "success"],
+      "properties": {
+        "query": {"type": "string"},
+        "steps": {"type": "array", "minItems": 1, "items": {"type": "string"}},
+        "answer_excerpt": {"type": "string", "maxLength": 200},
+        "num_steps": {"type": "integer", "minimum": 1},
+        "success": {"type": "boolean"},
+        "timestamp": {"type": "string", "format": "date-time"}
+      }
+    },
+    "ToolboxRecord": {
+      "type": "object",
+      "required": ["name", "description", "signature", "parameters", "augmented"],
+      "properties": {
+        "name": {"type": "string"},
+        "description": {"type": "string", "minLength": 1},
+        "signature": {"type": "string"},
+        "parameters": {"type": "object"},
+        "return_type": {"type": "string"},
+        "augmented": {"type": "boolean"},
+        "queries": {"type": "array", "items": {"type": "string"}}
+      }
+    },
+    "ToolSchemaForLLM": {
       "type": "object",
       "required": ["type", "function"],
       "properties": {
-        "type": { "const": "function" },
+        "type": {"const": "function"},
         "function": {
           "type": "object",
           "required": ["name", "description", "parameters"],
           "properties": {
-            "name": { "type": "string" },
-            "description": { "type": "string", "minLength": 1 },
+            "name": {"type": "string"},
+            "description": {"type": "string"},
             "parameters": {
               "type": "object",
               "required": ["type", "properties", "required"],
-              "properties": { "type": { "const": "object" } }
+              "properties": {"type": {"const": "object"}}
             }
           }
         }
       }
     },
+    "ContextWindow": {
+      "type": "string",
+      "description": "The assembled per-turn LLM input. MUST start with the '# Question' section (never summarized away), followed by these segments in this order, each under its exact markdown heading: '## Conversation Memory', '## Knowledge Base Memory', '## Workflow Memory', '## Entity Memory', '## Summary Memory'. Summary references render exactly as '[Summary ID: <id>] <description>'.",
+      "pattern": "^# Question\\n"
+    },
     "AgentTurnResult": {
       "type": "object",
-      "required": ["thread_id", "final_answer", "steps", "completed"],
+      "required": ["thread_id", "answer", "iterations", "steps", "tools_offered"],
       "properties": {
-        "thread_id": { "type": "string" },
-        "final_answer": { "type": "string", "minLength": 1 },
-        "steps": { "type": "array", "items": { "type": "string" } },
-        "completed": { "type": "boolean", "description": "false only when the iteration cap (R13) was hit" }
+        "thread_id": {"type": "string"},
+        "answer": {"type": "string", "minLength": 1},
+        "iterations": {"type": "integer", "minimum": 1, "maximum": 10},
+        "steps": {"type": "array", "items": {"type": "string"},
+          "description": "one entry per executed tool call: '<tool>(<args-preview>) → success|failed'"},
+        "tools_offered": {"type": "array", "maxItems": 5,
+          "items": {"$ref": "#/$defs/ToolSchemaForLLM"},
+          "description": "the focused toolset passed to the LLM this turn — never the full registry"},
+        "summaries_created": {"type": "array", "items": {"type": "string", "pattern": "^[0-9a-f]{8}$"}}
       }
     }
   }
 }
 ```
 
-Toolbox retrieval returns an array of `RetrievedToolSchema` with **unique** `function.name`
-values (dedup rule R4). Retrieved tool count per turn: a single config value, **k=5** (R4).
+---
 
 ## 4. Business Rules
 
-Provenance labels: **[C]** course-demonstrated (traceable, with CTX anchor) · **[H]** project
-hardening (added by this spec; the course did not demonstrate it — said so explicitly).
+Provenance labels: **[C]** course-demonstrated (with CTX anchor), **[H]** project hardening.
+Parameter values cite their exact source; where the materials contain more than one config,
+the contradiction is stated in place.
 
-1. **R1 — Deterministic conversation persistence.** [C] Every user query and every final
-   assistant answer is written to conversational memory with role, thread id, and timestamp, by
-   the harness — never at model discretion (prevents CTX-B1). → AC1, AC12, AC20
-2. **R2 — Deterministic context preload.** [C] Every turn, before the model is called, the
-   harness reads all five context segments (conversation by thread; knowledge base, workflow,
-   entity by query similarity; summary index by query+thread) and assembles them (prevents
-   CTX-B7). Per-segment read defaults, each from its single course config: conversation limit 10
-   messages, knowledge base k=3, workflow k=3, entity k=5, summary index k=10. → AC3, AC13
-3. **R3 — Conversation reads are thread-scoped, chronological, and exclude consolidated rows.**
-   [C] Reads filter to the thread, order by timestamp ascending, and skip rows whose
-   `summary_id` is set; when nothing remains, the segment states that explicitly (prevents
-   CTX-B5). → AC2, AC8
-4. **R4 — Focused tool retrieval.** [C] Each turn passes the model only the toolbox's semantic
-   top matches for the query (top-k, **k=5** — a single config value), deduplicated by tool name,
-   as OpenAI function-format schemas (§3) (prevents CTX-B2). Semantic retrieval is the baked-in
-   approach the course teaches for scaling tool use; for a tiny static toolset it simply returns
-   all tools, so it is safe regardless of tool count. → AC4, AC17
-5. **R5 — Idempotent, enriched tool registration.** [C] Registering a tool stores its
-   description + embedding in the toolbox store; with augmentation enabled (D11) the stored
-   description is LLM-enriched from docstring + source and ~5 synthetic queries join the
-   embedding text; re-registering an existing tool name never writes a duplicate row. → AC5, AC18
-6. **R6 — Context budget monitoring.** [C] Token usage is estimated as `len(chars) // 4`
-   against the model's budget (256,000 for the default D4 model; 128,000 fallback for unknown
-   models); status is `ok` below 50%, `warning` 50–79%, `critical` at ≥80% (prevents CTX-B3).
-   [H] The budget is injectable so tests can shrink it. → AC6
-7. **R7 — Threshold offload.** [C] When assembled memory context exceeds 80% of budget, the
-   harness (not the model) summarizes the thread's unconsolidated conversation, replaces the
-   conversation segment with a short stub pointing at summary references, appends the
-   `[Summary ID: …]` reference under the summary segment — and never summarizes the
-   `# Question` text (prevents CTX-B3). → AC7
-8. **R8 — Structured summarization.** [C] Summaries are produced with exactly four headings —
-   Technical Information / Emotional Context / Entities & References / Action Items & Decisions —
-   from at most the first 6,000 characters of input, with one simpler-prompt retry and then a
-   deterministic non-empty fallback if the model returns nothing; each summary gets an 8-char
-   hex id and a specific 8–12-word label (generic labels like "Conversation summary" are
-   rejected and replaced). → AC8, AC14
-9. **R9 — Recoverable consolidation.** [C] Summarizing a thread marks **exactly** the consumed
-   rows with the new `summary_id`; expanding a summary returns the stored summary text plus all
-   original messages, chronologically, with timestamps; already-marked rows are never
-   re-summarized (prevents CTX-B4, CTX-B5). → AC8, AC9, AC20
-10. **R10 — Complete tool logging with bounded excerpts.** [C] Every tool execution writes a
-    tool-log record (args, full result, ≤2000-byte preview, status, error message on failure);
-    the model receives at most 3,000 characters of the result — when truncated, the message ends
-    with a notice naming the log id where the full output lives (prevents CTX-B6). → AC10
-11. **R11 — Workflow write-back.** [C] Any run that made ≥1 tool call persists one workflow
-    record: the query, the ordered step descriptions with outcome markers, an answer excerpt of
-    at most 200 characters, and `num_steps`; workflow reads exclude records with zero steps.
-    → AC11
-12. **R12 — Non-blocking entity extraction.** [C] After the user query and after the final
-    answer, entities (PERSON/PLACE/SYSTEM, from at most the first 500 characters of text) are
-    extracted via the LLM and written to entity memory; any extraction failure is swallowed —
-    it must never fail the turn. → AC15
-13. **R13 — Bounded agent loop.** [C] The loop runs at most 10 iterations; if no final answer
-    is produced by then, the turn ends with a fixed inability message, which is still persisted
-    per R1 (prevents CTX-B8). → AC12
-14. **R14 — Search-and-store acquisition.** [C] Acquisition tools persist what they find to the
-    knowledge base with source metadata (source, id, title, chunk index/count, timestamps) in
-    the same call; deep ingestion chunks documents (default: recursive character splitting,
-    chunk size 1,500, overlap 200 — the course's single ingest config) before storing. → AC16, AC19
-15. **R15 — Configuration coherence.** [C] One distance strategy (cosine; §2) governs every vector
-    store, write and read (the course wipes and rebuilds all tables between lessons specifically
-    to guarantee this); [H] the distance strategy, toolbox k, and token budget are each defined
-    in exactly one configuration point. → AC17
-16. **R16 — Memory-aware model instructions.** [C] The system prompt names each context segment
-    and its purpose, instructs the model to consult memory before tools, sets the conflict
-    priority (current question > latest conversation > knowledge-base evidence > older
-    summaries/workflows), requires expanding a summary before relying on detail that exists only
-    there, and requires stating uncertainty instead of asserting unsupported claims. → AC13, AC20
+1. **R1 — Seven stores, canonical names, idempotent init.** [C] (CTX-A, CTX-B1) On startup the
+   system creates, if missing, exactly the seven stores named in the §3 `StoreName` enum
+   (conversational + tool-log relational; knowledge-base, workflow, toolbox, entity, summary
+   semantic). Initialization is create-if-missing (the helper's existence-check pattern);
+   **no implicit wipe** — the notebooks' drop-all-tables cells are lesson-scoped resets, and an
+   explicit `reset` command may reproduce them, but startup never destroys memory (destroying it
+   breaks D5's invariant). → AC1, AC2
+2. **R2 — Deterministic conversational persistence and reads.** [C] (CTX-B1) Every user query
+   and every final assistant answer is written to conversational memory (thread_id, role,
+   content, timestamp; `summary_id` initially null) on every turn, without model discretion
+   (D8). Reads are thread-scoped, chronological (ascending timestamp), **exclude rows whose
+   `summary_id` is set**, default limit 10 messages (source: MemoryManager
+   `read_conversational_memory` default), rendered as `[HH:MM:SS] [role] content`, with an
+   explicit "(No unsummarized messages found for this thread.)" placeholder when empty. → AC3, AC4
+3. **R3 — Partitioned deterministic context assembly.** [C] (CTX-A, CTX-B1) At the start of
+   every turn the harness deterministically builds the context window from memory:
+   conversational (thread), knowledge base (query, k=3), workflow (query, k=3), entity (query,
+   k=5), summary-context (query, k=10, thread-scoped when a thread is active) — each rendered
+   under its exact §3 segment heading with a "what this memory is / how to leverage it"
+   preamble; the current query is prepended as `# Question` **after** any offload and is never
+   summarized. k sources: MemoryManager read-method defaults (`k=3`/`k=3`/`k=5`/`k=10`). The
+   system prompt declares the segments, their semantics, and the conflict-priority order:
+   current Question > latest Conversation Memory > Knowledge Base evidence > older
+   summaries/workflows. → AC5
+4. **R4 — Context budget monitoring and threshold offload.** [C] (CTX-B2) Token usage is
+   estimated as `len(context) // 4` (≈4 chars/token) against a limit of **256 000** tokens for
+   the configured loop model, falling back to 128 000 for unknown models. *Contradiction note:*
+   the L4 notebook keys this limit under `gpt-5-mini` while `helper.py` keys it under `gpt-5`
+   (both 256 000); resolved by lever-value **branch 2** (the end-to-end app's limit applies to
+   whatever model the loop is configured with) — post-build lever (CTX-C6). Status bands:
+   <50 % `ok`, <80 % `warning`, else `critical` (helper `monitor_context_window`). When usage
+   exceeds **80 %** during context assembly, the harness deterministically offloads per D9
+   before reasoning. Threshold and bands are post-build levers (AF5). → AC6, AC7
+5. **R5 — Structured summarization output shape.** [C] (CTX-B6) Summaries are produced with
+   **exactly four headings in this order**: `### Technical Information`, `### Emotional
+   Context`, `### Entities & References`, `### Action Items & Decisions`; behavior constraints:
+   keep concrete details (names, dates, APIs, errors, decisions), separate confirmed facts from
+   open questions, never invent information, stay concise. Input to the summarizer is capped at
+   6 000 characters; completion capped at 4 000 tokens (source: `summarise_context_window`).
+   On empty model output, retry once with a simpler instruction (≤180 words, same headings);
+   if still empty, emit the deterministic fallback that preserves all four headings with a
+   ≤500-character source excerpt under Technical Information — the pipeline never breaks on a
+   bad LLM response. → AC8 (offline, stubbed), AC9 (`live`)
+6. **R6 — Specific summary labels.** [C] (CTX-B10) Each summary gets an 8–12-word label that
+   names a concrete signal (entity, task, or issue). Labels in the reject set {"conversation
+   summary", "summary", "chat summary", "thread summary"} (case-insensitive) or empty are
+   replaced by the deterministic fallback label builder (first content line of ≥4 words,
+   trimmed to 12 words; final fallback "Recent thread context, decisions, and open actions").
+   Source: helper `summarise_context_window` + `_fallback_description`. → AC10 (offline, stubbed)
+7. **R7 — Recoverable compaction (per D9's default).** [C] (CTX-B3) Summarizing a thread reads
+   only rows with `summary_id IS NULL` (chronological), generates the R5 summary, persists a
+   `SummaryRecord` (8-hex-char id, description, summary, **full source content**, thread_id),
+   marks **exactly the source rows** with the new `summary_id`, and reports the count.
+   The conversation segment is replaced by a stub telling the model to use
+   `expand_summary(id)`, and the reference is rendered exactly as
+   `[Summary ID: <id>] <description>` in the Summary Memory segment. `expand_summary(id)`
+   returns the summary text plus **all** original messages in chronological order with
+   timestamps. No source row is ever deleted by compaction. → AC11, AC12
+8. **R8 — No re-summarization.** [C] (CTX-B9) Already-summarized rows are never re-processed:
+   summarization selects only `summary_id IS NULL` rows; when none exist it returns a
+   "nothing to summarize" result and writes nothing. → AC13
+9. **R9 — Semantic tool retrieval; focused toolset; deduplicated registry.** [C] (CTX-B4,
+   CTX-B8) Tools are registered into toolbox memory with metadata (name, description,
+   signature, parameters, return type, augmented flag) and an embedding of their description
+   text (per D10). Registration is **name-deduplicated**: a tool whose name already exists in
+   the store is registered in-memory for execution but writes no duplicate row; retrieval also
+   deduplicates by name. Per turn, the harness retrieves the top **k=5** semantically relevant
+   tools for the query and passes **only those** to the LLM as OpenAI-style function schemas
+   (§3 `ToolSchemaForLLM`) — never the full registry. *Contradiction note:* the registered
+   `read_toolbox` tool's signature defaults `k=3` while its own docstring says "default: 5"
+   and the end-to-end agent loop calls `k=5`; resolved by lever-value **branch 2** (app config:
+   the loop's `k=5`) — post-build lever (CTX-C8). → AC14, AC15
+10. **R10 — Toolbox retrieval is itself agent-callable.** [C] (CTX-A) `read_toolbox(query, k)`
+    is registered as a tool so the agent can discover additional capabilities mid-execution
+    (when current tools error or seem insufficient) beyond the initial per-turn toolset. → AC16
+11. **R11 — Full tool-execution audit + bounded tool results in context.** [C] (CTX-B5) Every
+    tool call is logged to the tool-log store as a §3 `ToolLogRow`: full untruncated result, a
+    preview truncated to **2 000 UTF-8 bytes** (byte-safe), status `success`/`failed`,
+    error message on failure, and the loop iteration in metadata. The result fed back to the
+    LLM is capped at **3 000 characters**; when truncated it carries the exact notice
+    `[Truncated for context. Full output saved in TOOL_LOG_MEMORY as log_id: <id>]`.
+    Tool logs are **not** preloaded into context (JIT-only by default). Sources: helper
+    `write_tool_log`, L5 app loop. → AC17
+12. **R12 — Workflow capture and quality-filtered reads.** [C] (CTX-A) After any turn that
+    executed ≥1 tool call, the harness writes a workflow record: the query, the ordered step
+    strings (`<tool>(<args-preview>) → success|failed`), an answer excerpt capped at 200 chars,
+    and metadata (num_steps, success, timestamp). Workflow reads filter to `num_steps > 0`
+    and instruct the model to *adapt* patterns, not copy them blindly. Turns with zero tool
+    calls write no workflow. → AC18
+13. **R13 — Entity extraction (non-fatal).** [C] (CTX-A) Entities are extracted by LLM from
+    the user query and from the final answer (input capped at 500 chars per extraction), as a
+    JSON array of `{name, type, description}` with `type ∈ {PERSON, PLACE, SYSTEM}` (`UNKNOWN`
+    fallback); "none" is the empty array. Records are stored as text
+    `"<name> (<TYPE>): <description>"` plus metadata. Extraction failures are swallowed —
+    they must never fail the turn. → AC19 (`live`)
+14. **R14 — Bounded agent loop with honest exhaustion.** [C] (CTX-B7) The loop runs at most
+    **max_iterations = 10** (source: `call_agent` default). Each iteration either executes the
+    model's tool calls (feeding results back as `tool`-role messages) or accepts a final
+    answer and stops. On exhaustion without a final answer, the answer is exactly:
+    "I was unable to complete the request within the allowed iterations." — never a fabricated
+    result. → AC20, AC21 (`live`)
+15. **R15 — Grounding and abstention.** [C] (CTX-A) Factual/technical claims are grounded in
+    the Knowledge Base segment; when evidence is missing or ambiguous the agent states what is
+    missing (uncertainty) before/instead of asserting, and only then uses a tool; it makes the
+    minimum necessary tool calls. (Behavior encoded by the course's system prompt and KB
+    segment instructions — expressed here as behavior, not prompt text.) → AC22 (`live`)
+16. **R16 — One embedding model + one distance strategy, consistent across writes and reads.**
+    [C] All five vector stores use the same embedding model (768-dim
+    `paraphrase-mpnet-base-v2` by default, §2) and one distance strategy for both ingestion
+    and retrieval. Distance strategy default: **cosine**. *Contradiction note:* the materials
+    set cosine in the Lesson-3/Lesson-4 store code and the Lesson-3 narration states cosine
+    aloud, while the Lesson-5/Lesson-6 notebooks configure Euclidean and one Lesson-3 markdown
+    cell names `EUCLIDEAN_DISTANCE`; fails the §5.5 stakes test (near-equivalent at initial
+    choice) and resolves by lever-value **branch 1** — the transcript narration of the lesson
+    that introduces vector stores (Lesson 3) says cosine — post-build lever (CTX-C9). The
+    course's own clean-slate warning ("consistent distance strategy, no stale data") is the
+    consistency guard this rule encodes; mixing strategies or models across stores or across
+    write/read is a defect. → AC23
+17. **R17 — Search-and-store for external content.** [C] (CTX-A, CTX-C10) Any tool that fetches
+    external content persists it to knowledge-base memory with source metadata so later
+    queries answer from memory without re-fetching. The deep-ingestion tool
+    (`fetch_and_save_paper_to_kb_db`) chunks full paper text at chunk_size **1500** / overlap
+    **200** (source: the tool's defaults) and stores per-chunk metadata (source, arxiv_id,
+    title, entry_id, published, authors, chunk_id, num_chunks, ingested timestamp), returning a
+    saved-count confirmation naming the store; empty extraction and no-results cases return
+    explicit non-exceptional messages. The discovery tool (`arxiv_search_candidates`) returns a
+    JSON list of at most k candidates (default **5**; source: the tool's signature) with
+    `arxiv_id`, `entry_id`, `title`, `authors`, `published`, and abstract capped at 2 500 chars
+    (discovery reads metadata only — cheap before expensive ingestion; retriever caps: 8 docs,
+    4 000 chars). → AC24 (`live`), AC25 (offline via fixture tool)
+18. **R18 — Thread-scoped summary retrieval.** [C] Summary-context reads prefer/filter
+    summaries for the active thread when a thread_id is known; `expand_summary` accepts an
+    optional thread scope and reports "not found" per scope explicitly. (Source: helper
+    summary methods — the app path; the Lesson-5 notebook's local variant predates thread
+    scoping, CTX-C11.) → AC12 covers scope; AC11 asserts thread_id persisted.
 
-## 5. Acceptance Criteria ★ (the oracle)
-
-### Fixture corpus (define FIRST; authored for this spec — no course data copied)
-
-| Fixture | Exact contents |
-|---|---|
-| `fixtures/kb/kestrel-notes.md` | Synthetic paper notes: *"Kestrel: Streaming Memory Consolidation for Long-Horizon Agents. Authors: R. Marlow, T. Iversen (2025). Id: KX-2025-011. Claim: tiered summary ledgers cut resumption errors by 41% on synthetic long-horizon tasks."* (+ ~2 paragraphs of filler you author). |
-| `fixtures/kb/heron-notes.md` | Synthetic paper notes: *"Heron: Entity Graphs for Tool Routing. Author: F. Adeyemi (2024). Id: HX-2024-007. Claim: entity-conditioned routing halves tool-selection errors versus flat tool lists."* (+ filler). |
-| `fixtures/conversation/seed-thread.json` | 12 authored messages (6 user / 6 assistant), thread `seed-01`, about researching Kestrel. First user message is exactly: `"Find the Kestrel paper about streaming memory consolidation."` Deliberately long enough to exercise consolidation (failure modes CTX-B1/B4/B5). |
-| Fixture tool registry (9 tools) | 3 relevant: `paper_search` (returns fixture candidates JSON), `fetch_notes` (acquisition: reads a `fixtures/kb/*.md` file, chunks it, writes KB rows per R14, returns the full text — which exceeds 3,000 chars via the filler; failure modes CTX-B2/B6), `get_current_time`; 6 decoys with unrelated authored docstrings: `knit_pattern_helper`, `currency_convert`, `recipe_scaler`, `translate_phrase`, `calendar_lookup`, `sports_scores`. |
-| `fixtures/tools/oversized-output.txt` | ≥4,000 characters of authored filler used by `fetch_notes` to guarantee the >3,000-char case (CTX-B6). |
-| Scripted LLM client [H] | A deterministic stand-in honoring the D4 tool-calling interface, with canned per-test scripts (always-tool-call, canned summary, canned entities). Lets the oracle run without a key. Building agents MUST NOT modify fixtures to make a test pass (§6 Never). |
-
-Modes: **Offline** (no network after the one-time embedding-model download), **Scripted**
-(offline + scripted LLM client), **Live** (real network; `live-keyless` needs no key,
-`live-keyed` needs `OPENAI_API_KEY`). Live ACs are excluded from the default offline run.
-
-### Given / When / Then
-
-| # | Mode | Given | When | Then |
-|---|---|---|---|---|
-| AC1 | Offline | Fixtures ingested and seed thread written by process 1 | A **new OS process** opens the same DB file and reads seed-thread conversation and queries the KB for "streaming memory consolidation" | All 12 seed messages return chronologically, and a `kestrel-notes` chunk is the top KB hit — memory survived restart (D5/D14 invariants; R1) |
-| AC2 | Offline | Seed thread + 2 messages written to thread `other-01` | Reading conversational memory for `seed-01` with default limit | Only `seed-01` unconsolidated messages return, timestamp-ascending, each with role and timestamp; no `other-01` content (R3) |
-| AC3 | Offline | Both fixture notes ingested | KB similarity query "entity graphs for routing tools", k=3 | A `heron-notes` chunk ranks first — the true nearest neighbor, exact at fixture scale — and carries its source-file metadata (R2; D7 invariant) |
-| AC4 | Offline | All 9 fixture tools registered | Toolbox query "find research papers on agent memory" with k=5 | At most 5 schemas return, all valid `RetrievedToolSchema`, names unique, `paper_search` present (R4 invariant) |
-| AC5 | Offline | `paper_search` already registered | It is registered again under the same name | The toolbox store holds exactly one row for `paper_search` (R5) |
-| AC6 | Offline | A test budget of 1,000 tokens [H]; strings sized to 40% / 65% / 85% of it | Monitoring each | Statuses are `ok` / `warning` / `critical` respectively and each token estimate equals `len(chars)//4` (R6) |
-| AC7 | Scripted | Assembled context >80% of the test budget containing a `## Conversation Memory` section and a `# Question` line | The pre-model budget check runs | Returned context has the conversation section replaced by the offload stub, a `[Summary ID: …]` reference under `## Summary Memory`, and the `# Question` text byte-identical (R7; D10 invariant) |
-| AC8 | Scripted | Seed thread fully unconsolidated | Thread summarization runs, then immediately runs again | After run 1: every seed row carries the same new 8-char hex `summary_id`, unconsolidated count is 0, and the conversation read reports no unconsolidated messages; run 2 reports nothing to summarize (R3, R8, R9) |
-| AC9 | Scripted | AC8's summary id | The expand operation runs on it | Output contains the stored summary text AND all 12 originals with timestamps, chronological, including the first user message `"Find the Kestrel paper about streaming memory consolidation."` verbatim (R9; D10 invariant) |
-| AC10 | Scripted | `fetch_notes` returns >3,000 chars inside an agent turn | The loop executes the tool call | A tool-log record holds the FULL result, args, `status="success"`, preview ≤2,000 UTF-8 bytes; the tool message given to the model is ≤3,000 chars + a truncation notice naming the log id (R10; D12 invariant) |
-| AC11 | Scripted | A scripted run making exactly 2 tool calls then answering; plus one zero-step workflow row written directly as a control | The turn completes; then workflow memory is queried for a similar task | One workflow record exists with the query, 2 ordered steps with outcome markers, answer excerpt ≤200 chars, `num_steps=2`; the query returns it and never returns the zero-step control (R11; D8 invariant) |
-| AC12 | Scripted | A scripted model that always emits a tool call | `call_agent` runs a turn | The loop stops after exactly 10 iterations, `completed=false`, the final answer is the fixed inability message, and that answer is persisted to conversational memory (R13, R1) |
-| AC13 | Scripted | Any query on a fresh thread | The turn's exact model input is captured | The user content begins `# Question` and contains all five segment headings in order (Conversation, Knowledge Base, Workflow, Entity, Summary); the system message names all five segments and states the R16 conflict-priority order (R2, R16; D9 invariant) |
-| AC14 | Scripted | The seed transcript; scripted summary reply | Summarization runs | Output contains the four exact R8 headings; the id matches `^[0-9a-f]{8}$`; the label is 8–12 words and not in the generic-label reject set (R8) |
-| AC15 | Scripted | Scripted extractor returns 2 entities for the fixture text; a second scripted run throws | Entity extraction runs after a turn | Run 1 writes 2 `EntityRecord`s and the entity read returns both as formatted bullets; run 2's exception leaves the turn's final answer unchanged (R12) |
-| AC16 | Offline | `fetch_notes` acquisition tool | It executes on `kestrel-notes` | KB gains chunk rows with `source`, `chunk_id`, `num_chunks` metadata **within the tool call itself**, and chunk sizes respect the 1,500/200 chunking default (R14; D13 invariant) |
-| AC17 | Offline | The running configuration | All five vector stores and the toolbox retriever are inspected | Every store reports the identical distance strategy (§2/R15) and the retrieval k resolves from a single config point (R4, R15) |
-| AC18 | Scripted | A tool registered with augmentation on; scripted LLM returns enriched text + 5 queries | Registration completes | The stored description equals the enriched text (not the raw docstring) and the embedded text contains the 5 synthetic queries (R5; D11 invariant) |
-| AC19 | Live-keyless | Network available | The arXiv candidate-search tool runs with query "agent memory" | A JSON array returns; every element has `arxiv_id`, `entry_id`, `title`, `authors`, `published`, `abstract` (abstract ≤2,500 chars) (R14; D15 invariant) |
-| AC20 | Live-keyed | `OPENAI_API_KEY` set; fresh thread | Turns: "Find the MemGPT paper" → "Save the content of the paper" → "Summarize the conversation so far using your tool" → "What was my first question?" | Turn 2 resolves "the paper" from conversation memory without re-asking; turn 3 stores a summary and marks rows; turn 4's answer names the first question, having expanded the summary (R1, R2, R9, R16; D4 invariant — real native tool calling against the default provider) — the course's own end-to-end demonstration sequence (CTX-E, Lesson 6) |
-
-Every business rule reaches ≥1 AC and every AC traces to a rule (mapping inline above). Every
-demonstrated failure mode appears as rule + fixture + AC + CTX-B entry (§10 four-way encoding).
-
-## 6. Boundaries
-
-**Always**
-- Persist every user query and final answer (R1) and write a tool-log record for every tool call (R10).
-- Run the budget check before every model call (R6/R7); keep the `# Question` text intact through any offload.
-- Use the same embedding model for every store and for both write and read paths (CTX-C5).
-- Load secrets from the environment; keep the DB file out of version control.
-
-**Ask First** (course-spoken trade-offs — anything here forces rework or was shown lateral-or-worse)
-- **Changing the embedding model** — every vector store must be re-embedded; the course stresses the query-time model must match the ingest-time model (Lesson 2's RAG walkthrough).
-- **Changing distance strategy or adding/altering a vector index after data exists** (see §2) — the course wipes and rebuilds all tables between lessons precisely to avoid inconsistent-strategy corruption.
-- **Raising the toolbox retrieval count or passing all tools to the model** (R4) — Lesson 4 shows this degrades tool selection and bloats context; providers recommend ~10–20 tools max.
-- **Rewriting the summarization prompt structure** (R8) — Lesson 5: summarization is lossy and "the prompting technique you use … will determine the quality of the output".
-- **Switching the store realization** (D14) or **enabling Tavily web search** (D15) — migration/setup cost and a new secret respectively.
-
-**Never**
-- Invent citations, paper metadata, or provenance for content not present in memory.
-- Assert factual claims unsupported by knowledge-base evidence without stating uncertainty (R16); answer when the system should abstain.
-- Mutate fixtures (or the scripted LLM's scripts) to make a test pass.
-- Commit secrets or hardcode credentials (the course notebooks hardcode local DB passwords — do not reproduce that).
-- Re-summarize rows already marked with a `summary_id`, or bypass the tool log for any tool call.
-
-## 7. Test Plan & Self-Verification
-
-```bash
-python -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt        # generate a lockfile; pins are this build's choice (§2)
-cp .env.example .env                   # set OPENAI_API_KEY (required only for live-keyed)
-
-pytest -q -m "not live"                # AC1–AC18: offline + scripted (first run downloads the embedding model)
-pytest -q -m "live"                    # AC19 (keyless network), AC20 (needs OPENAI_API_KEY)
-```
-
-The building agent MUST report results **per acceptance criterion** (AC1…AC20) with cited
-evidence: the test command run, the pass/fail output line, and file paths of artifacts examined
-(e.g. the DB file inspected for AC1, the captured model input for AC13). "Should pass" /
-"looks correct" are treated as failures — they mean it wasn't run. If a live AC cannot run
-(no network / no key), report it as SKIPPED with the reason; never as passed.
-
-## Course Context Pack (embedded — agent-readable)
-
-Concepts only — no code from the course notebooks appears here or anywhere in this spec. The
-concepts in CTX-A…CTX-C are durable; only the names in CTX-D are perishable.
-
-### CTX-A. The pattern
-
-**Memory-aware agent loop over an external memory core.** A stateless LLM becomes a persistent
-agent by routing all durable state through a database (the *Agent Memory Core* — the component
-that sees the most data traffic in the system) and by making the model *aware* of that memory:
-
-`persist & preload memory → assemble partitioned context → guard the budget → retrieve focused tools → reason/act loop with logged tools → write back learning artifacts`
-
-Stage by stage, each with the reason it exists:
-1. **Typed memory stores behind one manager** — different memory types need different data
-   models and retrieval strategies (exact-by-thread vs semantic similarity), so each gets its
-   own store; a memory-manager abstraction unifies read/write so the agent code never touches
-   storage details (D7).
-2. **Deterministic preload** — the agent cannot choose to look up what it doesn't know exists
-   (the chicken-and-egg problem), so context bootstrapping runs every turn by harness rule (D8).
-3. **Partitioned context** — labeled, self-describing memory segments let the model use each
-   store for its intended role instead of one undifferentiated blob (D9).
-4. **Budget guard with recoverable reduction** — context windows are finite; consolidate
-   conversation into summaries that keep an id-link back to the originals, expandable
-   just-in-time (D10).
-5. **Semantic tool retrieval** — tools are procedural memory: register many, retrieve few per
-   query, so the system scales to hundreds of tools without degrading selection (R4, D11).
-6. **Logged execution with bounded excerpts** — full tool outputs live in the database; the
-   context window gets a pointer-bearing excerpt (D12).
-7. **Write-back learning** — conversations, workflows (steps + outcome), entities, and search
-   results persist after each turn, so the agent improves across sessions instead of restarting
-   from scratch (D13).
-
-### CTX-B. Failure-mode catalog
-
-- **CTX-B1 — Stateless amnesia.** *Symptom:* mid-conversation, the agent asks the user to
-  re-specify things already said ("book the first one" → "which list?"); nothing carries across
-  sessions. *Cause:* no external persistence; each turn starts from a blank context. *Fix:*
-  deterministic conversation persistence and preload every turn. *Enforced by R1, R2 / AC1, AC2,
-  AC20.*
-- **CTX-B2 — Tool overload.** *Symptom:* wrong or failed tool selection, ballooning latency and
-  cost as the toolset grows. *Cause:* every tool definition stuffed into the context — confusion
-  and bloat degrade selection. *Fix:* toolbox store + per-query semantic retrieval of a focused
-  subset. *Enforced by R4, R5 / AC4, AC5, AC18.*
-- **CTX-B3 — Context overflow.** *Symptom:* long threads crash into token limits or silently
-  drop history. *Cause:* unbounded accumulation with no monitoring. *Fix:* estimate usage every
-  turn; at ≥80% of budget, offload conversation to summary memory. *Enforced by R6, R7 / AC6,
-  AC7.*
-- **CTX-B4 — Unrecoverable (lossy) summarization.** *Symptom:* after compaction the agent can no
-  longer answer detail questions ("what was my first question?"). *Cause:* summarization alone
-  is lossy; originals were discarded. *Fix:* recoverable consolidation — mark source rows with
-  the summary id and expand on demand. *Enforced by R9 / AC9, AC20.*
-- **CTX-B5 — Re-summarizing processed messages.** *Symptom:* duplicate summaries, growing cost,
-  drifting summaries of summaries. *Cause:* no marker distinguishing consolidated rows. *Fix:*
-  set `summary_id` on exactly the consumed rows; reads and later summarizations exclude them.
-  *Enforced by R3, R9 / AC8.*
-- **CTX-B6 — Tool-output bloat.** *Symptom:* one verbose tool result crowds out the rest of the
-  context. *Cause:* full payloads routed through the model. *Fix:* full output to the tool log;
-  ≤3,000-char excerpt with a log-id pointer to the model. *Enforced by R10 / AC10.*
-- **CTX-B7 — Blind memory (chicken-and-egg).** *Symptom:* the agent never consults memory it
-  actually has. *Cause:* retrieval left to model discretion — you need memory to know which
-  memory you need. *Fix:* deterministic preload of all segments every turn. *Enforced by R2 /
-  AC13.*
-- **CTX-B8 — Runaway loop.** *Symptom:* a turn never terminates or burns unlimited tool calls.
-  *Cause:* no stop condition besides the model choosing to answer. *Fix:* hard iteration cap
-  with a templated, persisted inability answer. *Enforced by R13 / AC12.*
-
-### CTX-C. Decision background
-
-Reference only — decisions are made in the Decision Ledger, not here.
-
-- **CTX-C1 — Why typed stores (→ Ledger D7, D14).** The course's taxonomy: short-term memory
-  (semantic cache, working memory/context window) vs long-term memory (procedural → workflow &
-  toolbox; semantic → knowledge base, entity, summary; episodic → conversational, which is
-  time-ordered and timestamp-addressable). Conversation and tool logs need exact, chronological,
-  thread-keyed retrieval — a relational table, indexed on the thread key and on the timestamp so
-  lookups and chronological ordering stay fast (the course creates both indexes explicitly); the
-  other five need meaning-based retrieval — vector stores. The *memory manager* abstracts CRUD over all of them; the *memory unit* is the
-  smallest atomic record (e.g. a conversational unit = timestamp + role + content). The
-  database is called the memory core because it carries most of the system's data traffic.
-- **CTX-C2 — Why the deterministic/agent-triggered split (→ Ledger D8).** Deterministic ops buy
-  predictability, continuity, completeness, and lower model cognitive load ("don't let it forget
-  to save"); agent-triggered ops buy relevance filtering, cost/latency control, and judgment
-  ("should this be a durable preference? consolidate now?"). External tool calls are
-  agent-triggered because only the model can judge whether extra information is worth the cost.
-  The course's classification table and its final working loop disagree on two operations
-  (entity writes, summary-index reads) — evidence carried in D8's default note.
-- **CTX-C3 — Summarization vs compaction mechanics (→ Ledger D10).** Summarization compresses
-  content through the LLM into a shorter representation preserving task-relevant facts,
-  relationships, and removing redundancy — always lossy. Compaction moves content to the
-  database under an id with a short description, letting the model pull it back when needed — 
-  lossless but preloads nothing. The shipped pipeline pairs them: structured summary (four
-  fixed headings: technical / emotional / entities / actions-decisions) in the window, full
-  originals recoverable by id (JIT retrieval: fetch only what the current reasoning step needs,
-  when it needs it). Working parameters, each from its single course config: input cap 6,000
-  chars; summary generation capped at 4,000 completion tokens; label prompt capped at 2,000;
-  one retry then deterministic fallback; 8-char summary ids; budget estimate `chars//4`;
-  thresholds 50/80; budget 256,000 tokens (see D4's note for the model-name discrepancy).
-- **CTX-C4 — Toolbox mechanics (→ Ledger D11; R4).** Tool retrieval is keyed on
-  descriptions, not names: registration embeds name + description + signature (+ synthetic
-  queries when augmented); a user query embeds to the same space; nearest tools win. Augmented
-  registration has the LLM rewrite the docstring using the function source (summary, steps,
-  when-to-call, caveats) and generate ~5 example queries — the course demonstrates the enriched
-  text is far more separable than a one-line docstring. Model providers recommend exposing only
-  ~10–20 tools; the course passes the top 3–5. The self-lookup tool (`read_toolbox` as a
-  registered tool) lets the agent discover capabilities mid-execution when the initial toolset
-  proves insufficient. Registration deduplicates by tool name against the store.
-- **CTX-C5 — Embedding & consistency (→ §2, R15).** One local sentence-transformers
-  model (768-dim) serves every store; the query-time model must match the ingest-time model or
-  similarity is meaningless. The course re-creates all tables at each lesson start explicitly
-  "to guarantee a clean starting state with consistent distance strategy" — the strongest
-  in-course signal that mixed strategies corrupt retrieval. Distance config homes: cosine in the
-  L2/L3 notebooks' store setup; Euclidean in the L4/L5 notebooks' store setup; the L2 notebook's
-  markdown names Euclidean while its code passes cosine.
-- **CTX-C6 — Index background (→ §2).** The course text teaches HNSW (graph-based
-  nearest-neighbor traversal) and its lesson objectives name it, but the helper that actually
-  creates indexes builds IVF (neighbor-partition organization, target accuracy 95) to dodge
-  store-version bugs — a reminder that index choice is a store-realization detail, while the
-  invariant is retrieval correctness. Indexes exist to avoid full scans; at fixture scale exact
-  search is correct and simpler.
-- **CTX-C7 — Acquisition & ingestion (→ Ledger D13, D15; R14).** The course's acquisition tools:
-  a web search (default 5 results per call, each written with title/url/score/query/timestamp
-  metadata), a candidate
-  search returning structured JSON (id, title, authors, published, abstract capped at 2,500
-  chars; retriever configured for up to 8 docs, 4,000 chars each), and deep ingest
-  (PDF → text → chunks of 1,500 chars with 200 overlap → KB rows with chunk_id/num_chunks/
-  timestamps). Chunking exists because embedding inputs are bounded — oversized inputs fail or
-  truncate. Its bootstrap corpus streamed the first 100 records of a public arXiv dataset,
-  concatenating title + subjects + abstract as the embedded text with the fields as metadata.
-- **CTX-C8 — Loop & write-back parameters (→ Ledger D8, D12; R11–R13).** Max 10 iterations;
-  tool results >3,000 chars truncated for the model with a log-id pointer; tool-log previews
-  capped at 2,000 UTF-8 bytes; workflow records store the query, ordered outcome-marked steps,
-  and an answer excerpt capped at 200 chars, and reads filter to `num_steps > 0`; entity
-  extraction reads at most 500 chars of source text, classifies PERSON/PLACE/SYSTEM, is capped
-  at 2,000 completion tokens, and is wrapped so failures never break the turn; conversation
-  preload defaults to 10 messages — the agent loop uses that default, while one L4-notebook
-  *verification* cell reads with limit 100 (a test read, not the loop's config); KB k=3,
-  workflow k=3, entity k=5, summary index k=10 — each from its single course config (no
-  competing configs exist for these). The course validated its consolidation pipeline on a
-  seeded ~30-message thread; this spec's authored 12-message seed fixture plays that role.
-
-### CTX-D. Perishable assumptions
-
-Treat these as **search keywords against current documentation, not guaranteed imports**. The
-concepts in CTX-A…CTX-C are durable; only these names are perishable. The course's installs
-were entirely **unpinned** (no versions in its requirements file), so no course version pins
-exist to reproduce.
-
-- `langchain-oracledb` — `OracleVS`, `OracleVectorizerPreference` (hybrid search hook)
-- `langchain_community.vectorstores.utils.DistanceStrategy` (`COSINE`, `EUCLIDEAN_DISTANCE`, `DOT_PRODUCT`)
-- `langchain_huggingface` / `langchain_community.embeddings` — `HuggingFaceEmbeddings`
-- `sentence-transformers/paraphrase-mpnet-base-v2` (embedding model name)
-- `langchain_community.retrievers.ArxivRetriever`, `langchain_community.document_loaders.ArxivLoader`
-- `langchain_text_splitters.RecursiveCharacterTextSplitter`
-- `tavily` — `TavilyClient` (web search; keyed)
-- `openai` — chat-completions API with `tools` / `tool_choice="auto"`; model names `gpt-5`, `gpt-5-mini`
-- `oracledb`, Oracle AI Database `26ai`, DSN form `host:1521/FREEPDB1`, `datasets.load_dataset` streaming, dataset `nick007x/arxiv-papers`
-- `pymupdf`, `arxiv` (PDF/metadata access)
-
-### CTX-E. Provenance map
-
-Lesson numbering below follows the **transcripts** (authoritative). The notebook files are named
-L2–L5 and correspond to transcript Lessons 3–6 (off by one — the platform counts the
-Introduction as Lesson 1); the notebook dump's own "Lesson Map" header mislabels this mapping —
-where they disagree, the transcripts win. **Nothing in this spec requires platform access.**
-
-- **Lesson 1 — Introduction:** course framing; memory engineering as first-class, external,
-  persistent infrastructure → CTX-A preamble.
-- **Lesson 2 — Why AI Agents Need Memory:** stateless-agent failure demo (CTX-B1); conversational
-  memory and its limits; short/long-term memory taxonomy (CTX-C1); RAG-to-agent-memory bridge and
-  same-embedding-model requirement (CTX-C5); the Agent Memory Core (CTX-C1, D14).
-- **Lesson 3 — Constructing The Memory Manager** *(notebook file L2)*: agent stack and memory
-  layer; memory manager and memory units (CTX-C1); deterministic vs agent-triggered
-  classification (CTX-C2, D8); context engineering and the memory lifecycle; store creation, SQL
-  vs vector argument (D7), index creation (CTX-C6); dataset bootstrap ingest (CTX-C7).
-- **Lesson 4 — Scaling Agent Tool Use with Semantic Tool Memory** *(notebook file L3)*: the
-  toolbox pattern and its failure argument (CTX-B2, R4); memory-unit augmentation (CTX-C4,
-  D11); search-and-store with web search (D13, D15); arXiv candidate search and deep ingest
-  incl. chunking config (CTX-C7).
-- **Lesson 5 — Memory Operations: Extraction, Consolidation, and Self-Updating Memory**
-  *(notebook file L4)*: summarization vs compaction trade-off (CTX-C3, D10); workflow memory
-  rationale (R11); budget monitoring thresholds and the summarize/mark/expand pipeline
-  (CTX-B3/B4/B5, R6–R9).
-- **Lesson 6 — Memory Aware Agent** *(notebook file L5)*: the agent loop and harness; memory
-  operations in/out of the loop (D8); partitioned context and memory-aware system prompt (D9,
-  R16); tool-log context offloading (D12, CTX-B6); iteration cap (CTX-B8); the end-to-end
-  MemGPT-paper demonstration sequence reused as AC20.
-- **Lesson 7 — Conclusion:** recap of memory modeling, semantic retrieval, extraction,
-  consolidation, write-back.
-
-## Final deliverable note to the build agent
-
-When the build is complete and the acceptance criteria have been reported per §7, conclude your
-build conversation with an infra/structure diagram of the app you built (stores, harness, loop,
-and tool flows), and end with the exact phrase:
-
-**"This is the infra/structure diagram of this app"**
+**Post-build levers (body defaults, not Ledger rows — each carries its §5.5 lever-value
+branch):** distance strategy = cosine (branch 1, R16); loop toolbox k = 5 (branch 2, R9);
+token-limit map key (branch 2, R4); retrieval k's 3/3/5/10 (single-valued, R3); 80 % threshold
+and 50/80 bands (single-valued, R4); chunking 1500/200 (single-valued, R17); caps 6000/4000/
+2000-bytes/3000-chars/500-chars/200-chars/10-iterations (single-valued, R5/R11/R13/R12/R14);
+augmentation synthetic-query count = 5 (single-valued, D10). Change any of these only through
+§6 Ask First where flagged.
 
 ---
 
-*Spec v1 · Course: Agent Memory: Building Memory-Aware Agents · Learner project: `[project]`
-(default: memory-aware research assistant, D1) · Living document: when the building agent
-produces something unexpected, add the missing constraint here (rule + AC + fixture as needed)
-and re-run.*
+## 5. Acceptance Criteria ★ (the oracle)
+
+### Fixture corpus (define FIRST; all facts authored for this spec — no course data copied)
+
+The building agent MUST create these fixtures exactly as described and MUST NOT modify them to
+make a test pass.
+
+| Fixture | Contents (exact facts) |
+|---|---|
+| `fixtures/kb/coral-atlas.md` | "The Coral Atlas Project mapped 214 reef sites in the Meridian Sea between 2021 and 2023. Lead scientist: Dr. Imara Voss. Funding: the Bluewater Trust. Key finding: staghorn coverage declined 9 percent per year at unshaded sites." |
+| `fixtures/kb/glacier-sensors.md` | "The Halvard Glacier array uses 36 LoRa sensor nodes reporting every 90 minutes. Battery life per node: 14 months. Maintainer: the Nordfell Institute. Known issue: node 22 drifts +0.4 °C after firmware 2.1." |
+| `fixtures/kb/desert-battery.md` | "The Solara Flats storage pilot pairs 12 MWh of sodium-ion batteries with a 9 MW solar field near the town of Arrey. Operator: Meridian Grid Co. Round-trip efficiency measured in 2024: 87 percent." |
+| `fixtures/conversation-seed.json` | A 30-message alternating user/assistant conversation (authored) in which a masters student plans a field study of low-power sensor networks. It deliberately contains one of each summary-heading category: technical facts (the Halvard array's 90-minute cadence; a CRC error on node 22), emotional context (the student says they are "nervous about the fieldwork window"), entities (Dr. Imara Voss; the Nordfell Institute; the LoRaWAN gateway "Kestrel-3"), and action items (email Dr. Voss by Friday; order 4 spare nodes). Long enough that its rendered form exceeds a test-scaled context threshold. **Failure-mode seed for F2/F3.** |
+| `fixtures/turns-reference.json` | Two scripted user turns on one thread: (1) "List the three projects in the knowledge base with their operators or maintainers." (2) "Book time to review the second one." Turn 2 is resolvable only via conversational memory. **Seed for F1.** |
+| `fixtures/tools.py` (fixture tools, registered at test start) | `lookup_reef_site(site_id)` → returns the coral-atlas facts for a site; `big_report()` → returns a deterministic 5 000-character report (**seed for F5**); `get_current_time(detailed)` → course utility tool; plus five distinct no-op tools with unrelated single-purpose descriptions (`convert_units`, `spell_check`, `roll_dice`, `hash_text`, `count_words`) so the registry (≥8 tools) exceeds k=5 (**seed for F4**); a duplicate re-registration of `lookup_reef_site` is attempted once (**seed for F8**). |
+| `fixtures/llm-stubs.py` | [H] A scripted stand-in LLM client for offline ACs (the course used the live API; stubs are project hardening): `stub_empty_summarizer` (returns empty content twice, **seed for F6**), `stub_generic_labeler` (returns "Conversation summary", **seed for F10**), `stub_always_tool_caller` (always emits a `get_current_time` tool call, never a final answer, **seed for F7**), `stub_echo_answerer` (returns a fixed final answer with no tool calls). |
+
+Offline ACs run with stubs and no network (after the one-time embedding-model download).
+ACs tagged **`live`** need `OPENAI_API_KEY` (and network for AC24) and are excluded from the
+offline run.
+
+### Given / When / Then
+
+| AC | Rule | Given | When | Then | Mode |
+|---|---|---|---|---|---|
+| AC1 | R1 | A fresh environment (no DB file) | The app initializes | All seven stores from the §3 `StoreName` enum exist with their declared fields (conversation: id, thread_id, role, content, timestamp, metadata, summary_id; tool log: the §3 `ToolLogRow` fields; vector stores: text + embedding + metadata), before any other behavior runs | offline |
+| AC2 | R1, D5/D11 invariants | A process wrote 3 conversational rows, 1 KB doc, 1 summary, and 1 tool log, then exited | A **new process** starts against the same store and reads each memory type | All written records are returned unchanged; startup performed no wipe | offline |
+| AC3 | R2 | Thread `t1` with 4 written messages, 2 of them marked with a summary_id | `read_conversational_memory("t1")` | Exactly the 2 unmarked messages return, ascending by timestamp, rendered `[HH:MM:SS] [role] content`; an empty thread returns the explicit no-messages placeholder | offline |
+| AC4 | R2, R3 (F1) | The `turns-reference.json` script, KB seeded with the 3 fixture docs | Both turns run through the agent | Turn 2's answer identifies the Halvard Glacier array / Nordfell Institute (the second-listed project) without the user restating it — resolved from conversational memory | live |
+| AC5 | R3, D7/D8 invariants | Thread with prior messages; KB/workflow/entity/summary stores populated; `stub_echo_answerer` as LLM | One agent turn runs | The assembled context starts with `# Question` and contains all five segment headings in §3 order; the user query and the stub's answer are both persisted to conversational memory even though the model made no tool call (deterministic ops ran without model discretion) | offline |
+| AC6 | R4 | A 1 024 000-character string; loop model configured | `calculate_context_usage` / `monitor_context_window` | tokens = 256 000; percent = 100.0 against max 256 000; status `critical`; a 100 000-char string → status `ok`; an unknown model name → max 128 000 | offline |
+| AC7 | R4, R7 (F2) | The 30-message `conversation-seed` loaded into thread `t2`; threshold scaled for test (or context padded) so usage > 80 %; `stub_empty_summarizer` replaced by a scripted summarizer stub returning a valid 4-heading summary | Context assembly runs for `t2` | Offload triggers before reasoning: a SummaryRecord exists, the conversation segment is the compaction stub, and the Summary Memory segment carries `[Summary ID: <id>] <description>` | offline |
+| AC8 | R5 (F6) | `stub_empty_summarizer` (empty content on first and retry calls); the seed conversation text | Summarization runs | The retry was attempted; the deterministic fallback summary is stored containing all four headings in order, with a ≤500-char excerpt under Technical Information; no exception propagates | offline |
+| AC9 | R5 | Live LLM; the seed conversation | Summarization runs | Output contains exactly the four §3 headings in order and mentions at least one authored technical fact, one entity, and one action item from the seed | live |
+| AC10 | R6 (F10) | `stub_generic_labeler` returning "Conversation summary" as the label | A summary is stored | The stored description is NOT in the reject set; it equals the fallback builder's output (first ≥4-word content line, ≤12 words) | offline |
+| AC11 | R7 | Thread `t2` with 30 unsummarized rows; scripted summarizer stub | `summarize_conversation("t2")` | A SummaryRecord with an 8-hex-char id, non-generic description, 4-heading summary, full source text, and `thread_id="t2"` exists; exactly those 30 rows now carry that summary_id; the result reports 30 messages summarized; no row was deleted | offline |
+| AC12 | R7, R18, D9 invariant (F3) | The AC11 state | `expand_summary(<id>)` | Returns the summary text AND all 30 original messages, chronological, each with a timestamp; an unknown id (or wrong thread scope) returns an explicit not-found message | offline |
+| AC13 | R8 (F9) | The AC11 state (all rows marked) | `summarize_conversation("t2")` again | Returns the nothing-to-summarize result; no new SummaryRecord; no row's summary_id changed | offline |
+| AC14 | R9 (F8) | `lookup_reef_site` already registered | It is registered a second time | The toolbox store contains exactly one row named `lookup_reef_site`; the callable remains executable; a retrieval for reef lookups returns no duplicate names | offline |
+| AC15 | R9 (F4) | All ≥8 fixture tools registered | Toolset retrieval for "what time is it right now" | Exactly 5 tool schemas are returned (never the full registry), each valid per §3 `ToolSchemaForLLM`; `get_current_time` is among them | offline |
+| AC16 | R10 | The registered toolset | The toolbox store is inspected | `read_toolbox` itself exists as a registered, retrievable tool with a callable behind it | offline |
+| AC17 | R11 (F5) | `stub_always_tool_caller` scripted to call `big_report()` once then answer | One agent turn runs | A ToolLogRow exists with the full 5 000-char result, a ≤2 000-byte preview, status `success`, and iteration metadata; the tool message fed to the LLM is ≤3 000 chars + the exact truncation notice naming the log id; a forced tool exception yields a `failed` row with `error_message` set and the turn continues | offline |
+| AC18 | R12 | A turn that executed 2 tool calls (stub-scripted); a turn with 0 tool calls | Both turns complete | The first writes one WorkflowRecord (query, 2 ordered `→ success` steps, ≤200-char answer excerpt, num_steps=2); the second writes none; workflow retrieval returns only records with num_steps > 0 | offline |
+| AC19 | R13 | Live LLM; the text "Dr. Imara Voss of the Nordfell Institute reviewed the Kestrel-3 gateway." | Entity extraction runs on it | ≥2 EntityRecords are stored with types from the §3 enum (e.g. a PERSON for Dr. Voss); extraction on gibberish/empty text stores nothing and raises nothing | live |
+| AC20 | R14 (F7) | `stub_always_tool_caller`, max_iterations=3 for the test | One agent turn runs | Exactly 3 iterations execute, then the answer is exactly "I was unable to complete the request within the allowed iterations."; all 3 tool calls are logged | offline |
+| AC21 | R14, D4 invariant | Live LLM + network; empty thread `50000`; KB pre-seeded with fixtures | The scripted demo sequence runs: (1) find a paper on an authored fixture topic via discovery, (2) save its content, (3) ask for key takeaways, (4) "summarize the conversation so far using your tool", (5) "What was my first question?" | Each turn ends within 10 iterations; (2) grows the KB; (4) creates a summary and marks rows; (5)'s answer states turn 1's question — recoverable only via summary expansion — proving native tool calling and end-to-end continuity | live |
+| AC22 | R15 | Live LLM; KB seeded with fixtures only | Query: "What is the round-trip efficiency of the Solara Flats pilot, and who audited it?" | The efficiency answer is grounded in the fixture (87 percent); for the auditor — absent from all memory — the agent states the information is missing (or seeks it via a tool) rather than fabricating a name | live |
+| AC23 | R16 | The five vector stores initialized; config inspected | Startup + one write/read round-trip per store | One embedding model instance and one distance strategy (cosine) are configured for all five stores, identical at write and read; a doc written to KB is retrieved by a paraphrase of its content (not its exact words) | offline |
+| AC24 | R17 | Live network; empty KB | `arxiv_search_candidates("agent memory")` then `fetch_and_save_paper_to_kb_db(<first id>)` | Candidates parse as JSON with the §4 R17 keys and ≤2 500-char abstracts; the fetch stores >1 chunk with the full R17 metadata set incl. sequential chunk_id and correct num_chunks, and returns a confirmation naming the store and chunk count | live |
+| AC25 | R17, D12 invariant | Offline; `lookup_reef_site` wrapped as a search-and-store fixture tool | The tool runs via the agent harness (stub-scripted) | Its fetched content lands in the KB with source metadata (source name, query, timestamp); a follow-up KB read answers from memory without re-invoking the tool | offline |
+
+Coverage: every rule R1–R18 has ≥1 AC; every AC maps to a rule; every demonstrated failure
+mode F1–F10 (CTX-B) appears as a rule, a fixture seed, an AC, and a CTX-B entry. D-row
+invariants: D4→AC21, D5→AC2, D7→AC5, D8→AC5, D9→AC12, D10→AC15/AC16 (retrieval keyed on stored
+descriptions), D11→AC1/AC2/AC23, D12→AC25. D1–D3/D6 invariants are empty (nothing to test).
+
+---
+
+## 6. Standing Permissions (in force for the entire build)
+
+**Always**
+- Run the offline AC suite after any change to memory, summarization, or toolbox code, and before declaring any AC met.
+- Create stores idempotently on startup (R1); read/write memory only through the manager abstraction (D7 invariant).
+- Persist every tool execution to the tool log (R11) and every turn's user/assistant messages to conversational memory (R2).
+- Load secrets from the environment.
+
+**Ask First** (derived from the course's spoken trade-offs; each cross-referenced)
+- AF1 — Switching the context-reduction strategy to lossy-only or altering compaction so summaries stop linking back to source rows (→ D9): silently changes the recoverability guarantee; Lesson 5 warns summarization "will always lose a little bit of information".
+- AF2 — Changing the embedding model or the distance strategy after any data is ingested (→ R16, D11): forces a wipe/re-embed/re-ingest — the course's clean-slate cells exist precisely to keep the distance strategy consistent.
+- AF3 — Moving an operation between deterministic and agent-triggered (→ D8): changes a behavior guarantee (e.g. saves become discretionary, or an optional operation starts running automatically) without failing any AC; Lessons 3/6 argue the predictability-vs-cost trade-off.
+- AF4 — Raising the per-turn toolset k or passing more than the retrieved toolset to the LLM (→ R9): re-invites the context-bloat / tool-selection degradation the course demonstrated (Lesson 4).
+- AF5 — Changing the 80 % offload threshold, the status bands, or the token-estimate rule (→ R4): shifts when memory is compacted — a silent behavior change no test catches.
+- AF6 — Turning docstring augmentation off (or on) globally (→ D10): changes retrieval separability/recall at registration-cost trade-off argued in Lesson 4.
+- AF7 — Changing the 3 000-char tool-result cap or disabling full-result tool logging (→ R11): alters the audit and context-offloading guarantee ("move large payloads out of model context") argued in Lesson 6.
+- AF8 — Running any store wipe/reset outside a test sandbox (→ R1): destroys the D5 persistence invariant.
+- AF9 — [H] Changing summarization caps (6 000-char input, label rules) or max_iterations: post-build levers; not narrated as trade-offs by the course, flagged here as hardening.
+
+**Never**
+- Invent provenance, citations, sources, or entity facts; answer when the system should state that evidence is missing (R15).
+- Mutate fixtures (§5) to make a test pass.
+- Commit secrets, or reuse the course-lab credentials that appear in the materials as real credentials.
+- Delete conversational source rows during compaction (R7), or wipe stores implicitly at startup (R1).
+- Present the toolbox's full registry to the LLM in a normal turn (R9).
+
+---
+
+## 7. Test Plan & Self-Verification
+
+Runnable commands (adjust only the project root):
+
+```bash
+python -m venv .venv && . .venv/bin/activate
+pip install -r requirements.txt          # pins chosen at build time (§2 honesty note)
+python -m pytest tests/offline -q        # AC1–AC3, AC5–AC8, AC10–AC18, AC20, AC23, AC25 — no key, no network
+RUN_LIVE=1 python -m pytest tests/live -q   # AC4, AC9, AC19, AC21, AC22, AC24 — needs OPENAI_API_KEY (+ network for AC24)
+python app.py --thread 50000             # interactive demo; scripted sequence per AC21
+```
+
+The building agent MUST report results **per acceptance criterion**, each with cited evidence:
+the test command run, the pass/fail output line, and relevant file paths (e.g. the SQLite file,
+a dumped ToolLogRow, the printed resolved-decision checklist from §0). "Should pass",
+"looks correct", or an unrun `live` AC reported as passing are treated as **failures** — they
+mean it wasn't run. `live` ACs skipped for lack of a key must be reported as *skipped (live)*,
+never as passed.
+
+---
+
+## Course Context Pack (embedded — agent-readable)
+
+Concepts only — no code copied from the course. CTX anchors are position-independent.
+Everything in CTX-A…C is durable; only CTX-D's names are perishable. Nothing in this spec
+requires access to the course platform.
+
+### CTX-A. The pattern
+
+The course's central buildable pattern is the **memory-aware agent loop** over a **seven-type
+memory core**:
+
+`init stores → assemble partitioned context → check budget (offload >80%) → retrieve focused toolset → reason/act loop (log every tool call) → persist artifacts → answer`
+
+Stage reasons:
+1. **Init seven typed stores** — different memory types need different data models and retrieval strategies (exact/time-ordered vs semantic), coordinated by one memory-manager abstraction so the agent never touches storage directly.
+2. **Assemble partitioned context** (conversation / knowledge base / workflow / entity / summary segments under markdown headings) — segment labels + usage instructions make the model *memory-aware*: it knows what each memory is for and how to prioritize on conflict.
+3. **Budget check + offload** — context windows are finite; deterministic monitoring prevents overflow, and compaction keeps a recovery path (summary IDs + expansion) instead of silent loss.
+4. **Semantic tool retrieval (Toolbox)** — tools are memory too: embed descriptions, retrieve only the few relevant per query; scales to hundreds of tools without context bloat or selection degradation.
+5. **Reason/act loop with tool logging** — bounded iterations; full tool outputs go to the database (context offloading), only bounded results go back into context.
+6. **Persist artifacts** (conversation, workflow trajectories, entities, summaries) — the agent *learns*: discovered information and executed patterns become reusable memory, enabling long-horizon tasks and cross-session continuity.
+
+Also taught as framing (teaching structure, not decisions): the short-term/long-term memory
+taxonomy (semantic cache, working memory vs procedural/semantic/episodic), the "agent memory
+core = the database" concept, the agent-stack/memory-layer picture, the memory lifecycle
+(ingest → enrich → store → organize → retrieve → LLM → write back), and the naive→augmented→
+aware progression. The running example is a research assistant the notebooks nickname
+**ArxivScout**.
+
+### CTX-B. Failure-mode catalog
+
+1. **Stateless cross-turn amnesia** — symptom: the agent cannot resolve "book the first one" and asks the user to re-specify; cause: no persisted interaction history, context lost between turns/sessions; fix: deterministic conversational persistence + deterministic context preload every turn; enforced by R1–R3, AC2–AC5.
+2. **Context overflow** — symptom: long conversations crash the turn or evict important history; cause: finite context window, unbounded accumulation; fix: estimate usage every turn, offload at >80 %; enforced by R4, AC6–AC7.
+3. **Unrecoverable summarization loss** — symptom: after compaction the agent can't answer "what was my first question?"; cause: lossy summaries with no path back to originals; fix: store full source + mark rows with summary_id + expand-on-demand; enforced by R7/R18, AC11–AC12 (and live AC21 step 5).
+4. **Tool-context bloat / selection degradation** — symptom: with many tools the model picks wrong tools, latency and cost rise; cause: all tool definitions stuffed into context; fix: toolbox memory + top-k semantic retrieval per query; enforced by R9, AC15.
+5. **Tool-output flooding** — symptom: one large tool result devours the window; cause: raw payloads routed through the model; fix: persist full output to the tool log, feed the model a bounded result + log-id notice; enforced by R11, AC17.
+6. **Empty/failed summarizer output breaking the pipeline** — symptom: a blank LLM response aborts compaction; cause: model returns no content; fix: retry with a simpler instruction, then a deterministic 4-heading fallback; enforced by R5, AC8.
+7. **Runaway agent loop** — symptom: endless tool-calling; cause: no stop condition; fix: max-iterations bound + honest templated exhaustion answer; enforced by R14, AC20.
+8. **Duplicate tool registration** — symptom: retrieval returns the same tool twice, crowding the toolset; cause: re-running registration; fix: name-dedup at write and at read; enforced by R9, AC14.
+9. **Re-summarizing processed messages** — symptom: duplicate summaries, drifting content; cause: no marker on already-summarized rows; fix: select only unmarked rows; second pass is a no-op; enforced by R8, AC13.
+10. **Generic summary labels** — symptom: "Conversation summary" labels make summary references useless for JIT selection; cause: weak model labeling; fix: reject-list + deterministic specific-label fallback; enforced by R6, AC10.
+
+### CTX-C. Decision background (reference only — decisions live in the Ledger)
+
+1. **Store realization** (→ Ledger D11): the course ran Oracle AI Database 26ai in Docker with an admin-provisioned VECTOR user, LangChain's OracleVS per vector table, and IVF vector indexes created by a helper (the notebooks' markdown *says* HNSW, but the helper deliberately creates IVF — "NEIGHBOR PARTITIONS", target accuracy 95 — to dodge specific Oracle-Free errors it names). At fixture scale no index is needed at all; the index story matters only when you scale, which is why it lives in D11's Options, not the Default.
+2. **Why relational for conversation/tool-log but vector for the rest** (→ D11 invariant): chat history needs exact retrieval by thread id in time order — similarity is the wrong tool; the other five types are retrieved by meaning. This dual-mode requirement is the store row's invariant.
+3. **Reduction techniques** (→ D9): the course teaches Context Summarization (lossy compression, clean-window restart) vs Context Compaction (offload to DB under an ID + description; the model pulls detail back when needed), then *builds the pairing*: summarize, store with full source, mark rows, expand on demand. Mechanism behind the trade-off: summarization spends tokens once and loses detail; compaction spends storage and a retrieval hop but is reversible.
+4. **Deterministic vs agent-triggered** (→ D8): deterministic ops give context bootstrapping ("the agent can't choose to look up what it doesn't know exists"), reliability ("don't want the agent to forget to save"), and debuggability; agent-triggered ops give relevance filtering and cost control (deep retrieval, consolidation, external tools only when judged worthwhile). The Lesson-3 classification table and the Lesson-6 app disagree on `read_summary_context` and `write_entity` (table: agent-triggered; app: deterministic each turn) — D8's default follows the app.
+5. **Docstring augmentation** (→ D10): registration can send docstring + source to an LLM for an enriched description plus synthetic trigger queries; the enriched text is what gets embedded — mechanism: richer, more separable embedding text raises recall and separability in the tool-embedding space.
+6. **Model naming and token limits** (→ D4, R4): the loop's chat default is `gpt-5-mini` (app notebook) while the helper's memory-op defaults are `gpt-5`; the 256 000 token-limit map is keyed `gpt-5-mini` in the Lesson-5 notebook but `gpt-5` in the helper — same value, different key; unknown models fall back to 128 000. Resolved as a body default by lever branch 2 (app config).
+7. **`get_current_time` augment flag** (→ D10): registered augmented in the Lesson-4 notebook cell, unaugmented in the helper's common-tools path the Lesson-6 app uses.
+8. **Toolbox k** (→ R9): manager default 3; registered tool signature default 3 with a docstring claiming 5; app loop retrieves 5; lesson prose says "typically 3–5". Body default 5 by lever branch 2.
+9. **Distance strategy** (→ R16): cosine in Lesson-3/4 store configs and Lesson-3 narration; Euclidean in Lesson-5/6 notebook configs and one Lesson-3 markdown key-components list. Body default cosine by lever branch 1 (narration of the introducing lesson). The clean-slate drop cells exist to guarantee strategy consistency across a lesson run — the consistency rule R16 keeps that guard without the wipe.
+10. **Search-and-store** (→ D12, R17): the web-search tool doesn't just return results — it writes each result into the knowledge base with title/url/score/query/timestamp so the agent "learns from its searches"; the arXiv deep-ingest tool applies the same pattern to full papers (chunk 1500/200), keeping large payloads out of model context.
+11. **Summary thread-scoping** (→ R18): the Lesson-5 notebook's local summary writer has no thread scope; the helper version used by the Lesson-6 app adds thread_id scoping and thread-filtered summary-context reads. The app path is the default.
+12. **Instructor heuristics**: providers recommend exposing roughly 10–20 tools max for reliable selection; ~4 chars/token is a serviceable estimate (some models nearer 2); prompt wording determines summarization quality — vary it per problem; validate tool registration on a low-risk utility tool first; record workflows so the model doesn't "figure it out on the fly" each time.
+
+### CTX-D. Perishable assumptions
+
+Treat these as **search keywords against current docs, not guaranteed imports**. The concepts
+in CTX-A…C are durable; only these names are perishable. The course's installs were **unpinned**
+(no version numbers exist in the materials).
+
+- Packages/APIs: `langchain-oracledb` (`OracleVS`, `OracleVectorizerPreference`), `langchain_huggingface.HuggingFaceEmbeddings` (some lessons import the older `langchain_community.embeddings` path), `langchain_community` (`DistanceStrategy`, `ArxivRetriever`, `ArxivLoader`), `langchain_text_splitters.RecursiveCharacterTextSplitter`, `sentence-transformers`, `oracledb`, `openai` chat-completions with `tools`/`tool_choice="auto"` and `max_completion_tokens`, `tavily-python`, `datasets` (streaming), `pymupdf`, `dotenv`, `pydantic`.
+- Models: `gpt-5`, `gpt-5-mini`; embedding `sentence-transformers/paraphrase-mpnet-base-v2` (768-dim).
+- Oracle-era artifacts (provenance only; not used by the default build): Oracle AI Database 26ai in Docker; admin user `system`; a `VECTOR` user with a lab password; DSN `127.0.0.1:1521/FREEPDB1`; connection `program` tag `devrel.deeplearning.course_1`; index names `*_vs_ivf`; hybrid preference `KB_VECTORIZER_PREF`; lab quirk: "Admin connection failed" on first run resolves by waiting and re-running. Never reuse lab credentials.
+- Demo-data names: HuggingFace dataset `nick007x/arxiv-papers` (100 streamed records); demo query paper "MemGPT"; assistant nickname "ArxivScout"; demo thread id `50000`; sample 30-message PhD-research conversation shipped in the helper (re-expressed here as an authored fixture, not copied).
+
+### CTX-E. Provenance map (transcript numbering — authoritative)
+
+Platform numbering per the transcripts. The notebook dump's own lesson-map headers drift from
+both the notebook titles and the transcripts (e.g. it labels the Memory-Manager notebook
+"Lesson 4"); transcripts win. Notebook files are numbered L2–L5 and sit one-to-three lessons
+off the platform numbers.
+
+| Transcript lesson | Title | Notebook file | Contributed |
+|---|---|---|---|
+| Lesson 1 | Introduction | — | Course goal: memory engineering as first-class infrastructure (CTX-A framing) |
+| Lesson 2 | Why AI Agents Need Memory | — | Stateless-agent failure demo (CTX-B1); conversational memory + its limits (D7's argued trade-off); memory taxonomy; RAG→memory bridge; Agent Memory Core (CTX-A) |
+| Lesson 3 | Constructing The Memory Manager | L2.ipynb | Seven stores + manager (CTX-A stages 1–2, CTX-C1–C2); deterministic/agent-triggered classification (D8, CTX-C4); cosine narration (CTX-C9); index rationale; KB ingest/read demo (CTX-C10 seed) |
+| Lesson 4 | Scaling Agent Tool Use with Semantic Tool Memory | L3.ipynb | Toolbox pattern (CTX-B4, CTX-B8); augmentation argument (D10, CTX-C5); Tavily search-and-store (D12, CTX-C10); arXiv discovery + deep ingestion (R17) |
+| Lesson 5 | Memory Operations: Extraction, Consolidation, and Self-Updating Memory | L4.ipynb | Summarization vs compaction argument (D9, CTX-C3); token monitoring (CTX-B2); summary pipeline with marking + expansion (CTX-B3, B6, B9, B10); workflow-memory rationale |
+| Lesson 6 | Memory Aware Agent | L5.ipynb | Agent loop + harness (CTX-A stages 2–6); system-prompt memory awareness and priority order (R3, R15); tool-log offloading (CTX-B5); the 5-query continuity demo (AC21 shape); "summarize is both deterministic and agent-triggered" (D8) |
+| Lesson 7 | Conclusion | — | "Take these patterns, adapt them" — the pattern-over-product close that licenses D11's substitution |
+
+Nothing in this spec requires platform access.
+
+---
+
+*Version 1.0 · Course: Agent Memory — Building Memory-Aware Agents · Learner project: `[project]` (default: memory-aware research-assistant agent) · Living document: when the building agent produces something unexpected, add the missing constraint here and re-run.*
