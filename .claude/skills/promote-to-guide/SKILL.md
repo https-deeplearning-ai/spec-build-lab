@@ -130,6 +130,14 @@ Two property types, treated differently:
    regens by default; **N=3 or more when a property's failure mode is a known
    coin-flip** (N=2 detects a 50%-flaky defect only ~75% of the time). Pass
    bar: every property present in every confirmation regen.
+   **Scoring cost policy** (owner decision from the shakedown pass): spend the
+   full scorer subagent on **one** confirmation regen — the adoption candidate;
+   check the others with targeted orchestrator greps against the highest-risk
+   properties (the ones that failed in earlier rounds, plus any counted
+   structure like the Ledger row set). Scale back up to full scoring on more
+   regens only by explicit owner decision — full-scoring every regen roughly
+   doubles the pass's cost for marginal detection gain once the greps cover
+   the known failure modes.
 5. Cross-course validation is **deferred by owner decision**: the next new
    course's `/generate-spec` is the de-facto test — treat any principle-miss
    there as a trigger for the next promotion pass.
