@@ -90,11 +90,20 @@ the hand edit at `485e4ce` + step-4 fix at `e4c1c7d`.
 1. **Row-set variance, now better characterized**: it is a CLASS of judgment-boundary subjects,
    not one subject. A: topology folded, summary-scope extra (structural route). B: 13 rows, all
    12 canon subjects present, summary-scoping extra (contradicted route). C: topology present,
-   augmentation folded, initialization-semantics extra (contradicted route). Summary-scoping has
-   now entered via three different routes across two passes — it flickers because the boundary
-   is genuinely debatable (the course contradicts itself on it and scoping changes read
-   semantics). Owner decision at ship: keep as residual, or admit it to the canonical subject
-   list. Core 24 properties stable in all three.
+   augmentation folded, initialization-semantics extra (contradicted route). Summary-scoping entered
+   via two different routes within this pass (A: design-structural; B: contradicted) — it
+   flickers because the boundary is genuinely debatable (the course contradicts itself on it
+   and scoping changes read semantics). Core 24 properties stable in all three.
+   **OWNER DECISION (at ship): summary-scoping is ADMITTED TO THE CANON** — "a reasonable
+   different design is a Ledger decision": both sides are course-demonstrated working code,
+   never warned against (the cross-thread-leak indictment was regen-B's own extrapolation,
+   not course text), and the right answer depends on learner context (multi-context isolation
+   vs single-user recall) — the exact profile of a Ledger row, with the risk carried by the
+   Trade-off cell as the Ledger design intends. Implementation split (fix and test travel
+   together): the spec's summary-scoping row rides the owner's upcoming Loop-A revisions
+   batch; the guide example-sentence and the P1→13 canon update ride the next promotion pass
+   with its validation round. P1 stays at 12 subjects until then, avoiding a spec-vs-canon
+   mismatch window.
 2. **Id-alphabet drop is systematic on Opus-class** (0/3 pinned hex; A alphanumeric, B no
    alphabet + a minLength:6 schema floor under a stated 8 chars [verified], C length-only),
    while both Fable-class shakedown regens pinned hex — the first clean cross-model pinning gap.
