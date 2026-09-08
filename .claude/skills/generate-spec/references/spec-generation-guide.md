@@ -332,7 +332,7 @@ not because they are the right choice for this person's project.
    skip, merge, or silently default a row — make as many separate calls as there are rows.
 4. **Presenting any of these questions ENDS YOUR TURN — stop here; write no code, create or edit
    no file, take no other build action.** Keep asking, one row at a time, until **every** row has
-   an answer (a chosen option, an explicit "use the course default", or the step-2 as-is answer,
+   an answer (a chosen option, an explicit "use the course default", or the step-2 baseline answer,
    which resolves every row at once). Answers to *some* rows do NOT release the build; "no reply
    yet" is not an answer — wait for the user.
 5. **Before the first line of code, print a resolved-decision checklist** — every Ledger row
