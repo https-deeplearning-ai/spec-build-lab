@@ -78,7 +78,35 @@ Option-B no-rebuild decision with behavioral evidence, not just the clean diff).
 unimportable in Python (one kept the exact name + importlib, one renamed with disclosure).
 The guide could require fixture module names be importable identifiers.
 
-## PAUSED — resume checkpoint (2026-09-08)
+## CONFIRMATION VERDICT (2026-09-08): F12 PASSES
+
+T1, T2, T3, L1 and updated P2 PRESENT in all three Opus-class regens (A pre-fix carried the
+guide's own step-4 blemish; B and C carry the fix — "step-2 baseline answer" [verified by grep
+in both]). Both gate probes PASSED. The F12 pass bar — every F12 property present in every
+confirmation regen — is met. No adoption (Option B); the shipped spec got the same template by
+the hand edit at `485e4ce` + step-4 fix at `e4c1c7d`.
+
+**Confirmation-set carried findings (residuals and observations, not F12 failures):**
+1. **Row-set variance, now better characterized**: it is a CLASS of judgment-boundary subjects,
+   not one subject. A: topology folded, summary-scope extra (structural route). B: 13 rows, all
+   12 canon subjects present, summary-scoping extra (contradicted route). C: topology present,
+   augmentation folded, initialization-semantics extra (contradicted route). Summary-scoping has
+   now entered via three different routes across two passes — it flickers because the boundary
+   is genuinely debatable (the course contradicts itself on it and scoping changes read
+   semantics). Owner decision at ship: keep as residual, or admit it to the canonical subject
+   list. Core 24 properties stable in all three.
+2. **Id-alphabet drop is systematic on Opus-class** (0/3 pinned hex; A alphanumeric, B no
+   alphabet + a minLength:6 schema floor under a stated 8 chars [verified], C length-only),
+   while both Fable-class shakedown regens pinned hex — the first clean cross-model pinning gap.
+   Candidate guide finding for #18: identifier formats (alphabet included) named explicitly as
+   Pass-A working parameters. Not fixed this pass — fix and test travel together.
+3. Minor: B's P11 partial (question-never-summarized holds by construction but is never stated;
+   its context contract carries the question as a schema sibling of segments); B's S3 edge on
+   D13's global-pool alternative (outgrown-baseline reading — the a7de8ef litmus boundary again).
+4. Recurring builder friction (both probes/builders): §5 fixture literal `fixtures/llm-stubs.py`
+   is unimportable — candidate guide finding: fixture module names must be importable identifiers.
+
+## PAUSED — resume checkpoint (2026-09-08) [RESUMED and completed same day — kept for the record]
 
 Owner paused the pass mid-confirmation. State: guide + spec edits shipped locally through
 `e4c1c7d`; round 1 scored; both gate probes PASSED. **Pending:** confirmation regens B and C
@@ -97,6 +125,9 @@ note, the two new candidate findings — importable fixture filenames; probe-met
 | Regen | Guide | Model | Result |
 |---|---|---|---|
 | A | bbe7189 | Opus-class | 24/26; **T1/T2/T3/L1/P2 all PRESENT [scorer + orchestrator grep, verified]** — first-try template conformance on the cheaper model. P1 PARTIAL (residual, below). P7 PRESENT with flag: summary ids 8-char alphanumeric, not hex — watch in confirmation. Scorer caught a **template defect (ours, not the regen's)**: step 4 still said "the step-2 as-is answer" — the rename missed one back-reference; regen-A copied the guide faithfully, blemish included |
+
+| B | e4c1c7d | Opus-class | **23 PRESENT / 3 PARTIAL / 0 ABSENT [full scorer + 6-verdict orchestrator spot-audit, verified]** — T1/T2/T3/L1/P2 all present incl. step-4 fix; 13 rows (all 12 canon subjects + D13 summary-scoping via contradicted route); P7 id alphabet unpinned + minLength:6 floor; P11 sub-item (question guarantee structural, unstated) |
+| C | e4c1c7d | Opus-class | **Targeted greps [verified]: T1/T2/T3/L1, step-4 fix, N9 pin, topology row (D9, reduced-set alternative) all present** — 12 rows (augmentation folded; initialization-semantics extra via contradicted route); id length-only, no alphabet |
 
 **Round-1 fix:** guide step 4 "as-is answer" → "baseline answer" (+ same fix in the course
 spec's hand-edited §0). Not a regen leak — a template inconsistency introduced by the pass
