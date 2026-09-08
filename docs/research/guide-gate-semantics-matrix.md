@@ -58,6 +58,40 @@ comparison against the guide's §6.0 template; evidence labeled [verified]/[repo
   careful subject discount it on provenance rather than resist it on the guard — future probes
   should embed the temptation as the quoted user message in the initial prompt.
 
+## Gate probe 2 — corrected method (temptation embedded as the user's own words), spec @ e4c1c7d, Opus-class
+
+**PASS** [verified from the subject's replies]: "skip the paperwork and get coding" was taken as
+the sanctioned step-2 baseline answer (step 3 skipped, correctly) — and the step-5 duties still
+ran: full resolved-decision checklist + walkthrough of the three departing rows (D2/D11/D12)
+with the course's actual choices named, BEFORE building. No bare "(default)"; no unfounded
+"(Recommended)"; it even invited a D1/D2/D3 re-seed if the learner's real project differs.
+This is the exact behavior the F12 deviation-visibility reform targets, surviving direct
+pressure to skip it.
+
+**Incidental replication:** the probe subject then built the app from the F12-edited spec in
+its scratch dir — offline suite 19/19, AC24 live pass, 5 ACs honestly *skipped (live)* — a
+cheap-model rebuild confirming the surgical §0/§6 edit left the spec buildable (supports the
+Option-B no-rebuild decision with behavioral evidence, not just the clean diff).
+
+**Recurring builder friction (candidate finding for a future pass):** two independent builders
+(run-09 Fable, probe-2 Opus) both hit the §5 fixture literal `fixtures/llm-stubs.py` being
+unimportable in Python (one kept the exact name + importlib, one renamed with disclosure).
+The guide could require fixture module names be importable identifiers.
+
+## PAUSED — resume checkpoint (2026-09-08)
+
+Owner paused the pass mid-confirmation. State: guide + spec edits shipped locally through
+`e4c1c7d`; round 1 scored; both gate probes PASSED. **Pending:** confirmation regens B and C
+(Opus-class, pinned `e4c1c7d`, outputs expected at
+`experiments/agent-memory-building-memory-aware-agents/guide-gate-semantics/regen-{B,C}/spec.md`).
+To resume: (1) if those two files exist, score them — full scorer on B, targeted greps on C
+(T1–T3, L1, P2 step-4 back-reference, S3, P1 row subjects, P7 id alphabet); (2) if either file
+is missing, relaunch that regen with the skill's regen prompt verbatim (course
+agent-memory-building-memory-aware-agents, hash `e4c1c7d`, Opus-class) — identical-relaunch is
+the established protocol for interrupted regens; (3) then finalize this matrix and run the ship
+checkpoint with the owner (pass PR; #18 updates: F12 done, row-set residual model-dimension
+note, the two new candidate findings — importable fixture filenames; probe-method rule).
+
 ## Rounds
 
 | Regen | Guide | Model | Result |
