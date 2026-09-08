@@ -104,3 +104,27 @@ rule ambiguity (the guide's design-structural route even names "store topology" 
 example and E still folded it). Owner policy applies: adopted specs are matrix-verified
 individually; the flake affects only future regenerations, which are checked by this matrix.
 Wording iteration stopped at diminishing returns per the owner's cost decision.
+
+### Green-build gate (adoption validation, Phase 5): run-09 built from the adopted spec
+
+`/prepare-build` allocated run-09; the adopted spec (pin `a7de8ef`, adoption `98d8815`) was
+built as-is — §0 gate resolved "as-is", every Ledger row at its course default (checklist in
+`builds/run-09/BUILD-REPORT.md`).
+
+- **Offline AC suite: 19/19 passed** (AC1–AC3, AC5–AC8, AC10–AC18, AC20, AC23, AC25) —
+  `python -m pytest tests/offline -q` on Python 3.11.9 [verified, run twice].
+- **AC24 (live, keyless): passed** against the real arXiv API after one transient 429
+  [verified]. The other five live ACs (AC4, AC9, AC19, AC21, AC22) **skipped (live)** — no
+  `OPENAI_API_KEY` on this machine; reported as skipped per §7, never as passed.
+- Two spec-predicted friction points confirmed the spec's own warnings rather than defects:
+  the CTX-D perishable-API note fired (arxiv 4.0.1 removed `Result.download_pdf`; build
+  switched to `Result.pdf_url` + stdlib download), and the §2 Python ≥ 3.11 pin caught a 3.10
+  interpreter at venv creation.
+- Build log: `evals/run-09/session-log.md` (221 turns, opening bookend matched on the adoption
+  commit message, 0 materials reads). Note for #19: the run-09 `/prepare-build` allocation
+  predated a transcript compaction and the verbatim announcement bookend was absent — the
+  default opening regex found nothing and the log needed an explicit `--from`.
+- Both evals run post-build: `evals/run-09/spec-vs-build.md`, `evals/run-09/materials-vs-build.md`
+  (scores recorded there).
+
+**Gate verdict: PASS — the adopted regen-F spec is buildable; adoption `98d8815` stands.**
