@@ -57,3 +57,26 @@ surfaced the one-time embedding-model download. The orientation block does not w
 |---|---|---|---|
 | A | 0cd5ff2 | Opus-class | **All six V-properties PRESENT [orchestrator greps, verified]**: V1 orientation lead is a true user-visible scene + fastest-path/completion verbatim-equivalent (L3, echoed §7 L671); V2 heavy-setup inline on 4 options (generalized past the two examples); V3 no current-model names, "model currency is a gate-time judgment" in D4, CTX-D request-parameter entry (L745, mined from materials); **V4 id alphabet pinned `^[0-9a-f]{8}$` + "alphabet is part of the contract" (R13) — G4 closed the 0/3 cross-model gap first try**; V5 all fixture modules importable; V6 D14 scope row, both sides + stakes reasoning — **G6 stabilized the subject**. P1 PARTIAL: 14 rows = all 13 canon subjects + an extra init-mode row (the documented judgment-boundary class; same subject as last pass's regen-C) — residual policy, no fix round |
 | C | 0cd5ff2 | Opus-class | **All six V-properties PRESENT [orchestrator greps, verified]**: V1 orientation scene + completion criterion (L3); V2 heavy-setup inline (store, web-search, local-model option); V3 "Model names rot: pick the current model at gate time via your (Recommended) flag" in D4 + CTX-D request-parameter entry (L1200, notes the course passes no temperature); V4 `^[0-9a-f]{8}$` + "alphabet is part of the contract" (L157-158) — **G4 2/2**; V5 five importable fixture modules; V6 D12 scope row (contradicted route). P1 PARTIAL: 12 rows — augmentation folded (residual class, same subject as prior pass); init-semantics correctly baked into R1 with the warned-failure litmus stated |
+| B | 0cd5ff2 | Opus-class | **30/30 PRESENT, 0 PARTIAL, 0 ABSENT [full scorer + 6-verdict orchestrator spot-audit, verified]** — all six V-properties (V4 hex contract `^[0-9a-f]{8}$` + "alphabet is part of the contract"); T1-T3/L1/P2 near-exact incl. step-4 fix; **P1 EXACT 13/13** — the first regen in any pass with zero judgment-boundary deviation; P7 label band and P11 question-guarantee (prior partials elsewhere) both explicitly present |
+
+## CONFIRMATION VERDICT (2026-09-09): the batch's guide rules PASS
+
+All six V-properties present in **3/3 Opus-class regens** [A and C orchestrator-grep verified;
+B full-scored 30/30 with spot audits]. **G4 closed the id-alphabet cross-model gap 3/3** (was
+0/3 pre-fix). **G6 held the scope row in 3/3** (D14/D12/D13). Stage-1 gate probe PASSED with
+the new blockquote. Carried set: P1 exact in B; A +1 (init-mode row), C -1 (augmentation fold)
+— the documented judgment-boundary residual, expressing at the known rate; all other carried
+properties present in every sample scored.
+
+**New finding (queued for the next pass — guide half of the AC21 fix):** harness-known
+identities are injected, never model-guessed. The live AC21 run caught the build exposing
+`thread_id` as a model-supplied tool argument; the model, never told its thread, guessed
+"current_thread" and the tool honestly consolidated nothing. Fixed in the spec (R11 sentence,
+commit on this branch) + the run-09 build; the course-agnostic guide rule is recorded here,
+unapplied, per fix-and-test-travel-together.
+
+## Live-AC run (run-09, owner-supplied key)
+
+First full keyed run in the lab: **AC4, AC9, AC19, AC22, AC24 PASSED live** [pytest -rA,
+verified]. AC21 failed deterministically (2/2) on the thread-identity gap above → spec + build
+fix → offline suite re-green (21/21) → AC21 rerun: _(result recorded below when complete)_.
