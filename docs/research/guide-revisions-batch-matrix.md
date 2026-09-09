@@ -40,6 +40,8 @@ New:
 Pass bar: all properties present in both confirmation regens, evidence-labeled
 [verified]/[reported]; V4 is the watched cross-model item (0/3 on Opus-class pre-G4).
 
+| C | 0cd5ff2 | Opus-class | **All six V-properties PRESENT [orchestrator greps, verified]**: V1 orientation scene + completion criterion (L3); V2 heavy-setup inline (store, web-search, local-model option); V3 "Model names rot: pick the current model at gate time via your (Recommended) flag" in D4 + CTX-D request-parameter entry (L1200, notes the course passes no temperature); V4 `^[0-9a-f]{8}$` + "alphabet is part of the contract" (L157-158) — **G4 2/2**; V5 five importable fixture modules; V6 D12 scope row (contradicted route). P1 PARTIAL: 12 rows — augmentation folded (residual class, same subject as prior pass); init-semantics correctly baked into R1 with the warned-failure litmus stated |
+
 ## Probe
 
 Stage-1 only (no new behavioral guard shipped): cold-start Opus build agent on a scratch copy
