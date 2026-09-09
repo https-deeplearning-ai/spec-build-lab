@@ -79,4 +79,5 @@ unapplied, per fix-and-test-travel-together.
 
 First full keyed run in the lab: **AC4, AC9, AC19, AC22, AC24 PASSED live** [pytest -rA,
 verified]. AC21 failed deterministically (2/2) on the thread-identity gap above → spec + build
-fix → offline suite re-green (21/21) → AC21 rerun: _(result recorded below when complete)_.
+fix → offline suite re-green (21/21) → AC21 rerun: **PASSED** (1 passed, 6m17s) — the live suite is 6/6; the course's headline
+cross-session continuity demo is demonstrated end-to-end for the first time [verified].
