@@ -4,7 +4,7 @@
 >
 > **This file is self-contained.** The embedded **Course Context Pack** (bottom of this file) replaces all external course references — nothing here requires access to the course platform, notebooks, or transcripts. `(CTX-X)` anchors mark course-derived knowledge. The **Decision Ledger** below holds every point where this build could diverge, each pinned to one course-derived default, so the spec builds as-is with zero intake.
 >
-> **Provenance:** generated from the *Agent Memory: Building Memory-Aware Agents* course notebooks (notebook dump incl. `helper.py` and `requirements.txt`) + lesson transcripts, on 2026-09-07. Generation guide version: repo commit `a7de8ef`. Hand-evolved since: §0 gate and Ledger option labels updated on 2026-09-08 to the guide's gate-semantics template (guide @ `bbe7189`); body otherwise unchanged.
+> **Provenance:** generated from the *Agent Memory: Building Memory-Aware Agents* course notebooks (notebook dump incl. `helper.py` and `requirements.txt`) + lesson transcripts, on 2026-09-07. Generation guide version: repo commit `a7de8ef`. Hand-evolved since: §0 gate and Ledger option labels updated on 2026-09-08 to the guide's gate-semantics template (guide @ `bbe7189`); revisions batch on 2026-09-09 — orientation block, heavy-option setup notes, D4/CTX-D model-currency updates, fixture-module rename, and the D13 summary-scope row (matching guide rules land in the same PR); body otherwise unchanged.
 
 ---
 
@@ -79,11 +79,13 @@ when you have reason to prefer another option.
 | D11 | realization | **Persistent memory store** — heavy-dependency substitution row | One durable store layer provides **both** (a) exact-key, time-ordered relational access (conversation rows by `thread_id`; tool logs) **and** (b) semantic-similarity retrieval with metadata filtering over embedded text for the five vector memory types. (Durability across restarts: owned by D5) | **SQLite via Python's stdlib `sqlite3`** — one database file, seven tables carrying the §4 canonical store names; embedding vectors stored per row; similarity computed **exactly, in process (brute-force cosine)** at the declared fixture scale. §3 dependency precedence **branch 1** (substitution): the course teaches a memory *pattern* that Oracle realizes; Oracle is not the taught subject — the course's own close is "take these patterns, adapt them to your own use case" (CTX-E L7). "Lightest" decided by tier: **tier 1** (ships with the standard distribution) satisfies the invariant at the declared default scale, because exact brute-force similarity meets the retrieval contract on fixture-sized data; no indexing tier is required at that scale — scaling realizations live in Options | Oracle AI Database 26ai + LangChain `OracleVS` + IVF vector index **(course default — heavy setup: Docker container, admin credentials, multi-GB image)**; SQLite stdlib; an embedded vector library (tier 2) once the corpus outgrows brute force; a locally served / hosted vector DB (tier 3) | Switching stores forces re-ingestion and re-implementation of the metadata filters; Oracle adds container + admin setup (Docker, admin credentials) but brings IVF/HNSW indexing and hybrid search at scale — the course's Lesson-3 rationale for indexing (CTX-C1, CTX-C2) | course+learner |
 | D12 | realization | **Web-search tool** (course realization: Tavily) — keyed-tool row | If a web-search tool is enabled it MUST be toolbox-registered and follow the **search-and-store** pattern: results persisted to knowledge-base memory with title/url/score/query/timestamp metadata, never returned only ephemerally (§4 R17) | **Omitted.** §3 keyed-tool rule: Tavily needs an API key (heavy), and it is *not* the only carrier of the taught search-and-store behavior — the keyless arXiv tool `fetch_and_save_paper_to_kb_db` also persists fetched external content to the knowledge base — so the deterministic default is omission, with the keyless course tools carrying the behavior | Tavily via `TAVILY_API_KEY` **(course default — needs a paid API key)**; an honestly-labeled local stand-in (a fake `search_web_local` tool serving canned fixture results, whose registered description MUST say it is a fake standing in for a real web-search service); omit | Omission removes open-web reach (the agent is limited to arXiv + its own memory); the stand-in keeps the pattern exercisable offline but only answers from fixtures; Tavily restores the course demo exactly at the cost of a key | course+learner |
 
-**Contradicted group: empty.** Every mined course contradiction failed the §5.5 stakes test
-(each is a near-equivalent lever whose up-front choice changes no structure, semantics, or
-guarantee). Each is resolved as a **body default** carrying its in-place contradiction note,
-its lever-value branch citation, and a *post-build lever* label — see §4 R4/R16 notes and the
-"Post-build levers" list at the end of §4, with background in CTX-C6–C9.
+| D13 | contradicted | **Summary memory scope** — does a stored summary belong to the thread that produced it, or to one global pool shared across threads | — (recoverability under either scope: owned by D9) | **Thread-scoped**: summaries are written with the originating `thread_id`, and summary-context reads filter to the active thread — the helper path the Lesson-6 app runs (§4 R18). *Contradiction note:* the Lesson-5 notebook's local summary writer stores summaries with **no thread id** (a global pool) while the helper version the app uses adds scoping — both sides cited in CTX-C11. Passes the §5.5 stakes test at initial choice: the choice changes what a summary read *returns*, so it is a row, not a lever | Thread-scoped **(course default** — the app path**)**; one global summary pool, unscoped (course-demonstrated: the Lesson-5 notebook's writer) | Thread scoping isolates conversations — no cross-thread context bleed, and per-thread recovery ("what was my first question?") stays deterministic. The global pool turns summaries into cross-conversation recall (useful for a single-user assistant) at the cost of one thread's compressed context surfacing in another's window — a hazard wherever threads are different users or contexts needing isolation. Cross-conversation knowledge still flows through the global stores (knowledge base, entities, workflows) under either choice | course+learner |
+
+**Contradicted group: one row (D13).** Every other mined course contradiction failed the §5.5
+stakes test (each is a near-equivalent lever whose up-front choice changes no structure,
+semantics, or guarantee). Each of those is resolved as a **body default** carrying its in-place
+contradiction note, its lever-value branch citation, and a *post-build lever* label — see §4
+R4/R16 notes and the "Post-build levers" list at the end of §4, with background in CTX-C6–C9.
 
 ---
 
@@ -414,11 +416,12 @@ the contradiction is stated in place.
     `arxiv_id`, `entry_id`, `title`, `authors`, `published`, and abstract capped at 2 500 chars
     (discovery reads metadata only — cheap before expensive ingestion; retriever caps: 8 docs,
     4 000 chars). → AC24 (`live`), AC25 (offline via fixture tool)
-18. **R18 — Thread-scoped summary retrieval.** [C] Summary-context reads prefer/filter
-    summaries for the active thread when a thread_id is known; `expand_summary` accepts an
-    optional thread scope and reports "not found" per scope explicitly. (Source: helper
-    summary methods — the app path; the Lesson-5 notebook's local variant predates thread
-    scoping, CTX-C11.) → AC12 covers scope; AC11 asserts thread_id persisted.
+18. **R18 — Thread-scoped summary retrieval (per D13's default).** [C] Summary-context reads
+    prefer/filter summaries for the active thread when a thread_id is known; `expand_summary`
+    accepts an optional thread scope and reports "not found" per scope explicitly. (Provenance:
+    helper summary methods — the app path; the Lesson-5 notebook's local variant is unscoped —
+    the decision between the two lives in Ledger D13, CTX-C11.) → AC12 covers scope; AC11
+    asserts thread_id persisted.
 
 **Post-build levers (body defaults, not Ledger rows — each carries its §5.5 lever-value
 branch):** distance strategy = cosine (branch 1, R16); loop toolbox k = 5 (branch 2, R9);
@@ -484,7 +487,8 @@ offline run.
 Coverage: every rule R1–R18 has ≥1 AC; every AC maps to a rule; every demonstrated failure
 mode F1–F10 (CTX-B) appears as a rule, a fixture seed, an AC, and a CTX-B entry. D-row
 invariants: D4→AC21, D5→AC2, D7→AC5, D8→AC5, D9→AC12, D10→AC15/AC16 (retrieval keyed on stored
-descriptions), D11→AC1/AC2/AC23, D12→AC25. D1–D3/D6 invariants are empty (nothing to test).
+descriptions), D11→AC1/AC2/AC23, D12→AC25. D1–D3/D6/D13 invariants are empty (nothing to
+test; D13's recoverability is owned by D9→AC12, and its default is exercised by AC11/AC12).
 
 ---
 
@@ -590,7 +594,7 @@ aware progression. The running example is a research assistant the notebooks nic
 8. **Toolbox k** (→ R9): manager default 3; registered tool signature default 3 with a docstring claiming 5; app loop retrieves 5; lesson prose says "typically 3–5". Body default 5 by lever branch 2.
 9. **Distance strategy** (→ R16): cosine in Lesson-3/4 store configs and Lesson-3 narration; Euclidean in Lesson-5/6 notebook configs and one Lesson-3 markdown key-components list. Body default cosine by lever branch 1 (narration of the introducing lesson). The clean-slate drop cells exist to guarantee strategy consistency across a lesson run — the consistency rule R16 keeps that guard without the wipe.
 10. **Search-and-store** (→ D12, R17): the web-search tool doesn't just return results — it writes each result into the knowledge base with title/url/score/query/timestamp so the agent "learns from its searches"; the arXiv deep-ingest tool applies the same pattern to full papers (chunk 1500/200), keeping large payloads out of model context.
-11. **Summary thread-scoping** (→ R18): the Lesson-5 notebook's local summary writer has no thread scope; the helper version used by the Lesson-6 app adds thread_id scoping and thread-filtered summary-context reads. The app path is the default.
+11. **Summary thread-scoping** (→ Ledger D13, R18): the Lesson-5 notebook's local summary writer has no thread scope; the helper version used by the Lesson-6 app adds thread_id scoping and thread-filtered summary-context reads. The app path is D13's default; the unscoped pool is its course-demonstrated alternative.
 12. **Instructor heuristics**: providers recommend exposing roughly 10–20 tools max for reliable selection; ~4 chars/token is a serviceable estimate (some models nearer 2); prompt wording determines summarization quality — vary it per problem; validate tool registration on a low-risk utility tool first; record workflows so the model doesn't "figure it out on the fly" each time.
 
 ### CTX-D. Perishable assumptions
