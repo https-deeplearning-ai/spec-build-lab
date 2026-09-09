@@ -116,6 +116,16 @@ Two property types, treated differently:
    (course, output path `experiments/<course>/<passname>/regen-<X>/spec.md`,
    guide commit hash). **N=1 while iterating** — a single regen suffices to
    find a leak.
+   **Model policy** (owner cost decision): run regen, scorer, and probe
+   subagents on a cheaper capable model (Opus-class), not the orchestrator's
+   model — the guide must pin properties for whatever model runs
+   `/generate-spec` later, so the cheaper regen is both the cost cut and the
+   more representative test. Record each regen's model in the matrix.
+   Escalate to a single orchestrator-model regen only when a failure is
+   ambiguous between guide wording and model capability — flag the spend to
+   the owner first; for a known-flaky property, apply the documented-residual
+   policy instead of tiebreaking (one expensive run proves nothing about a
+   coin flip).
 2. **Score**: spawn a fresh scorer subagent per regen (prompt template in
    `references/regen-prompt.md`): it reads only the matrix and the regen
    output, and must return a per-property verdict **with quoted line evidence**.
