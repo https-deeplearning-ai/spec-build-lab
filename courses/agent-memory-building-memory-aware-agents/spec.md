@@ -367,8 +367,13 @@ the contradiction is stated in place.
     error message on failure, and the loop iteration in metadata. The result fed back to the
     LLM is capped at **3 000 characters**; when truncated it carries the exact notice
     `[Truncated for context. Full output saved in TOOL_LOG_MEMORY as log_id: <id>]`.
-    Tool logs are **not** preloaded into context (JIT-only by default). Sources: helper
-    `write_tool_log`, L5 app loop. → AC17
+    Tool logs are **not** preloaded into context (JIT-only by default). Invocation also injects
+    **harness-known identity**: an agent-triggered operation that acts on the active thread
+    (`summarize_and_store`) receives the thread id from the harness at invocation, never as a
+    model-supplied argument — the model has no way to know the thread id, and a guessed one
+    silently consolidates nothing. [H — constraint added 2026-09-09 after AC21 caught the gap,
+    per the living-document rule.] Sources: helper `write_tool_log`, L5 app loop. → AC17;
+    thread injection is exercised end-to-end by AC21
 12. **R12 — Workflow capture and quality-filtered reads.** [C] (CTX-A) After any turn that
     executed ≥1 tool call, the harness writes a workflow record: the query, the ordered step
     strings (`<tool>(<args-preview>) → success|failed`), an answer excerpt capped at 200 chars,
