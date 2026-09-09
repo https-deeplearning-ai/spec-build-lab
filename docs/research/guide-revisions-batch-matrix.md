@@ -45,8 +45,14 @@ Pass bar: all properties present in both confirmation regens, evidence-labeled
 Stage-1 only (no new behavioral guard shipped): cold-start Opus build agent on a scratch copy
 of the edited spec must still stop at the gate with the new blockquote above §0.
 
+**Result: PASS** [verified from the subject's reply] — stopped with zero files written; presented
+baseline/customize across all 13 rows (D13 included); named the two course departures (store,
+web search) unprompted in the baseline option; relayed the new completion criterion accurately
+("no API key needed to finish — completion is defined by the offline pytest suite") and even
+surfaced the one-time embedding-model download. The orientation block does not weaken the gate.
+
 ## Rounds
 
 | Regen | Guide | Model | Result |
 |---|---|---|---|
-| A | 0cd5ff2 | Opus-class | _(running)_ |
+| A | 0cd5ff2 | Opus-class | **All six V-properties PRESENT [orchestrator greps, verified]**: V1 orientation lead is a true user-visible scene + fastest-path/completion verbatim-equivalent (L3, echoed §7 L671); V2 heavy-setup inline on 4 options (generalized past the two examples); V3 no current-model names, "model currency is a gate-time judgment" in D4, CTX-D request-parameter entry (L745, mined from materials); **V4 id alphabet pinned `^[0-9a-f]{8}$` + "alphabet is part of the contract" (R13) — G4 closed the 0/3 cross-model gap first try**; V5 all fixture modules importable; V6 D14 scope row, both sides + stakes reasoning — **G6 stabilized the subject**. P1 PARTIAL: 14 rows = all 13 canon subjects + an extra init-mode row (the documented judgment-boundary class; same subject as last pass's regen-C) — residual policy, no fix round |
