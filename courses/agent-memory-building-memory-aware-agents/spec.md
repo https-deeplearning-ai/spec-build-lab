@@ -47,14 +47,18 @@ not because they are the right choice for this person's project.
    an answer (a chosen option, an explicit "use the course default", or the step-2 baseline answer,
    which resolves every row at once). Answers to *some* rows do NOT release the build; "no reply
    yet" is not an answer — wait for the user.
-5. **Before the first line of code, print a resolved-decision checklist** — every Ledger row
-   with its final value (the user's choice, or its Ledger default), each line carrying a
-   deviation mark: `= course choice`, or `≠ course choice (course used: <option>)`. If the
-   baseline path was chosen, walk the person through every `≠` row — the course's actual
+5. **Before the first line of code, print a resolved-decision checklist AND write it to
+   `resolved-decisions.md` in the build folder** — every Ledger row with its final value (the
+   user's choice, or its Ledger default), each line carrying a deviation mark:
+   `= course choice`, or `≠ course choice (course used: <option>)`. Write it once every row is
+   resolved (step 4 satisfied); it is the only file you create before implementation begins.
+   The file is a **record, not an input**: a later build — new or resumed — re-runs this gate
+   from the spec and never reads a previous run's checklist, and each gate run overwrites it.
+   If the baseline path was chosen, walk the person through every `≠` row — the course's actual
    choice, and why this build's default substitutes it (the row's Trade-off/branch note says
-   why) — before building. Begin implementation ONLY after this complete checklist is shown;
-   if any row is unresolved you are not done — return to step 3. Build on the checklist's
-   values.
+   why) — before building. Begin implementation ONLY after this complete checklist is shown and
+   written; if any row is unresolved you are not done — return to step 3. Build on the
+   checklist's values.
 
 ---
 
@@ -542,7 +546,7 @@ python app.py --thread 50000             # interactive demo; scripted sequence p
 
 The building agent MUST report results **per acceptance criterion**, each with cited evidence:
 the test command run, the pass/fail output line, and relevant file paths (e.g. the SQLite file,
-a dumped ToolLogRow, the printed resolved-decision checklist from §0). "Should pass",
+a dumped ToolLogRow, `resolved-decisions.md` written at the §0 gate). "Should pass",
 "looks correct", or an unrun `live` AC reported as passing are treated as **failures** — they
 mean it wasn't run. `live` ACs skipped for lack of a key must be reported as *skipped (live)*,
 never as passed.

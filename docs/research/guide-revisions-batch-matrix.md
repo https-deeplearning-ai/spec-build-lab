@@ -81,3 +81,50 @@ First full keyed run in the lab: **AC4, AC9, AC19, AC22, AC24 PASSED live** [pyt
 verified]. AC21 failed deterministically (2/2) on the thread-identity gap above → spec + build
 fix → offline suite re-green (21/21) → AC21 rerun: **PASSED** (1 passed, 6m17s) — the live suite is 6/6; the course's headline
 cross-session continuity demo is demonstrated end-to-end for the first time [verified].
+
+## Post-validation addendum (2026-09-10): trial-driven fixes, added to the open PR
+
+Third evidence source this pass: a **disposable-clone trial** — the PR-#25 spec copied alone into
+an empty folder, built by a fresh session with zero project context (`~/learner-test`). Result:
+build green (**50 passed / 6 skipped**, live skips honest), independent eval **9/10**, exact-string
+contracts all character-correct, §5 fixtures byte-identical. Two defects in our owned assets
+surfaced, both fixed on this branch:
+
+**Fix A — R11 generalized (commit `eb953a0`).** The 2026-09-09 wording named `summarize_and_store`
+inside the normative clause; the trial built the general injection mechanism (schema-stripping +
+harness override) but applied it to that one tool, leaving `expand_summary` unscoped and weakening
+D13's isolation. Wording-discipline violation #2 (course specific instead of concept). Now: every
+thread-scoped agent-triggered operation, parameter absent from the model-facing schema, with
+genuinely model-held identifiers (summary ids) explicitly still model-supplied.
+
+**Fix B — the gate checklist becomes a durable artifact.** §0 said *print*; §7 cited "the printed
+checklist" as evidence — durable proof demanded of ephemeral output. Provenance: printed checklist
+is old (`e934873`), §7's citation arrived with `98d8815`, F12 only added deviation marks. Evidence
+of the resulting drift: the checklist landed in `resolved-decisions.md` (probe-2, spontaneously),
+inside `BUILD-REPORT.md` (run-09), and partially inside `README.md` (the trial) — three builds,
+three places, two of them files no spec mentions, so no eval could ever find it.
+
+**Owner decisions logged:** (i) the checklist is printed **and** written to a fixed-name file
+`resolved-decisions.md` in the build folder; (ii) it is a **record, never an input** — no build
+reads a previous checklist to resume; a new or resumed build re-runs the gate from the spec, and
+each gate run overwrites the file (no accumulation, no version-control noise: build folders are
+already gitignored).
+
+**Conscious property update (template-conformance, per the skill's verbatim-template rule):** the
+§0 property in the P2/T3 family now requires the emitted step 5 to carry the write-to-file
+requirement, the fixed filename, and the record-not-input clause. Not carried forward silently.
+
+**Accepted residual:** the *behavioral* test — does a build actually write the file — rides the
+next disposable-clone trial rather than a paid probe build. Prior evidence the behavior is
+natural: probe-2 wrote exactly `resolved-decisions.md` unprompted; the trial wrote a variant.
+
+**Deferred to the next pass (from the same trial):** D10's augmentation default ships untested
+(the offline stub cannot return augmentation JSON, and no live AC registers through a real model);
+AC7/AC11 depend on a "scripted summarizer stub" §5 never declares — **2/2 builds invented it**,
+so a share of the offline oracle rests on builder-authored fixture content; two §3/§4 prose
+constraints (summary-description minimum length, R6's 8-12-word band) have no AC behind them; and
+the guide-level generalization of R11 (harness-known identities are injected, never model-guessed).
+
+| Regen | Guide | Model | Result |
+|---|---|---|---|
+| D | (post-Fix-B guide commit) | Opus-class | _(running — template-conformance greps only, N=1 per the cost policy)_ |
