@@ -134,3 +134,43 @@ spec-only edit (its guide generalization is deferred), and regen-D contains **ze
 thread-injection language — so a spec generated from today's guide would ship exactly the gap the
 trial exposed. That is positive evidence for promoting the rule ("harness-known identities are
 injected, never model-guessed") in the next pass, where it gets its own validation round.
+
+### Fix B — corrected justification and trim (2026-09-10, after owner review)
+
+Two claims in the entry above were overstated when written; the record is corrected here rather
+than rewritten, so the reasoning trail stays honest.
+
+1. **"Makes gate compliance mechanically checkable" — retracted.** The file is forgeable: an
+   agent that skipped the gate entirely could write it at the end with all defaults, and the
+   delivered tree would look identical to a compliant build. Gate *behavior* is only testable by
+   observing the agent's replies (what the probes do). This framing has been removed from the
+   guide's §6.0 rule.
+2. **"Three builds wrote it unprompted (3/3)" — inflated.** Honestly: one clean instance
+   (probe-2, exact filename); one was the orchestrator's own run-09 build writing it into a
+   self-invented BUILD-REPORT.md (not independent evidence); one partial (the trial's README —
+   3 of 13 rows, no deviation marks, arguably evidence of weak demand). All three share a
+   confound: §0 already required *printing* a checklist, so writing it down is partly an echo of
+   that requirement, not independent demand.
+
+**The purpose that survives, and is what the wording now states:** a recoverable record of the
+values a build was built from, in a fixed place a reader knows to look, instead of whatever file
+the agent invents (three builds → three different locations, two of them files no spec mentions).
+It is a record, never an input (owner constraint).
+
+**Trim (owner directive — spec and guide have been growing):** Fix B's guide cost cut from +256
+to **+104 words** (the §6.0 bullet from 356 back to 263, vs 196 pre-fix); spec step 5 from +66 to
+**+26 words** (105 → 131). Guide/spec template text verified byte-identical after the trim, so
+regen-D's validation still covers the requirement set (the property is content-defined — file
+requirement, fixed name, record-not-input — not string-exact), and no re-validation was spent.
+
+**Deliberate economy, with its risk named:** the trimmed step 5 drops the explicit "write it once
+every row is resolved (step 4 satisfied); it is the only file you create before implementation"
+sequencing clause. Step 4 still says "create or edit no file" while waiting, so a pedantic build
+agent could read a conflict; step ordering plus "Before the first line of code" is judged
+sufficient (neither probe-2 nor regen-D showed confusion). If a build stumbles here, restore the
+clause with that evidence.
+
+**Batch size accounting (owner concern):** this batch took the guide 11,041 → 12,313 words
+(+11.5%) and the spec 9,773 → 10,528 (+7.7%). Worth watching: at this rate the guide doubles
+every ~6 batches, and §0/§6.0 — the sections learners called dense — carry a large share of the
+growth. Candidate for a future pass: a prose-economy sweep rather than only additive rules.
