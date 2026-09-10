@@ -127,4 +127,10 @@ the guide-level generalization of R11 (harness-known identities are injected, ne
 
 | Regen | Guide | Model | Result |
 |---|---|---|---|
-| D | (post-Fix-B guide commit) | Opus-class | _(running — template-conformance greps only, N=1 per the cost policy)_ |
+| D | 0813752 | Opus-class | **Fix B PASSES [orchestrator greps, verified]** — emitted §0 step 5 carries the write-to-file requirement and the fixed name (L54), the record-not-input clause verbatim (L58-59), and the spec's own §7/completion wording cites the file. It went **beyond** the template on its own initiative: a §6 **Never** entry "Read a previous run's `resolved-decisions.md` as build input." (L571) and a completion definition requiring the file to exist "with a line for all 14 Ledger rows carrying deviation marks" (L595) — i.e. a fresh generation independently made the artifact part of done-criteria, which is exactly the mechanical checkability the fix was for. 14 rows (all 13 canon subjects + an offline-model-client realization row — residual class, +1 direction) |
+
+**Fix A is unvalidated at guide level BY DESIGN and regen-D shows why it matters:** Fix A was a
+spec-only edit (its guide generalization is deferred), and regen-D contains **zero** harness
+thread-injection language — so a spec generated from today's guide would ship exactly the gap the
+trial exposed. That is positive evidence for promoting the rule ("harness-known identities are
+injected, never model-guessed") in the next pass, where it gets its own validation round.
