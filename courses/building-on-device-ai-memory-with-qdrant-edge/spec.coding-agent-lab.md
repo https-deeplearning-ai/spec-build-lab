@@ -20,7 +20,12 @@
 > **Provenance.** Generated from the *Building On-Device AI Memory with Qdrant Edge* notebook dump
 > (`L3`/`L4`/`L5` notebooks, `helper.py`, `requirements.txt`, `ro_shared_data/`), the five lesson
 > transcripts, and the slide descriptions, on **2026-09-11**, by spec-generation-guide commit
-> **`8e44ecb`**. Lesson numbers follow the **transcripts** (authoritative) — the slide decks carry a
+> **`8e44ecb`**. **Provenance caveat:** this file was written *before* the `--env=coding-agent-lab`
+> overlay existed, so its lab-specific decisions were made by hand rather than by rule. On
+> **2026-09-13** it was brought into conformance with overlay commit **`b0d88d6`** (the Environment
+> Resolutions table below, and AC8b). A clean-room regeneration under `/generate-spec
+> --env=coding-agent-lab` is still pending; until then, treat the sibling `spec.md` — generated
+> agnostically from the same materials — as the baseline this one departs from. Lesson numbers follow the **transcripts** (authoritative) — the slide decks carry a
 > *third*, earlier numbering that is off by one and must not be used (CTX-E). Slides are cited with
 > their status: **shown** (one of the 8 that appear in a lesson video) or **drafted** (one of the 15
 > that exist only in the decks) — a drafted slide never outranks shipped code or narration. Facts
@@ -87,12 +92,23 @@ These are the points where this build could diverge. Every row has a course-deri
 spec is buildable and evaluatable as-is; change a row only when you have reason to prefer another
 option. §0 above requires you to present all four rows before building.
 
-**Four rows, not ten.** The learner-context dimensions a standalone takeaway normally asks about —
-*project*, *data/inputs*, *goal*, *model/provider*, *environment* — are **fixed by the lab** and are
-not asked here: the project and goal are this spec's §1, the data is the §5 fixture corpus, the
-runtime is the AI Coding Lab container (see *Runtime environment*), and the course uses **no LLM at
-all**, so there is no model/provider to choose. See *Adapting this beyond the lab* in §1 for what to
-change if you take this spec elsewhere.
+### Environment Resolutions
+
+This spec targets the **AI Coding Lab**. The six learner-context dimensions a standalone takeaway
+carries were derived in full and then *resolved* against that environment — not skipped. The
+canonical nine-row Ledger is in this course's `spec.md`; five of its rows are answered below, which
+is why four remain.
+
+| Dimension | Resolution | Where its Invariant lives now |
+|---|---|---|
+| project | **ANSWERED** — the lab fixes the assignment | §1 Objective |
+| data/inputs | **ANSWERED** — inputs are seeded into the workspace | §5 fixture corpus |
+| goal | **ANSWERED** — the lab fixes what "working" means | §1 + the acceptance criteria |
+| model/provider | **CONSTRAINED** — agent models are the platform's set and this spec must work on all of them; the app itself needs no LLM, and the container's ambient provider keys must not be read | §2 + R2 + CTX-D |
+| environment | **ANSWERED** — the container | §2 + *Runtime environment*; the durability invariant moved to **D3** and **R12**, tested by AC12 |
+| scope-boundary | **KEPT** | stays a Ledger row — **D1** |
+
+See *Adapting this beyond the lab* in §1 for what to change if you take this spec elsewhere.
 
 | # | Category | Decision | Invariant (must hold) | Default (course-derived) | Options | Trade-off | Owner |
 |---|---|---|---|---|---|---|---|
@@ -292,7 +308,7 @@ acceptance criterion.
    model. Prevents dimension mismatches and the silent mixing of two score scales (CTX-B7). → AC1,
    AC4 · *course-demonstrated*
 4. **A question reaches both lanes by being embedded twice** — once with the text model, once with
-   the image-space text encoder — and each embedding queries only its own space (CTX-B7). → AC6, AC8
+   the image-space text encoder — and each embedding queries only its own space (CTX-B7). → AC6, AC8, AC8b
    · *course-demonstrated*
 5. **Results are presented as separate lanes, never one blended list**, and each lane is judged
    against its own cutoff: **0.6** for text and voice, **0.23** for photos. Scores from two different
@@ -437,6 +453,7 @@ the speech package and its model. Both tiers are keyless and offline after the o
 | AC7 | core | the ingested corpus | the same question is run with a filter of `category == "food"` **and** `price < 15` | exactly ids 4 and 6 come back — id 5 fails the price bound and id 12, which has no `price`, cannot satisfy the range condition |
 | AC7b | core | the ingested corpus, in which id 10 (the fig cutting) is the only `garden` point and is semantically unrelated to food | "somewhere to eat" is searched with a filter of `category == "garden"`, limit 3 | id 10 comes back. *This is the test that separates a filter applied **inside** the search from one applied to its results: id 10 would never enter an unfiltered top 3 for this question, so a post-filtered implementation returns nothing here and fails.* |
 | AC8 | core | the ingested photos | the image lane is queried with the stored vector of `circle_red_on_white.png` | that same point is the top hit with a score ≥ 0.99 |
+| AC8b | core | the 8 fixture photos stored | the image lane is queried with the **text** "a red circle" | `circle_red_on_white.png` outranks both `triangle_green_on_black.png` and `cross_black_on_white.png` — a typed description reaching the image space, which is the cross-modal half of R4 |
 | AC9 | core | the ingested corpus | a recall for "soup" is requested | the response validates against *recall-response*: exactly the three lanes, no id in more than one lane, every item carrying its own `weak` verdict, and both cutoffs reported |
 | AC10 | core | the ingested corpus | a recall runs with the text cutoff set above every returned score | every text item comes back with `weak: true`, none is presented as the answer, and none is dropped from the response |
 | AC11 | core | the ingested corpus and the top hit for "where did I leave the bike" | that memory is deleted and the question re-run | the previously second result is now first with its score unchanged to within 1e-6, the deleted id is absent, and the point count has dropped by exactly one |
