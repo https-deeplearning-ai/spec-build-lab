@@ -45,11 +45,20 @@ supported automatically — see "Building" below.
   Writes nothing under `materials/transcripts/`, which stays a manual download.
 - `/generate-spec` — reads `materials/notebooks/` and `materials/transcripts/`,
   follows `.claude/skills/generate-spec/references/spec-generation-guide.md`, and
-  writes `spec.md`.
+  writes `spec.md`. Pass `--env=<slug>` to generate for a known build
+  environment instead of the agnostic learner takeaway: it additionally reads
+  the overlay `references/spec-generation-guide.<slug>.md` and writes
+  `spec.<slug>.md`, leaving `spec.md` alone. The overlay declares what it
+  overrides in the base guide; **the base guide is never edited for an
+  environment.** Environment profiles live at `environments/<slug>.md` — one
+  per target, shared across courses, deliberately outside any `materials/`.
 - `/prepare-build` — the expected, explicit way to start a build run; allocates
   the run and drops a session breadcrumb at `evals/run-NN/.session` (see below).
   It will also fire on its own if the user just starts building against `spec.md`,
-  but treat the explicit call as the norm.
+  but treat the explicit call as the norm. Takes the same `--env=<slug>` as
+  `/generate-spec`: it then prepares the run from `spec.<slug>.md`. The snapshot
+  and working copy are still named `spec.md`, so the build agent and both eval
+  skills are unaffected by which spec a run came from.
 - `/extract-build-log <run-NN>` — slices the build conversation out of Claude
   Code's session transcript and writes `evals/run-NN/session-log.md`. Run when
   the build is in a state worth capturing. Re-runnable with different bookends
@@ -141,13 +150,16 @@ would leak course content into the docs themselves.
 - `evals/run-NN/` is generated to match the build. The run number is the join key
   between a build and its evaluation — keep them aligned. Evals require an explicit
   `run-NN`; if none is given, list the runs in `builds/` and ask — never default.
-- **Version control:** per course, only `spec.md`, `materials/`, and an optional
-  `spec.coding-agent-lab.md` are tracked. The latter is a variant of the canonical
-  spec for exploring a Decision Ledger change (e.g. removing an Options entry)
-  without touching `spec.md` itself — same filename across every course, so it
-  needs no per-experiment `.gitignore` edit. Everything else under
-  `courses/<name>/` — `builds/`, `evals/`, scratch — is gitignored and stays
-  local to the machine that ran the build.
+- **Version control:** per course, only `spec.md`, `materials/`, and any
+  `spec.<variant>.md` are tracked (the negation is a wildcard, so a new variant
+  needs no `.gitignore` edit). A variant is one of two things: a **hand-edited**
+  exploration copy of the canonical spec, for trying a Decision Ledger change
+  (e.g. removing an Options entry) without touching `spec.md` itself; or a
+  **generated** environment spec from `/generate-spec --env=<slug>`, named
+  `spec.<slug>.md`. Everything else under `courses/<name>/` — `builds/`,
+  `evals/`, scratch — is gitignored and stays local to the machine that ran the
+  build. `environments/` is tracked and sits outside `courses/` — one profile
+  per build target, not per course.
 
 ## Run numbering
 `run-NN` is per course (`run-01`, `run-02`, …). Every new build is a new run —

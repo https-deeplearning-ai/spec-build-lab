@@ -16,6 +16,9 @@ description: >
   PROACTIVELY — treat any clear build intent as the trigger. Do NOT
   use this skill to run an existing build, build a docker image, or
   build features in unrelated projects.
+  Pass --env=<slug> to prepare a build from that environment's spec
+  variant (spec.<slug>.md) instead of the canonical spec.md.
+argument-hint: "[--env=<slug>]"
 allowed-tools: [Bash, Read]
 ---
 
@@ -27,10 +30,20 @@ Does NOT start the build — building is the agent's subsequent work.
 
 ## Steps
 
+0. **Parse `--env=<slug>`, if given.** Pass it only if the user supplied
+   one — never synthesize a slug. It selects the *source* spec for this
+   run: with a slug the source is `spec.<slug>.md`, without one it is
+   `spec.md`. Call that file SOURCE_SPEC below. The slug changes nothing
+   else: the snapshot and working copy are always named `spec.md`, so
+   the build agent and both eval skills are unaffected.
+
 1. **Verify cwd is a course folder.** Confirm all exist relative to cwd:
-   `spec.md`, `builds/`, `evals/`, `materials/`. If any are missing,
-   refuse with: "Run /prepare-build from inside a course folder —
-   `cd courses/<name>` first." Stop.
+   SOURCE_SPEC (i.e. `spec.md`, or `spec.<slug>.md` with a flag),
+   `builds/`, `evals/`, `materials/`. If any are missing, refuse with:
+   "Run /prepare-build from inside a course folder — `cd courses/<name>`
+   first." Stop. If SOURCE_SPEC is the only thing missing and a sibling
+   `spec.*.md` exists, say which variants are present and name the
+   `--env=<slug>` that selects one, instead of just reporting absence.
 2. **Allocate the next run number.**
    ```bash
    highest=$(ls -1 builds/ 2>/dev/null | grep -E '^run-[0-9]+$' \
@@ -40,9 +53,14 @@ Does NOT start the build — building is the agent's subsequent work.
 3. **Create the run dirs and snapshot the spec.**
    ```bash
    mkdir -p "builds/$next" "evals/$next"
-   cp spec.md "evals/$next/spec.md"   # frozen snapshot, read by /eval-spec-vs-build
-   cp spec.md "builds/$next/spec.md"  # working copy, read by the build agent
+   cp "$SOURCE_SPEC" "evals/$next/spec.md"   # frozen snapshot, read by /eval-spec-vs-build
+   cp "$SOURCE_SPEC" "builds/$next/spec.md"  # working copy, read by the build agent
    ```
+   `SOURCE_SPEC` is `spec.md`, or `spec.<slug>.md` when `--env=<slug>`
+   was given (step 0). **Both destinations are always named `spec.md`** —
+   the filename is normalised here, which is why nothing downstream
+   (the build agent, `/eval-spec-vs-build`, `/eval-materials-vs-build`)
+   needs to know an environment variant was involved.
    The eval snapshot at `evals/$next/spec.md` is judged against later by
    `/eval-spec-vs-build`, so the run is judged against the spec it was
    actually built from even if `spec.md` is regenerated. The working
@@ -85,6 +103,9 @@ Does NOT start the build — building is the agent's subsequent work.
 ## Don't
 
 - Don't generate or modify `spec.md` here — that's `/generate-spec`.
+- Don't rename the snapshot or working copy after an `--env` run. Both
+  stay `spec.md`; say in the announcement which source they came from,
+  so the run's provenance is in the transcript.
 - Don't ask the user for a run number — allocation is automatic.
 - Don't reuse an existing run-NN folder. Every new build is a new run,
   even with the same `spec.md`, so runs and their evals can be compared.
