@@ -29,12 +29,13 @@ another engineer (or coding agent) can implement end-to-end.
 ## Steps
 
 0. **Parse `--env=<slug>`, if given.** Pass it only if the user supplied one —
-   never synthesize a slug. With a slug, resolve
+   never synthesize a slug. With a slug, resolve **both** halves of the overlay
+   relative to `$CLAUDE_PROJECT_DIR`:
    `.claude/skills/generate-spec/references/spec-generation-guide.<slug>.md`
-   relative to `$CLAUDE_PROJECT_DIR`. If that file does not exist, refuse with
-   "No environment overlay named `<slug>`." plus the list of
-   `spec-generation-guide.*.md` overlays that do exist. Stop. Without a flag,
-   every step below runs exactly as written and the output is `spec.md`.
+   (the rules) and its `.runtime.md` companion (the environment's facts). If
+   either is missing, refuse with "No environment overlay named `<slug>`." plus
+   the list of overlays that do exist. Stop. Without a flag, every step below
+   runs exactly as written and the output is `spec.md`.
 
 1. **Verify cwd is a course folder.** Confirm all of these exist relative to
    cwd: `materials/notebooks/`, `materials/transcripts/`, `builds/`,
@@ -49,8 +50,11 @@ another engineer (or coding agent) can implement end-to-end.
    here; defer to the guide so the two files can't drift.
 
    **With `--env=<slug>`:** after reading the base guide in full, also read the
-   overlay resolved in step 0, and follow its precedence rules. The base guide
-   is never edited for an environment; the overlay declares what it overrides.
+   overlay's **rules** file resolved in step 0, and follow its precedence rules.
+   Do **not** open the `.runtime.md` companion here — the rules file says when,
+   and reading its facts early corrupts the derivation they are meant to resolve.
+   The base guide is never edited for an environment; the overlay declares what
+   it overrides.
 3. **Read every material.** Glob `materials/notebooks/**/*` and
    `materials/transcripts/**/*`, then read each non-empty file. If both
    directories are empty (only `.gitkeep`), refuse with: "No materials

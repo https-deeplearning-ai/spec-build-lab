@@ -3,15 +3,18 @@
 **Applies only when `/generate-spec` is invoked with `--env=coding-agent-lab`.** Without that
 flag this file is not read and the base guide governs alone.
 
-Source of the facts below: `environments/coding-agent-lab.md` §4, §5.1, §6, §9.
-Written against base guide **`8e44ecb`**.
+Written against base guide **`8e44ecb`**. This file carries the **rules**; its companion
+`spec-generation-guide.coding-agent-lab.runtime.md` carries the environment's **facts**, and is
+opened later, at OVERRIDE 2 Phase 2. Both are distilled from `environments/coding-agent-lab.md`.
 
 ---
 
 ## How to read this file
 
 Read the base guide first, in full:
-`.claude/skills/generate-spec/references/spec-generation-guide.md`. Then read this file.
+`.claude/skills/generate-spec/references/spec-generation-guide.md`. Then read this file — all of
+it. **Do not open the `.runtime.md` companion yet**; OVERRIDE 2 says when, and the facts it holds
+must not be in play while the six learner-context dimensions are being derived.
 
 **Precedence**
 
@@ -71,12 +74,14 @@ Base guide `8e44ecb` §5.5 **Procedure** reads, verbatim:
 **Phase 1 — derive all six, exactly as the base guide requires.** Project, data/inputs, goal,
 model/provider, environment, scope-boundary. Each gets its Invariant (the pattern's capability
 requirements on that dimension, empty when the pattern demands nothing) and its course-derived
-default. **Do this before reading the RUNTIME FACTS section of this file.** A dimension you have
-not written down cannot be resolved, and an unresolved dimension disappears without trace — that
-is the exact failure this ordering prevents.
+default. **Do all of this before opening `spec-generation-guide.coding-agent-lab.runtime.md`.**
+A dimension you have not written down cannot be resolved, and an unresolved dimension disappears
+without trace — that is the exact failure this ordering prevents. The facts live in a separate
+file precisely so this ordering is enforceable: you cannot un-read a section of a file you were
+told to read in full.
 
-**Phase 2 — resolve each of the six** against the Resolutions below, and emit the resolution
-table into the spec (ADD 1). A dimension is resolved in one of three ways:
+**Phase 2 — now open `spec-generation-guide.coding-agent-lab.runtime.md`**, then resolve each of
+the six against the Resolutions in ADD 1 and emit the resolution table into the spec. A dimension is resolved in one of three ways:
 
 - **ANSWERED** — the lab fixes it. The row leaves the Ledger, and **its Invariant must land
   somewhere named**: a spec section, a business rule, or another Ledger row's Invariant. An
@@ -104,9 +109,25 @@ and then resolved, not skipped.
 | project | **ANSWERED** — the lab fixes the assignment | spec §1 Objective |
 | data/inputs | **ANSWERED** — inputs are seeded into the workspace | spec §5 fixture corpus |
 | goal | **ANSWERED** — the lab fixes what "working" means | spec §1 + the acceptance criteria |
-| model/provider | **CONSTRAINED** — see RUNTIME FACTS | spec §2 (+ CTX-D) |
+| model/provider | **CONSTRAINED or KEPT** — decide by the test below | spec §2 (+ CTX-D), or a Ledger row |
 | environment | **ANSWERED** — the container | spec §2 + the Runtime section; capability invariants move to the rows that need them |
 | scope-boundary | **KEPT** | stays a Ledger row |
+
+**The model/provider row resolves conditionally — do not assume CONSTRAINED.** This environment
+fixes the model *the coding agent itself* runs on, and supplies ambient LLM credentials to the
+built app. It fixes **nothing** about models the course's own pipeline uses. So apply this test:
+
+- **Does the built app need an LLM?** → **CONSTRAINED.** Platform models only; keys and base URLs
+  read from the environment; never ask the learner for one. The row leaves the Ledger and the
+  constraint becomes a business rule with ≥1 AC.
+- **Does the course's pipeline need no LLM at all?** → the dimension is about the course's *own*
+  models — embedding, speech, vision — which this environment does not fix. It stays **KEPT** as
+  an ordinary Ledger row with its course-derived default, *plus* a business rule stating that the
+  ambient provider keys are present and must not be read.
+
+Getting this wrong deletes a legitimate learner decision: a course whose models are local
+encoders has a real choice here, with a real invariant and a real switching cost (changing one
+means re-embedding every stored item).
 
 The generated spec must also carry a short *"Adapting this beyond the lab"* note in §1, naming
 where each ANSWERED or CONSTRAINED dimension now lives, so a reader taking the spec elsewhere
@@ -138,78 +159,12 @@ Run the base §14 checklist in full, then these:
 - [ ] The provenance header pins **both** the base guide's commit and this overlay's.
 - [ ] §1 carries the "Adapting this beyond the lab" note.
 
----
-
-## RUNTIME FACTS
-
-**Do not read this section until Phase 1 of OVERRIDE 2 is complete** — all six dimensions
-derived and written down.
-
-Distilled from `environments/coding-agent-lab.md`. Everything here is `[environment]`.
-
-### The question mechanism — feeds base §6.0 unchanged
-
-Base §6.0 already requires a structured question tool "if you have one". This environment has
-one, so **this is an input to that rule, not an override of it.** The mechanism is a fenced
-` ```choices ` block:
-
-- Explanation in prose *above* the fence; the fence is **last** in the message; one option per
-  line; the turn ends there.
-- A line `**Question N of M — <decision>**` before the fence renders a question box. Use it, so
-  learner and agent can both see nothing was skipped.
-- A click sends the option line verbatim; a typed answer naming an option counts identically.
-  The generated spec must say so.
-- Only the **latest** assistant message's buttons stay live. A spec must never ask anyone to go
-  back and change an earlier answer — re-ask as a new question.
-- Never put a `choices` fence inside the spec's own examples in a way that implies the learner
-  brief carries one; the fence is parsed only in assistant chat messages.
-
-### The container — feeds spec §2
-
-Debian, non-root user, Node 22, Python 3 with venv, sqlite3, git, build tooling.
-**Preinstalled:** `fastapi`, `uvicorn`, `python-dotenv`, `openai`, `anthropic`; Node `express`,
-`cors`, `better-sqlite3`, `vite`, `nodemon`. **Nothing else** — no vector stores, no embedding
-models, no ML frameworks.
-
-Outbound network works, so installs and one-time model downloads succeed, but each costs the
-learner wall-clock time inside the session. A spec whose stack needs anything beyond the
-preinstalled set must say so in §2 and tell the build agent to batch the install early and
-announce its cost. Create venvs with `--system-site-packages` so the preinstalled stack is
-reusable.
-
-Memory is finite and shared with the agent's own process. A spec whose pipeline can hold several
-models resident at once must carry a business rule releasing one before loading the next.
-
-### Model / provider — the CONSTRAINED resolution
-
-The learner picks the *agent's* model per conversation from the platform's set; a spec must work
-across all of them, or say in its own text which it assumes. **Never bake a "current best" model
-name into the spec** — base §6.0's gate-time "(Recommended)" flag already owns model currency.
-
-The container exports provider API keys and their base URLs. If the built app needs an LLM, the
-spec says: read keys and base URLs from the environment, use a platform model, **never ask the
-learner for a key**. If the course's pipeline needs no LLM, the spec says that plainly and adds
-a rule that the ambient keys are not to be read.
-
-### The app preview — feeds spec §4 business rules
-
-- **One server, port 4000, bound to `0.0.0.0`**, serving both the page and the API. Nothing
-  else is previewable.
-- **Every URL inside the page must be relative** (`api/thing`, never `/api/thing`). The preview
-  is reverse-proxied under a path prefix, so a root-absolute path resolves against the IDE.
-  This is the single most common way a working app appears broken; it belongs in the spec as a
-  numbered business rule with an acceptance criterion, not as a note.
-- HTTP only — WebSocket upgrades are not proxied. Streaming responses work.
-
-### The workspace — feeds spec §6 permissions
-
-- **The workspace is the record.** A new chat starts with no memory of an earlier one, and the
-  grader sees only what is on disk. Decisions, resolved values and results must be written to
-  files, not left in chat. Base §6.0 already requires `resolved-decisions.md`; state *why* it is
-  load-bearing here.
-- **Never author `AGENTS.md`** in the workspace — the IDE rewrites it at every boot, so guidance
-  placed there is silently lost. This belongs in the spec's **Never** tier.
-- Every tool call is visible to the learner, and long-running servers run in the background.
+**Where base §14's learner-row items apply in this mode.** Two of its lines assume six rows exist
+— *"learner-context rows carry only the pattern's §3 capability requirements"* and *"every
+non-empty row Invariant is exercised by ≥1 AC"*. With dimensions resolved, read them against the
+**Environment Resolutions table** instead: an ANSWERED or CONSTRAINED dimension discharges both
+obligations at its **named home**, and a KEPT dimension discharges them as an ordinary Ledger
+row. Neither line is waived; only its target moves.
 
 ---
 
