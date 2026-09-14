@@ -1,128 +1,107 @@
-# Spec: On-Device Multimodal Memory — Standalone Takeaway
+# Spec: On-Device Memory Assistant — Standalone Takeaway
 
-> **What you're building.** Something you can ask *"where did I leave the bike?"* — and a note
-> from this morning, a voice memo, and a photo come back side by side, each with its similarity
-> score, the weak ones dimmed rather than dressed up as answers. Show it two photos of an object
-> and hold a third back, and it names the third. Delete a memory and watch the next-best answer
-> move up. No LLM anywhere in the pipeline: every answer comes out of vectors on local disk.
+> **What you're building.** You type — or speak — a question like *"where did I leave the spare charger?"* and the app answers by handing back the note, the voice memo, or the photo from your own captures that actually holds the answer, ranked by meaning, with the most recent memory winning when two of them disagree. It runs as one process on your own machine, with no model API, no server, and no network once the local models are on disk. **Fastest path:** answer the first question of the pre-build gate below with *"recommended baseline build"* and the whole thing gets built end to end from this file alone. **The build is COMPLETE when the offline acceptance suite passes.** A credential unlocks only the `live`-tagged tests (the optional server-sync realization on Ledger row D7) and live use of the finished app against your own data — never any part of completion.
 >
-> **Fastest path.** Answer the §0 gate's first question with the **recommended baseline build**
-> and this gets built end-to-end with no further decisions. The build is **complete when the
-> offline test suite passes** — nothing here needs an API key, an account, or a network call at
-> query time; the only network use is the one-time model download.
+> **This file is self-contained.** The embedded **Course Context Pack** replaces every reference to the course: you do not need the notebooks, the videos, or the platform to build this.
 >
-> **This file is self-contained.** The embedded **Course Context Pack** (`CTX-A`…`CTX-E`, at the
-> end) replaces every external course reference — nothing here requires the course platform, its
-> notebooks, or its transcripts. `(CTX-X)` anchors mark course-derived knowledge. The **Decision
-> Ledger** below holds every point where this build could legitimately diverge, each pinned to
-> one course-derived default, so the spec is buildable and evaluatable **as-is** with no intake.
-> `[bracketed]` values mark where you may substitute your own.
+> **(CTX-X) anchors** mark knowledge derived from the course materials. The **Decision Ledger** below holds every point where this build could legitimately diverge, each pinned to exactly one course-derived default, so the spec builds and evaluates as-is with zero intake from you.
 >
-> **Provenance.** Generated from the *Building On-Device AI Memory with Qdrant Edge* notebook
-> dump (`L3`/`L4`/`L5` notebooks, `helper.py`, `requirements.txt`, `ro_shared_data/`), the five
-> lesson transcripts, and the slide descriptions, on **2026-09-13**, by spec-generation-guide
-> commit **`8e44ecb`**. Lesson numbers follow the **transcripts** (authoritative) — the slide
-> decks carry a *third*, earlier numbering that is off by one and must not be used (CTX-E).
-> Slides are cited as **shown** (one of the 8 appearing in a lesson video) or **drafted** (one of
-> the 15 existing only in the decks); a drafted slide never outranks shipped code or narration.
+> **Provenance.** Generated from the *Building On-Device AI Memory with Qdrant Edge* notebook dump (`sc-Qdrant-C3-notebook-context.md`), transcripts (`sc-Qdrant-C3-transcripts.md`, five lessons) and slide descriptions (`sc-Qdrant-C3-slide-descriptions.md`) on 2026-09-14, by spec-generation-guide.md at repo commit `8e44ecba383841fd78b6fc157a331f94d0ab5f68`.
 
 ---
 
 ## 0. Before you build — REQUIRED (do this first)
 
-You are the build agent. Before writing ANY code, you MUST surface the design decisions in the
-Decision Ledger (next section) to the person you are building for. Do **not** skip this because
-the defaults look complete — the defaults exist so the build is *reproducible*, not because they
-are the right choice for this person's project.
+You are the build agent. Before writing ANY code, you MUST surface the design decisions
+in the Decision Ledger (next section) to the person you are building for. Do **not** skip
+this because the defaults look complete — the defaults exist so the build is *reproducible*,
+not because they are the right choice for this person's project.
 
-1. **Use a structured question tool if you have one.** If your environment offers an interactive
-   structured-question tool (e.g. Claude Code's `AskUserQuestion`, or the equivalent in yours),
-   you MUST use it for the questions below — do not paraphrase them into a prose paragraph. Only
-   if no such tool exists, list the rows in your reply and ask the user to respond to each.
+1. **Use a structured question tool if you have one.** If your environment offers an
+   interactive structured-question tool (e.g. Claude Code's `AskUserQuestion`, or the equivalent
+   in yours), you MUST use it for the questions below — do not paraphrase them into a prose
+   paragraph. Only if no such tool exists, list the rows in your reply and ask the user to
+   respond to each.
 2. **First question — recommended baseline build, or customize?** Ask exactly one question with
    two options: the **recommended baseline build** — every Ledger row resolves to its Default:
    mostly the course's own choices, with a lighter stand-in wherever the course's choice needs
-   setup you may not have; the step-5 checklist marks exactly where the baseline differs from
-   the course — or **customize** the decisions row by row. If the user chooses the baseline, skip
-   step 3 — go straight to the step-5 checklist and build. If the user chooses customize,
-   continue with step 3.
-3. **Present the Ledger ONE ROW AT A TIME — one question per row.** For each row ask a single
-   question: the **Decision** as the prompt, its **Options** as the choices. Append "(course
-   default)" to the option the course actually used — on a substitution row that is the
-   course-faithful Options entry, not the Ledger Default. You may also mark an option
+   setup you may not have (a paid API key, an admin-provisioned service); the step-5 checklist
+   marks exactly where the baseline differs from the course — or **customize** the decisions row
+   by row. If the user chooses the baseline, skip step 3 — go straight to the step-5 checklist
+   and build. If the user chooses customize, continue with step 3.
+3. **Present the Ledger ONE ROW AT A TIME — one question per row.** This Ledger has **11 rows
+   (D1–D11)**, so that is **11 separate questions**. For each row ask a single question: the
+   **Decision** as the prompt, its **Options** as the choices. Append
+   "(course default)" to the option the course actually used — on a substitution row that is
+   the course-faithful Options entry, not the Ledger Default. You may also mark an option
    "(Recommended)" — your judgment for THIS person's context, made now, at gate time; with no
-   contextual reason to depart, recommend the row's Default. When your recommended option IS the
-   course's actual choice, merge the labels into "(Recommended - course default)". A
+   contextual reason to depart, recommend the row's Default. When your recommended option IS
+   the course's actual choice, merge the labels into "(Recommended - course default)". A
    recommendation never removes or moves the "(course default)" label, and no option is ever
-   labeled with a bare "(default)" — these two labels and their merged form are the only option
-   labels. Use the answers already given (project, data, goal, …) to frame later questions and
-   describe options in the person's own terms — but never skip a row, drop or alter an Option, or
-   move the "(course default)" label because of an earlier answer. Put any realizations beyond
-   the tool's option slots (or the free-form case) under the tool's "Other"/free-text. Ask about
-   **every** row. A per-call item limit is NEVER a reason to drop, skip, merge, or silently
-   default a row — make as many separate calls as there are rows.
+   labeled with a bare "(default)" — these two labels and their merged form are the only
+   option labels. Use the answers already given (project, data, goal, …) to frame
+   later questions and describe options in the person's own terms — but never skip a row, drop
+   or alter an Option, or move the "(course default)" label because of an earlier answer. Put
+   any realizations beyond the tool's option slots (or the free-form case) under the tool's
+   "Other"/free-text. Ask about **every** row. A per-call item limit is NEVER a reason to drop,
+   skip, merge, or silently default a row — make as many separate calls as there are rows.
 4. **Presenting any of these questions ENDS YOUR TURN — stop here; write no code, create or edit
    no file, take no other build action.** Keep asking, one row at a time, until **every** row has
-   an answer (a chosen option, an explicit "use the course default", or the step-2 baseline
-   answer, which resolves every row at once). Answers to *some* rows do NOT release the build;
-   "no reply yet" is not an answer — wait for the user.
+   an answer (a chosen option, an explicit "use the course default", or the step-2 baseline answer,
+   which resolves every row at once). Answers to *some* rows do NOT release the build; "no reply
+   yet" is not an answer — wait for the user.
 5. **Before the first line of code, print a resolved-decision checklist and write it to
    `resolved-decisions.md`** — every Ledger row with its final value (the user's choice, or its
-   Ledger default), each line carrying a deviation mark: `= course choice`, or `≠ course choice
-   (course used: <option>)`. The file records what this build was built from; nothing reads it
-   back — a later build re-runs this gate. If the baseline path was chosen, walk the person
-   through every `≠` row — the course's actual choice, and why this build's default substitutes
-   it (the row's Trade-off/branch note says why) — before building. Begin implementation ONLY
-   after this checklist is shown and written; if any row is unresolved you are not done — return
-   to step 3. Build on the checklist's values.
+   Ledger default), each line carrying a deviation mark: `= course choice`, or
+   `≠ course choice (course used: <option>)`. The file records what this build was built from;
+   nothing reads it back — a later build re-runs this gate. If the baseline path was chosen,
+   walk the person through every `≠` row — the course's actual choice, and why this build's
+   default substitutes it (the row's Trade-off/branch note says why) — before building. Begin
+   implementation ONLY after this checklist is shown and written; if any row is unresolved you
+   are not done — return to step 3. Build on the checklist's values.
 
 ---
 
-## Decision Ledger
+## Decision Ledger (§0 above requires the build agent to present these before building)
 
-These are the points where this build could diverge. Every row has a course-derived default, so
-the spec is buildable and evaluatable as-is; change a row only when applying to a real project or
-when you have reason to prefer another option. §0 above requires you to present all nine rows
-before building.
+These are the points where this build could diverge. Every row has a course-derived default, so the spec is buildable and evaluatable as-is; change a row only when applying to a real project or when you have reason to prefer another option.
 
 | # | Category | Decision | Invariant (must hold) | Default (course-derived) | Options | Trade-off | Owner |
 |---|---|---|---|---|---|---|---|
-| **D1** | learner | **Project** `[project]` — what you're building. The Default is the course's *example shape* re-expressed on this spec's own synthetic fixtures; expect to swap it when applying to a real project. | *(none — the pattern imposes no requirement on what the memories are about)* | **A personal multimodal memory assistant**: a day of captures (text notes, voice notes, photos) stored on-device and recalled by typed question, plus object recognition taught from a few photos. | 1) The default assistant **(course default shape)**. 2) A domain-specific memory (field inspection log, lab notebook, asset catalogue, support-ticket recall). 3) Free text — describe yours. | Swapping the project changes the fixture corpus (D2) and the wording of the acceptance criteria, but not the pattern: every business rule below survives unchanged. | learner |
-| **D2** | learner | **Data / inputs** `[data]` — what it remembers, and where that lives. Default is this spec's authored fixture corpus, expected to be swapped for real captures. | Inputs must be reducible to **text, still images, or speech**; speech becomes text at ingest (R10). Anything else needs its own encoder and its own named vector space. | **The §5 fixture corpus** — 13 authored notes (10 text, 3 voice) and 10 generated images, all facts invented here. | 1) The fixture corpus **(the spec's own; no course data is copied)**. 2) Your own exported notes/photos/audio. 3) A live capture source (camera frames, a notes app export). | Real data invalidates nothing structural, but the ACs that quote fixture facts must be re-pointed, and absolute similarity scores shift — see the standing rule in §5 about asserting order, not magnitudes. | learner |
-| **D3** | learner | **Goal** `[goal]` — what "working" means. | Retrieval must be **semantic, not lexical**: a question that shares no words with the memory must still find it (CTX-A). | **Recall the day and recognise a taught object, offline, by similarity alone** — three ranked lanes with per-lane cutoffs, plus a threshold-gated recognition verdict. | 1) Recall + recognition, the default. 2) Recall only (retires AC13–AC15). 3) Recognition only (retires AC5–AC11, AC16–AC17). | Dropping a half halves the build and the acceptance set; the remaining half is unchanged. Adding a goal the course never demonstrated means this spec supplies no parameters or criteria for it. | learner |
-| **D4** | learner | **Model / provider** `[model]` | The text encoder must apply **distinct document and query transformations** (R9) and expose a fixed dimensionality; the image encoder must be **joint text–image** — a typed description and a photo must land in one comparable space (CTX-A). **No LLM is required anywhere in this pipeline.** | **Local CPU models, no account and no key**: a 768-dimension text embedder and a 512-dimension joint image/text encoder, plus a small local speech-to-text model for voice. The course's own choices; see §2 for the exact names and CTX-D for their perishability. | 1) The course's local models **(Recommended - course default)** — keyless, offline after first download. 2) Other local models of your choice, with their own widths. 3) A hosted embedding API *(heavy setup: needs an API key and a network call on every ingest and every query — it also breaks the offline guarantee in D5's invariant).* | Changing an encoder means **re-embedding every stored memory**; scores recorded before the change stop being comparable with scores after it. Widths in §2 and the store config must move together. A hosted API additionally makes recall depend on the network. | course+learner |
-| **D5** | learner | **Environment** `[environment]` — where it runs. | **All memories must survive the process exiting** and be readable by a new process from the same location (R12). After the one-time model download, storing and recalling must need **no network and no credential**. | **A local machine** — Python ≥ 3.12, CPU only, memories in a directory under the project. | 1) A local machine **(course default)**. 2) A small single-board device (the course's own framing — the memory loop is unchanged; only capture and interface differ). 3) A container or server you control. | The pattern is indifferent; what changes is the compute and storage budget and how you get data in. A device with less memory may need the models loaded one at a time (R11). | learner |
-| **D6** | learner | **Scope boundary** `[scope-boundary]` — *gate instruction:* when asking this row, present the §1 "Not Included" list **item by item inside the question**, then ask whether to build exactly that scope or bring something back. | *(none)* | **Keep as-is**: every §1 exclusion stands and the full acceptance set is built. | 1) Build the scope exactly as §1 defines it. 2) Bring back one or more excluded items — say which. Free text may also add a *new* exclusion. | Each restored item adds build time and, unless §1 says otherwise, arrives with no acceptance criteria of its own. A new exclusion must name the ACs it retires. | learner |
-| **D7** | design-argued | **Memory locality** — on the device only, or on the device with sync to a server. | Recall and recognition must work with **no network and no credentials** once the models are on disk. | **On-device only** — an embedded store in a directory, no server, no cluster, no credentials. *§3 dependency precedence: no substitution needed — the course's own demonstrated choice is already the lightest self-contained realization (tier 2, an embedded library: package-manager install, no separate process, no credential), so it stands unchanged.* | 1) On-device only **(course default)**. 2) On device **plus** sync to a server *(heavy setup: a reachable cluster URL and an API key you must hold; Lesson 1 names this path and the course ships helper functions for it, but no notebook in the supplied materials runs it).* | Lesson 1 argues both sides aloud: local works with no connection, recall is faster and more reliable, and private memories stay private; server sync buys sharing between devices and more compute and storage than a small device has. The instructor's framing: "for today, we will only be working locally… you can always use cloud and local retrieval combined together if your use case requires it." Switching later means re-uploading every point and taking on a credential. | course+learner |
-| **D8** | design-structural | **Memory topology** — one store holding both vector spaces, or a separate store per purpose. | Text and image embeddings must live in **separate named vector spaces**, each with its own dimensionality and its own score scale; one question must be able to reach both lanes; every stored memory must survive a restart (cross-ref D5). | **One store** declaring both named spaces — what the course's end-to-end assistant does (Lesson 5, §4). | 1) One store, both named vector spaces **(course default for the finished assistant)**. 2) A separate store per purpose — which is what the course itself does in Lesson 5 §1, building object recognition in its own store before folding the taught object into the assistant's store. | Separate stores isolate recognition from recall and let either be wiped alone, but a question then has to be fanned out and merged by hand, and a memory that is *both* a photo and a note (the course's taught object carries both vectors on one point) has to be written twice and kept in step. | course+learner |
-| **D9** | design-structural | **Ranking** — similarity alone, or similarity with a freshness boost. | When two memories carry the same kind of fact, ranking must be able to prefer the more recent **without letting recency outrank meaning**; a memory with no timestamp must be treated as current, never dropped. | **Similarity + exponential freshness decay**: prefetch a wider candidate set by meaning, then re-score with an exponential decay over the timestamp (target = newest memory, half-life 7 days = 604,800 s, midpoint 0.5) added at weight **0.2** on top of the similarity score (Lesson 5, cell 19). | 1) Similarity + freshness decay **(course default for the finished assistant, Lesson 5 §5)**. 2) Similarity only — what Lessons 3 and 4 run on, and enough when no two memories restate the same fact. | Lesson 5 narrates the failure it fixes: two memories hold a code, meaning alone puts the outdated one first, and "ideally we would want the most recent memory with the most recent code to score the highest". The 0.2 weight is a ceiling, so meaning still leads and recency only breaks ties. Choosing similarity-only retires AC16 and AC17. | course+learner |
+| D1 | learner | **Project** — what you are building | *(none — the pattern imposes no requirement on the subject of the project)* | A personal day-memory assistant: a library plus a command-line entry point that ingests a day of text notes, voice memos and photos from local files and answers typed questions about them. **This is the course's example realization re-expressed on this spec's own synthetic fixture corpus (§5) — expect to swap it** when your project differs; the pattern (CTX-A), not this scenario, is what must survive. | (a) the day-memory assistant on the fixture corpus (course example shape); (b) a field/inspection device that remembers what it was shown; (c) a personal archive over your own documents; (d) any other subject, free-text | Swapping the project changes the fixture corpus, the queries in §5, and the categories in the payload — nothing in the pipeline (CTX-A) or in any other row. | learner |
+| D2 | learner | **Data / inputs** — what it remembers, and where that lives | Every input must reduce to **either a text string or a still image**, and must carry a **capture time** — the recency stage (R6) has nothing to rank on without one. Audio is admitted only via a transcription step (R12). *(Exercised by AC2 and AC10.)* | The synthetic fixture corpus defined in §5: one JSON file of 14 authored records plus images and audio **generated by `make_fixtures.py`** at build time. No course data and no binary assets travel in this spec. | (a) the fixture corpus; (b) your own folder of notes/photos/voice memos on local disk; (c) an export from a notes or photos app, converted to the §3 record shape; (d) other, free-text | Real data replaces the fixture facts the §5 acceptance criteria assert, so the ACs must be re-pinned to facts you can assert. Everything upstream and downstream is unchanged. | learner |
+| D3 | learner | **Goal** — what "working" means | The goal must be reachable by **retrieval alone**: the answer is one or more stored memories, returned verbatim with their metadata and scores. Anything requiring a memory to be *composed*, summarized, or reasoned over is outside the pattern (R15, §1). | A question returns the nearest memories per modality lane, each lane gated by its own confidence floor, recency-weighted in the text lane; when nothing clears its floor the app says so instead of answering. | (a) recall (question in, memories out) — the course's goal; (b) recognition (photo in, label or UNKNOWN out); (c) both lanes of the same store; (d) other, free-text | Dropping recognition removes R13/AC12/AC17 and the calibration procedure (R17); dropping recall removes most of §5. The store and its schema are unchanged either way. | learner |
+| D4 | learner | **Model / provider** — the encoders | **Three separately-addressable local encoders, none requiring a credential:** a text encoder with distinct *document* and *query* forms (R8); an image encoder whose text tower embeds into the **same** space as its vision tower (cross-modal recall); and a speech-to-text model. Text and image scores are **never** comparable (R4), so each space keeps its own width and its own floor. | The course's trio, all run locally on CPU through their course-pinned runtimes: `nomic-ai/nomic-embed-text-v1.5` for text (**768** dimensions), `Qdrant/clip-ViT-B-32-vision` / `Qdrant/clip-ViT-B-32-text` for images and cross-modal queries (**512** dimensions), and `whisper-base` for voice. No account, no key; one first-run download, offline after that. | (a) the course's trio (course default); (b) any other local sentence-embedding + CLIP-family pair at their own widths; (c) a hosted embedding API (heavy setup: a paid account and an API key, and it takes memories off the device — conflicts with D7's local-only default and R15); (d) other, free-text | Changing either encoder changes its vector width, **invalidates every stored vector, and forces a full re-embed and re-ingest** — the single most expensive change in this build (§6 Ask First). The calibrated floors (R17) must be re-derived too: they are properties of the encoder, not of the data. | course+learner |
+| D5 | learner | **Environment** — where it runs | Memory **must survive process exit and power loss** (R10) and **must answer with no network** after the one-time model download (R15). No specific hardware: whatever runs the chosen encoders on CPU is enough. | One local process on the learner's own computer (Python 3.12+), with the memory store as a plain directory on local disk beside the code. | (a) your own computer (course default — the course states plainly that no specific hardware is needed and that the final lesson runs the same code on a personal machine); (b) a single-board computer such as a Raspberry Pi-class device; (c) an embedded compute module on a robot or camera rig (heavy setup: hardware the learner must buy and provision); (d) other, free-text | Smaller devices trade recall latency and model-load time for portability; the code, the store layout and every acceptance criterion are identical. The course's own latency figures are machine-specific and are *not* a target (CTX-C6). | course+learner |
+| D6 | learner | **Scope boundary** — what this build leaves out. **Gate: read the full §1 "Not Included" list aloud inside this question, item by item, before offering the options** — §1 is not a Ledger row, so this question is the only place the learner ever sees it. | *(none)* | **Keep as-is:** every §1 exclusion stands and the full acceptance set in §5 is built. | (a) keep the boundary as written; (b) bring something back — say which §1 item, in free-text. Handling is determinate: *live camera/microphone capture, a graphical interface, frame-by-frame video, encryption at rest* are additive and owned by no other row → restorable here; *the robot hardware build* is named by the course but never built → buildable, but this spec supplies no parameters and no acceptance criteria for it, and you will be told so; *server sync* → owned by D7, *encoder choice* → D4, *store technology* → D10, decided there and never twice; *integration into an existing codebase* → outside this build mode, unavailable. A genuine additional exclusion also goes in free-text and must name the acceptance criteria it retires. | Restoring an item adds work with no acceptance criteria behind it unless you write them; excluding more retires the ACs you name. | learner |
+| D7 | design-argued | **Where memory lives** — on the device only, or synced to a server | The device **must still answer with no network at all**. Any sync is additive and one-way-optional; it may never become the read path. | **Local only.** Nothing leaves the machine; there is no server component and no credential anywhere in the build. | (a) local only (course default); (b) local, plus optional one-way sync of a shard snapshot to a Qdrant server — *heavy setup: a hosted or self-run Qdrant cluster plus `QDRANT_URL` and `QDRANT_API_KEY`; the supplied materials contain the four helper functions and the pinned client for this, but the appendix notebook that used them is absent from the supplied repo copy, so the spec carries no worked parameters for it*; (c) server-only storage — outside the pattern, listed for completeness and excluded by the invariant | Lesson 1 argues both sides aloud: on-device wins because it works with no connection, avoids the network round trip, and keeps private memories private with no cloud storage or API; a server is genuinely useful *"when some memories need to be shared"* and when the device runs short of compute or storage, and the instructor states you can combine local and cloud retrieval if your use case requires it — but *"for today, we will only be working locally."* (Lesson 1: Why Devices Need Memory.) Cost of switching: a credential to manage, secrets to keep out of the repo, and the privacy guarantee becomes conditional. | course+learner |
+| D8 | design-structural | **Memory-store topology** — one store for everything, or one per purpose | A single memory **must be reachable both by sight and by words**: one point may carry more than one named vector, and the spaces must stay separately addressable so a query names which space it searches and no score crosses spaces (R4). *(Exercised by AC22.)* | **One store, two named vector spaces** (`text` and `image`, widths pinned in row D4), with a taught subject stored as a *single* point carrying both its image vector and the text vector of its note. This is what the course's final end-to-end assistant does. | (a) one store, two named spaces, dual-vector points (course default); (b) a dedicated object store for taught subjects plus a separate store for day memories — also exercised by the course while teaching, and the right shape when the two have different lifecycles; (c) one store per modality | Redraw the diagram and a box disappears or appears. One store keeps a taught subject findable from a photo *and* from a typed question, and keeps one flush/restore path; separate stores let you wipe or re-teach object memory without touching the day's captures, at the cost of querying two handles and merging nothing (you cannot merge — R4). | course+learner |
+| D9 | design-structural | **Sub-threshold results in recall** — mark them, or suppress them | A result below its lane's floor **must never be presented as a confident answer** (R3, R5). What happens to it beyond that is this row's choice. | **Mark and keep.** Below-floor hits are still returned and still rendered, visibly dimmed/flagged as weaker, so the person can see *why* the app was unsure. This is what the course's memory inbox does. | (a) mark and keep (course default); (b) suppress — below-floor hits are dropped from the result entirely and the lane reports "no confident answer" | The guarantee changes, not a number. Marking teaches the user where the boundary is and makes a near-miss recoverable by eye — the course leans on this when a note about a park surfaces as a weak match for a question about a parked bike (Lesson 4). Suppressing is the right call for a device with no screen, a spoken answer, or any surface where a dimmed result reads as an answer anyway. | course+learner |
+| D10 | realization | **The vector memory store** | An **embedded, credential-free** store that persists to a local directory and offers, in one query surface: multiple independently-named vector spaces per point with an arbitrary payload; nearest-neighbour search naming the space to search; a payload **filter applied inside the query**, not after it; point deletion; and a **formula re-rank over a payload field** fed by a wider prefetch (R6). Retrieval must work with no network. | **Qdrant Edge (`qdrant-edge-py`, the course's pinned 0.7.2), used as an embedded library — no server process.** §3 dependency precedence **branch 2 applies: the specific technology IS the taught subject** (the course is *Building On-Device AI Memory with Qdrant Edge*), so it is reproduced as the default rather than substituted. No substitution is needed in any case: on the §3 tier ladder this is **tier 2 — an embedded library installed by the package manager, with no separate process and no credential** — so it is not a heavy dependency at all, and the whole setup cost is one `pip install`. | (a) Qdrant Edge as an embedded library (course default); (b) a server-based vector database, Qdrant or otherwise — *heavy setup: a separate process to run or a hosted cluster to provision, plus credentials*; (c) a stdlib-only brute-force store (tier 1): it can satisfy exact nearest-neighbour over a fixture-sized corpus, but it does **not** satisfy this row's Invariant — in-query payload filtering, indexed fields, and the decay-formula re-rank are the taught query surface and would have to be hand-built, which is the pattern itself, not a realization of it | Leaving the embedded library means either running and supervising a process (b) or reimplementing the query surface (c). Both keep the pattern; only (a) keeps it at one `pip install` and zero operational surface. The API is pre-1.0 — see §2 and CTX-D. | course+learner |
+| D11 | contradicted | **Memory id scheme** | Every point id is **unique within its store** and **stable for a given source item**, so re-ingesting the same item updates exactly one point and can never overwrite a different memory (R16). | **A single allocator that namespaces ids by source**, so every source's range is disjoint within a store and stable across runs: `id = source_base + index_within_source`, with `source_base` declared once per source in one place, and an overlap between any two declared ranges raising at registration. | (a) integer id ranges chosen per source by hand, each source's base written where that source is loaded (course default); (b) integer ranges issued and checked by **one** allocator that owns every range in the store; (c) content-derived stable ids (a hash of the source item's identity); (d) opaque UUIDs recorded in a side index | The course sets this **inconsistently**: it allocates by disjoint hand-picked ranges — day memories at 0–41, a bulk photo import starting at 1000, taught views at 100+, a new note at 900, a taught assistant memory at 5000 — while its own history file independently occupies 1000–1101. Those two 1000-based ranges never collide only because the materials happen to put them in different stores; put them in one store, as row D8's default does, and **one source silently overwrites the other with no error**. Picking the scheme up front is cheap; changing it after data exists means a full re-ingest (§6 Ask First). (b) and (c) remove the hazard by construction but cost a lookup or a side index at write time. | course |
 
 ---
 
 ## 1. Objective
 
-A local application that stores text notes, voice notes and photos as vectors in an on-device
-store and answers typed questions from them by similarity alone — returning text, voice and photo
-results as three separate ranked lanes with their scores — while also recognising an object it was
-taught from two example photos, and forgetting a memory on request. No LLM anywhere in the
-pipeline. (pattern: CTX-A)
+A standalone, fully-local memory assistant: it ingests text notes, voice memos and photos as vectors into one on-device store, and answers a typed or spoken question by returning the actual memories that match — ranked by meaning, gated by a calibrated per-modality confidence floor, and tie-broken by recency — with no LLM, no remote model and no network in the answer path. (pattern: CTX-A)
 
 ### Not Included ★
 
-The build stops at this line. Each item carries a **handling rule**, so the D6 gate question has a
-determinate answer.
+Each item below is out of scope for this build. Ledger row **D6** presents this list at the gate; a learner may ask for an item back there.
 
-| # | Excluded | Handling rule at the D6 gate |
-|---|---|---|
-| N1 | **Any LLM** — no generated prose answers, no summarising or re-writing of results, no chat. Answers are retrieved memories and their scores. | *Owned by the course as a taught guarantee* — this is R1, not a scope choice. Unavailable. |
-| N2 | **Server sync** — no cluster, no API key, no cross-device sharing. | *Owned by another row* — decided at **D7**, never here. |
-| N3 | **Live camera or video-frame loop** (the course's own robot runs this same loop frame by frame). | *Named by the course but never built in the supplied materials* — buildable, but this spec supplies no parameters and no acceptance criteria for it. |
-| N4 | **Recording audio inside the app.** Voice memories arrive as audio files already on disk, or as pre-transcribed records. | Additive, owned by no other row — restorable at the gate. |
-| N5 | **An upload UI for teaching photos.** Teaching uses image files already on disk. | Additive, owned by no other row — restorable at the gate. |
-| N6 | **Any latency benchmark or performance chart.** | Additive, restorable at the gate — but only as numbers this build measures itself, labelled as measured here. Replaying the course's figures is never restorable: R13 forbids it outright. |
-| N7 | **Authentication, accounts, multi-user separation, sharing between people.** | Additive, owned by no other row — restorable at the gate, but it changes the §3 contract. |
-| N8 | **Swapping embedding models at runtime**, or a UI for it. Models and widths are pinned in config (§2) and chosen at D4. | *Owned by another row* — D4 decides the models; runtime swapping is additive and means re-embedding everything (§6 Ask First). |
-| N9 | **Grafting this onto an existing codebase.** The deliverable is a standalone project. | *Outside the delivered build mode* — unavailable. |
+1. **Any LLM, chat model, or generated natural-language answer.** The app returns the retrieved memories themselves, with their scores and metadata — it never writes prose about them.
+2. **Live camera or microphone capture.** The build ingests images and audio files that are already on disk.
+3. **Syncing memories to a server or to another device.** (Owned by Ledger row D7 — decided there.)
+4. **Any graphical interface** — no phone app, no web UI, no notebook front-end. The deliverable is a library plus a command-line entry point.
+5. **Specific hardware.** No robot, no single-board-computer image, no enclosure, no wiring.
+6. **Training, fine-tuning, distilling or quantizing any model.** Subjects are learned by writing example vectors, never by changing weights.
+7. **Frame-by-frame ingestion of live video.**
+8. **Multi-user accounts, authentication, or per-user memory isolation.**
+9. **Encryption of the store at rest, and any data-retention or compliance policy.**
+10. **Approximate-index tuning for very large stores** — index parameters, quantization, or more than one shard. The build targets a corpus that fits comfortably in one store on one device.
+11. **Integration of this pattern into an existing codebase.** This spec's build mode is a standalone takeaway.
+12. **Packaging or distribution** — no installer, container image, service definition, or release pipeline.
 
 ---
 
@@ -130,107 +109,183 @@ determinate answer.
 
 | Component | Pinned choice | Note |
 |---|---|---|
-| Language | Python ≥ 3.12 | The course was built and validated on 3.14.6; its notebooks' kernel metadata records 3.12.11. Report the actual version as build evidence. |
-| Memory store | `qdrant-edge-py==0.7.2` | The embedded on-device engine — no server, no network, memories in a directory. **This is the course's subject, kept as the default (§3 precedence branch 2).** *The course pins every dependency exactly; those pins are carried forward here unchanged. If a pin no longer resolves, treat the names in **CTX-D** as search keywords against current docs, not guaranteed imports.* Locality is **D7**; topology is **D8** — change them there, not here. |
-| Text embeddings | `fastembed==0.8.0`, model `nomic-ai/nomic-embed-text-v1.5`, **768 dims** | Runs locally on CPU. Documents and queries use **different task prefixes** — use the library's query-embedding call for questions and its document call for stored text (R9). Chosen at **D4**. |
-| Image embeddings | `fastembed==0.8.0`, models `Qdrant/clip-ViT-B-32-vision` and `Qdrant/clip-ViT-B-32-text`, **512 dims** | One shared image/text space, so a typed description can retrieve a photo. Its scores sit on a different scale from the text model's — never compared or merged with them (R5). Chosen at **D4**. |
-| Speech to text | `onnx-asr==0.12.0`, model `whisper-base`, CPU provider | Voice notes only. Released from memory before the embedding models load (R11). |
-| Runtime deps | `onnxruntime==1.27.0`, `tokenizers==0.23.1`, `numpy==2.5.1`, `Pillow==12.3.0` | Pinned alongside the models because they decide the embedding numbers. |
-| Interface | A small local HTTP server, or a CLI — **the build agent's choice** | Not a Ledger row: the pattern is indifferent and no course material argues it. Whatever you pick, the query path must stay offline and keyless. |
-| Tests | `pytest` | §7. |
-| Secrets | **none** | Nothing in this build reads an API key. Never hardcode or commit a credential. |
+| Language / runtime | Python 3.12 or newer | The course's notebook kernels record 3.12.11 and its README states the course was built and validated on 3.14.6. Pick one and record it. |
+| Vector memory store | `qdrant-edge-py==0.7.2` | **The Decision Ledger row D10 owns this choice — change it there, not here.** *Version policy, stated honestly:* unlike the usual case, the course's `requirements.txt` **pins every single dependency to an exact version** and says why — so the scores in the saved outputs reproduce. This library is **pre-1.0**, so its API surface is genuinely unstable; reproduce the course's pin rather than floating it, and treat every type name in CTX-D as a search keyword against the version you actually install, not as a guaranteed import. |
+| Text embeddings | `fastembed==0.8.0`, model `nomic-ai/nomic-embed-text-v1.5`, 768-d | Ledger row D4. Downloaded once on first run; no account, no key. Disclose the download size to the user before the first run. |
+| Image + cross-modal embeddings | `fastembed==0.8.0`, models `Qdrant/clip-ViT-B-32-vision` and `Qdrant/clip-ViT-B-32-text`, 512-d | Ledger row D4. The two towers share one space — that is what makes searching photos with words work. |
+| Speech to text | `onnx-asr==0.12.0`, model `whisper-base`, CPU execution provider | Ledger row D4. Must be reachable behind an injectable interface (R12, AC16). |
+| Model runtime | `onnxruntime==1.27.0`, `tokenizers==0.23.1` | The course pins these alongside the models because they decide the embedding numbers. |
+| Image handling | `Pillow==12.3.0` | Also used by `make_fixtures.py` to generate the fixture images (§5). |
+| Numerics | `numpy==2.5.1` | |
+| Test runner | `pytest` (any recent version) | **Project hardening** — the course ships notebooks, not a test suite. Markers: `live` (needs a credential; excluded from the completion run). |
+| Server client | `qdrant-client==1.18.0` | **Installed only if Ledger row D7 is changed from its default.** Reads `QDRANT_URL` and `QDRANT_API_KEY` from the environment. |
 
-**Install cost, stated plainly.** The store, both embedding packages, the ASR package and the
-runtime deps all install from a package index, and the four models download once (keyless, no
-account). Do this as **one batched install early** and say roughly what it costs in wall-clock
-before starting it. After the first download everything runs offline.
+**Secrets.** No credential is required by the default build. If D7 is changed, `QDRANT_URL` and `QDRANT_API_KEY` are read from the process environment only — never written to a file in the repo, never printed, never committed. The store directory and any generated fixture assets are git-ignored.
 
 ---
 
 ## 3. Input/Output Contracts ★
 
-**The memory record** — one record is one point in the store: an integer id, one or two named
-vectors, and this payload.
-
 ```json
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "memory-record",
-  "type": "object",
-  "required": ["id", "source_type"],
-  "properties": {
-    "id": { "type": "integer", "minimum": 0 },
-    "source_type": { "enum": ["text", "voice", "photo", "object"] },
-    "category": { "type": "string" },
-    "location": { "type": "string" },
-    "timestamp": {
-      "type": "integer",
-      "description": "Epoch seconds. Optional: a record without it is treated as current by the D9 ranking, never dropped."
-    },
-    "note": { "type": "string", "minLength": 1 },
-    "transcript": { "type": "string", "minLength": 1 },
-    "file": { "type": "string", "minLength": 1 },
-    "label": { "type": "string", "minLength": 1 },
-    "price": { "type": "number", "minimum": 0 },
-    "audio_file": { "type": "string" }
-  },
-  "allOf": [
-    { "if": { "properties": { "source_type": { "const": "text" } }, "required": ["source_type"] },
-      "then": { "required": ["note"], "not": { "required": ["file"] } } },
-    { "if": { "properties": { "source_type": { "const": "voice" } }, "required": ["source_type"] },
-      "then": { "required": ["transcript"], "not": { "required": ["file"] } } },
-    { "if": { "properties": { "source_type": { "const": "photo" } }, "required": ["source_type"] },
-      "then": { "required": ["file"], "not": { "anyOf": [{ "required": ["note"] }, { "required": ["transcript"] }] } } },
-    { "if": { "properties": { "source_type": { "const": "object" } }, "required": ["source_type"] },
-      "then": { "required": ["label", "file"] } }
-  ],
-  "unevaluatedProperties": false,
-  "$comment": "Audio is never stored: a voice record carries its transcript and at most the source filename. No property may hold audio or image bytes."
-}
-```
+  "$id": "https://example.invalid/on-device-memory/schemas.json",
+  "$defs": {
 
-**Vector assignment is part of the contract.** `text` and `voice` records carry a `text` vector
-(768) and no `image` vector. `photo` and `object` records carry an `image` vector (512). A record
-may carry **both** only when it is genuinely both — the taught object that also has a written note.
-
-**The recall response** — three lanes, never one blended list (R5).
-
-```json
-{
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "recall-response",
-  "type": "object",
-  "required": ["question", "cutoffs", "lanes"],
-  "properties": {
-    "question": { "type": "string", "minLength": 1 },
-    "cutoffs": {
+    "MemoryRecord": {
+      "title": "One captured memory, before it is embedded",
       "type": "object",
-      "required": ["text", "photo"],
-      "properties": { "text": { "type": "number" }, "photo": { "type": "number" } },
-      "$comment": "Two cutoffs because the two lanes come from different models on different scales."
-    },
-    "lanes": {
-      "type": "object",
-      "required": ["text_notes", "voice_notes", "photos"],
+      "required": ["id", "source_type", "captured_at"],
       "additionalProperties": false,
       "properties": {
-        "text_notes": { "$ref": "#/$defs/lane" },
-        "voice_notes": { "$ref": "#/$defs/lane" },
-        "photos": { "$ref": "#/$defs/lane" }
+        "id":          { "type": "integer", "minimum": 0,
+                         "description": "Unique within a store and stable for this source item (R16, Ledger D11)." },
+        "source_type": { "enum": ["text", "voice", "photo"] },
+        "captured_at": { "type": "integer",
+                         "description": "Capture time, epoch seconds. Required: the recency stage ranks on it (R6)." },
+        "category":    { "type": "string" },
+        "location":    { "type": "string" },
+        "text":        { "type": "string", "minLength": 1,
+                         "description": "The searchable words of this memory. For a voice memory this is the transcript (R12)." },
+        "price":       { "type": ["number", "null"] },
+        "image_ref":   { "type": "string", "minLength": 1,
+                         "description": "Path or name of the image file. The image itself is NEVER stored in the record." },
+        "audio_ref":   { "type": "string", "minLength": 1,
+                         "description": "Path or name of the audio file. Audio bytes are NEVER stored in the record (R12)." },
+        "label":       { "type": "string",
+                         "description": "Present only on a taught-subject memory (R13)." }
+      },
+      "allOf": [
+        { "if":   { "properties": { "source_type": { "const": "text" } }, "required": ["source_type"] },
+          "then": { "required": ["text"],
+                    "not": { "anyOf": [ { "required": ["audio_ref"] }, { "required": ["image_ref"] } ] } } },
+        { "if":   { "properties": { "source_type": { "const": "voice" } }, "required": ["source_type"] },
+          "then": { "required": ["text", "audio_ref"] } },
+        { "if":   { "properties": { "source_type": { "const": "photo" } }, "required": ["source_type"] },
+          "then": { "required": ["image_ref"] } }
+      ]
+    },
+
+    "StoredPoint": {
+      "title": "One memory as it lives in the store",
+      "type": "object",
+      "required": ["id", "vectors", "payload"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "integer", "minimum": 0 },
+        "vectors": {
+          "type": "object",
+          "minProperties": 1,
+          "additionalProperties": false,
+          "description": "Named vector spaces. A point may carry one or both; a taught subject carries both (Ledger D8).",
+          "properties": {
+            "text":  { "type": "array", "items": { "type": "number" }, "minItems": 1 },
+            "image": { "type": "array", "items": { "type": "number" }, "minItems": 1 }
+          }
+        },
+        "payload": { "$ref": "#/$defs/MemoryRecord" }
+      },
+      "allOf": [
+        { "description": "A photo memory must carry an image vector; a text or voice memory must carry a text vector.",
+          "if":   { "properties": { "payload": { "properties": { "source_type": { "const": "photo" } } } } },
+          "then": { "properties": { "vectors": { "required": ["image"] } } } },
+        { "if":   { "properties": { "payload": { "properties": { "source_type": { "enum": ["text", "voice"] } } } } },
+          "then": { "properties": { "vectors": { "required": ["text"] } } } }
+      ]
+    },
+
+    "Hit": {
+      "title": "One retrieved memory",
+      "type": "object",
+      "required": ["id", "space", "score", "confident", "payload"],
+      "additionalProperties": false,
+      "properties": {
+        "id":    { "type": "integer" },
+        "space": { "enum": ["text", "image"],
+                   "description": "Which named vector space produced this score. A score is meaningless without it (R4)." },
+        "score": { "type": "number",
+                   "description": "Similarity in `space` only. NEVER compare or merge scores across spaces." },
+        "ranking_score": { "type": ["number", "null"],
+                   "description": "Score after recency re-ranking, where applied (R6). Null where it was not." },
+        "confident": { "type": "boolean",
+                   "description": "score >= the floor calibrated for `space` (R3, R5)." },
+        "payload": { "$ref": "#/$defs/MemoryRecord" }
       }
-    }
-  },
-  "$defs": {
-    "lane": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "required": ["id", "score", "weak", "payload"],
-        "properties": {
-          "id": { "type": "integer" },
-          "score": { "type": "number" },
-          "weak": { "type": "boolean", "description": "true when score < this lane's cutoff" },
-          "payload": { "$ref": "memory-record" }
+    },
+
+    "RecallResult": {
+      "title": "One question's answer: separate lanes, never one blended list",
+      "type": "object",
+      "required": ["question", "lanes", "has_confident_answer"],
+      "additionalProperties": false,
+      "properties": {
+        "question": { "type": "string", "minLength": 1 },
+        "lanes": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["text_notes", "voice_notes", "photos"],
+          "description": "Each lane is ranked within itself. There is no cross-lane ranking and no combined list (R4).",
+          "properties": {
+            "text_notes":  { "type": "array", "items": { "$ref": "#/$defs/Hit" } },
+            "voice_notes": { "type": "array", "items": { "$ref": "#/$defs/Hit" } },
+            "photos":      { "type": "array", "items": { "$ref": "#/$defs/Hit" } }
+          }
+        },
+        "has_confident_answer": { "type": "boolean" }
+      },
+      "allOf": [
+        { "description": "Ungrounded ⇒ nothing confident: if no hit in any lane is confident, has_confident_answer is false.",
+          "if": { "properties": { "has_confident_answer": { "const": true } } },
+          "then": { "properties": { "lanes": { "anyOf": [
+              { "properties": { "text_notes":  { "contains": { "properties": { "confident": { "const": true } }, "required": ["confident"] } } } },
+              { "properties": { "voice_notes": { "contains": { "properties": { "confident": { "const": true } }, "required": ["confident"] } } } },
+              { "properties": { "photos":      { "contains": { "properties": { "confident": { "const": true } }, "required": ["confident"] } } } }
+          ] } } } }
+      ]
+    },
+
+    "RecognitionResult": {
+      "title": "A photo shown to the store: a label, or UNKNOWN",
+      "type": "object",
+      "required": ["verdict", "nearest_id", "nearest_label", "score", "threshold"],
+      "additionalProperties": false,
+      "properties": {
+        "verdict":       { "enum": ["known", "unknown"] },
+        "nearest_id":    { "type": "integer" },
+        "nearest_label": { "type": ["string", "null"] },
+        "score":         { "type": "number" },
+        "threshold":     { "type": "number",
+                           "description": "The calibrated recognition threshold this verdict was decided against (R17)." }
+      },
+      "allOf": [
+        { "description": "A 'known' verdict REQUIRES a label. Nearest-neighbour always returns something; the threshold is what makes it an answer (R3).",
+          "if":   { "properties": { "verdict": { "const": "known" } } },
+          "then": { "properties": { "nearest_label": { "type": "string", "minLength": 1 } },
+                    "required": ["nearest_label"] } }
+      ]
+    },
+
+    "StoreDescriptor": {
+      "title": "The store as created, asserted on fresh initialization (AC0)",
+      "type": "object",
+      "required": ["directory", "spaces", "indexed_fields"],
+      "additionalProperties": false,
+      "properties": {
+        "directory": { "type": "string", "minLength": 1 },
+        "spaces": {
+          "type": "object", "minProperties": 1, "additionalProperties": false,
+          "properties": {
+            "text":  { "type": "object", "required": ["size", "distance"], "additionalProperties": false,
+                       "properties": { "size": { "const": 768 }, "distance": { "const": "cosine" } } },
+            "image": { "type": "object", "required": ["size", "distance"], "additionalProperties": false,
+                       "properties": { "size": { "const": 512 }, "distance": { "const": "cosine" } } }
+          }
+        },
+        "indexed_fields": {
+          "type": "array", "minItems": 2, "uniqueItems": true,
+          "items": { "type": "object", "required": ["field", "kind"], "additionalProperties": false,
+                     "properties": { "field": { "enum": ["category", "price"] },
+                                     "kind":  { "enum": ["keyword", "float"] } } }
         }
       }
     }
@@ -238,501 +293,298 @@ may carry **both** only when it is genuinely both — the taught object that als
 }
 ```
 
-**The recognition response.**
-
-```json
-{
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "recognition-response",
-  "type": "object",
-  "required": ["verdict", "score", "threshold", "nearest_id"],
-  "properties": {
-    "verdict": { "type": "string", "description": "the matched label, or the literal UNKNOWN" },
-    "label": { "type": ["string", "null"], "description": "the nearest point's label, always reported, even when the verdict is UNKNOWN" },
-    "score": { "type": "number" },
-    "threshold": { "type": "number" },
-    "nearest_id": { "type": "integer" }
-  },
-  "$comment": "Nearest search always returns something, so a verdict is a separate decision against the threshold — never the bare nearest hit."
-}
-```
+> The `768` / `512` / `cosine` constants above are the widths and distance strategy of the encoders pinned in **Ledger row D4**. If D4 is changed, these three constants move with it — they are not independent choices.
 
 ---
 
 ## 4. Business Rules
 
-Numbered. Each rule states the behaviour and the failure it prevents, and reaches ≥1 acceptance
-criterion.
+Each rule states the behavior and the failure it prevents, carries a provenance label, and reaches at least one acceptance criterion.
 
-1. **No LLM in the pipeline.** Answers are retrieved memories and their scores — never generated,
-   summarised or re-worded text. Recognition is a vector comparison against stored examples: no
-   training, no fine-tuning, no vision pipeline (CTX-B1). → AC19 · *course-demonstrated*
-2. **No credentials, no query-time network.** Once the models are on disk, storing and recalling
-   work with no network and no API key — including through whatever interface §2 chooses
-   (CTX-B1). → AC18, AC19, AC20 · *course-demonstrated*
-3. **Two named vector spaces, fixed widths.** The store declares `text` at 768 and `image` at 512,
-   both cosine, before any point is written; a point's vector goes into the space matching its
-   model. Prevents dimension mismatches and the silent mixing of two score scales (CTX-B7).
-   → AC1, AC4 · *course-demonstrated*
-4. **A question reaches both lanes by being embedded twice** — once with the text model, once with
-   the image-space text encoder — and each embedding queries only its own space (CTX-B7).
-   → AC6, AC8, AC8b · *course-demonstrated*
-5. **Results are presented as separate lanes, never one blended list**, and each lane is judged
-   against its own cutoff: **0.6** for text and voice, **0.23** for photos. Scores from two
-   different models are never compared, merged or sorted together (CTX-B2). → AC9 ·
-   *course-demonstrated*
-   *(Both cutoffs are single-valued in the materials — Lesson 4, cells 13/15/18 and its narration
-   — and both are post-build levers: see §6 Ask First.)*
-   **Lane sizes.** One recall fetches the text space wide — top 10 — and splits that set into at
-   most 3 voice and 3 text results; the image lane fetches top 1. *The materials set the photo
-   fetch two ways: the shared helper pulls 3 photo candidates and shows the first, while the
-   lesson's own recall — defined in the notebook, and the one that actually runs from that cell
-   onward — pulls 1. Near-equivalent (both surface a single photo), so this resolves as a body
-   default, not a Ledger row: by the lever rule's second branch, the end-to-end application's own
-   configuration wins → top 1. A **post-build lever**.*
-   **The course considered the other design and dropped it.** A slide describing a single merged
-   inbox — all modalities "merged into one inbox ranked by score" — was drafted for Lesson 4 and
-   appears in **no** video; the shipped display renders three columns and its own source names the
-   merged form as the thing not to do. If you have seen that slide, it is not the course's
-   position (CTX-C8).
-6. **A result below its lane's cutoff is returned but marked weak**, and never presented as the
-   answer. Nothing below a cutoff is silently promoted or silently dropped (CTX-B3). → AC10 ·
-   *course-demonstrated*
-7. **Payload filtering requires a field index, and the filter runs inside the search.** Fields used
-   in filters — `category` (keyword) and `price` (float) — are indexed at initialisation; a
-   filtered recall returns only points satisfying every condition, and a point missing a filtered
-   field cannot satisfy a range condition on it. **The filter is part of the query, not a trim
-   applied to its results:** the similarity search runs *over the points that pass the conditions*,
-   so a filtered search returns the nearest matches **within** the filtered set — never "the top k,
-   minus the ones that failed" (CTX-B4, CTX-C8). → AC3, AC7, AC7b · *course-demonstrated*
-8. **Forgetting really forgets.** Deleting a memory removes its point; the next-best result moves
-   up and the other results' scores are unchanged; the stored count drops by one (CTX-B5). → AC11
-   · *course-demonstrated*
-9. **Queries and documents are embedded by their own call.** The text model uses different task
-   prefixes for the two, so a question embedded as a document (or the reverse) mis-scores
-   everything (CTX-B6). → AC6 · *course-demonstrated*
-10. **Voice becomes text at the boundary.** A voice memory is stored as its transcript and searched
-    exactly like a text memory; the audio itself is never stored in the payload — at most its
-    source filename (CTX-B8). → AC5, AC21 · *course-demonstrated*
-11. **Release the speech model before the embedding models load.** Transcription finishes first,
-    its session is freed, and only then are the embedding models loaded. Prevents holding two
-    model sets resident at once (CTX-B9). → AC21 · *course-demonstrated*
-12. **Writes are durable before they are announced.** After a write the store is optimised and
-    flushed, so a memory survives the process exiting; reopening the same directory in a new
-    process returns the same memories and the same answers (CTX-B10, CTX-C9). → AC12 ·
-    *course-demonstrated*
-13. **Recognition is a threshold decision, not a nearest hit.** A match "is a decision rule, not a
-    model" — Lesson 1's closing slide (shown) puts the similarity score against a threshold and
-    calls that the whole mechanism: no LLM, no retraining, no custom vision pipeline. Nearest
-    search always returns something, so a verdict is produced by comparing the top score with
-    **one named threshold constant, 0.80**, used everywhere the decision is made; below it the
-    verdict is `UNKNOWN` and the nearest label is still reported (CTX-B11). → AC15, AC13, AC14 ·
-    *course-demonstrated; the single-constant requirement is **project hardening** — the course's
-    own Lesson 5 cell defines the threshold under one name and reads it under another, which fails
-    on the spot (CTX-D)*
-14. **No fabricated measurements.** The course's latency figures were measured on the instructor's
-    machine and are background only (CTX-C5): never printed, plotted or quoted as this build's own.
-    Any number this build shows must have been measured by this build, and labelled as such.
-    → AC22 · *project hardening*
-15. **Teaching is writing, not training.** Teaching an object stores one point per example view
-    under a shared label, then flushes; recognising compares a new photo against those stored
-    views. Adding a subject never retrains or reloads a model (CTX-B12). → AC14 ·
-    *course-demonstrated*
+**R1 — One point per memory.** *(course-demonstrated, CTX-A)* Every memory is stored as a single point: a stable id, one or more **named** vectors, and a payload carrying the memory's own words (or its file reference) plus its metadata. The vector carries the meaning; the payload rides along and is returned with every hit. Ranking is by vector similarity and, where R6 applies, by the recency formula — nothing else reorders results. → **AC2, AC3**
+
+**R2 — An empty or unmatched store answers with nothing, never with something.** *(course-demonstrated, CTX-B1)* Querying a store before anything is written returns zero results and no error. → **AC1**
+
+**R3 — Nearest is not the same as right; a floor decides.** *(course-demonstrated, CTX-B2)* Nearest-neighbour retrieval **always** returns its closest point no matter how far away it is. Every lane therefore applies a confidence floor calibrated for its own vector space, and when nothing clears it the app reports *no confident answer* (recall) or *UNKNOWN* (recognition). A below-floor hit is never presented as the answer. → **AC7, AC12**
+
+**R4 — Scores from different encoders never meet.** *(course-demonstrated, CTX-B3)* Text scores and image scores come from different models on different scales. They are never compared, never merged into one ranked list, never shown in a shared bar/percentage scale, and never gated by a shared floor. Each named space has its own lane, its own floor, and its own result list. → **AC8, AC9**
+
+**R5 — Weak results are marked, not promoted.** *(course-demonstrated, CTX-B4)* A hit below its lane's floor is returned with `confident: false` and rendered visibly weaker (Ledger D9 default: mark and keep; if D9 is set to *suppress*, it is dropped instead). Either way it can never become the confident answer. → **AC9**
+
+**R6 — Meaning leads; recency breaks ties.** *(course-demonstrated, CTX-B5)* Two memories can carry the same fact with different values at different times, and similarity alone will happily return the stale one. Text-lane ranking therefore combines the similarity score with an **exponential decay on capture time** — value 1 at the newest memory in the store (the decay target is the maximum `captured_at` present, not wall-clock now), halved one **half-life** earlier, fading from there — added as a **bounded** bonus: `ranking_score = similarity + weight × freshness`, where `weight` is the *most* recency can ever add. The course's values, carried as this build's starting point: **half-life = 7 days (604800 seconds)** and **weight = 0.2**, both cited to Lesson 5 and both **post-build levers** (§6 Ask First #5). Candidates are re-scored from a **wider prefetch** than the number of results returned, so a fresher memory outside the top *k* can still surface. A memory with no capture time is treated as current rather than dropped. → **AC10, AC11**
+
+**R7 — Forgetting is real.** *(course-demonstrated, CTX-B6)* Deleting a memory removes its point from the store; it must not appear in any later result, and the store's reported count must fall. Every other result's score is unchanged by the deletion. → **AC6**
+
+**R8 — Questions and documents are embedded differently.** *(course-demonstrated, CTX-B7)* The text encoder distinguishes a *document* from a *query*; stored text goes through the document path and a question goes through the query path, so the scores line up. Using one path for both silently degrades every score in the build. → **AC13**
+
+**R9 — Recall cost grows with the store; forgetting is how you control it.** *(course-demonstrated, CTX-B8)* Embedding the question costs the same whatever the store holds; the lookup grows with the number of vectors, sub-linearly but steadily. The app must expose the store's memory count and a first-class delete operation so the corpus can be pruned deliberately rather than growing without bound. → **AC6**
+
+**R10 — A write is durable.** *(course-demonstrated, CTX-B9)* After a write, the store is compacted and flushed to disk before the operation reports success, so a taught memory survives the device losing power. Reopening the store directory in a **new process** returns the same memories and the same answers. → **AC14**
+
+**R11 — Never remove a store directory while a handle is open.** *(course-demonstrated, CTX-B10)* An open store handle holds its files and flushes when it is dropped; deleting the files underneath it makes that flush fail inside a destructor and surfaces as a native crash rather than a catchable error. Any reset path closes every open handle first, then removes the directory. → **AC15**
+
+**R12 — A voice memory is stored as its transcript.** *(course-demonstrated, CTX-A)* Audio is transcribed on-device at ingest; what is embedded and stored is the transcript text. The record keeps the audio file's *name* (`audio_ref`) and never its bytes. After ingest the answer path never touches the audio file — a spoken question is transcribed by the same step and then travels the ordinary text path. → **AC16**
+
+**R13 — Subjects are learned by writing vectors, never by training.** *(course-demonstrated, CTX-A)* Teaching a subject means embedding two or more views of it and storing them as points sharing one label. No weights change. An unseen view of a taught subject must score higher against the taught views than any untaught photo in the store does. → **AC12, AC17**
+
+**R14 — A filter is part of the query, not a post-filter.** *(course-demonstrated, CTX-A)* Payload conditions are passed into the search so similarity is computed only over points that pass them; results still carry their similarity scores. Every field used in a filter carries an index of the right kind (`category` keyword, `price` float). → **AC5**
+
+**R15 — No LLM, no remote model, no network in the answer path.** *(course-demonstrated, CTX-A)* Answering is pure retrieval. After the one-time model download, the ingest and answer paths make zero outbound network calls, and no generative model exists anywhere in the build. → **AC18**
+
+**R16 — Ids are unique within a store and stable across re-ingest.** *(project hardening — the course allocates hand-picked id ranges per source and relies on separate stores to keep them apart; see Ledger D11.)* One allocator issues ids; ingesting the same source item twice updates exactly one point; two different sources can never be issued the same id in the same store, and an attempt to do so raises rather than silently overwriting. → **AC4, AC19**
+
+**R17 — Floors are calibrated on this build's own corpus, and recorded.** *(project hardening — the calibration **procedure** is course-demonstrated (CTX-C4); treating the course's numbers as portable constants is not.)* Before the floors are used, the build runs the held-out calibration: score each taught subject's held-out view against its own taught views (matches) and against every other subject's views and every scene photo (non-matches), then place the threshold between the highest non-match and the lowest match. The resulting value is written to a named file alongside the corpus it was derived from. The course's own numbers — text floor **0.6**, photo floor **0.23**, recognition threshold **0.80** — are recorded as the starting point and their provenance, not as constants to trust with different data or a different encoder. → **AC20**
 
 ---
 
 ## 5. Acceptance Criteria ★ (the oracle)
 
-### Fixture corpus (define FIRST; every fact authored for this spec — no course data is copied)
+### 5.1 The fixture corpus
 
-All fixture facts are invented here. `NOW` is the fixed constant **1767225600**
-(2026-01-01T00:00:00Z); every timestamp is `NOW` minus the stated offset, so the corpus is
-deterministic.
+Nothing here is copied from the course; every fact is authored for this spec. **No binary assets travel in this file** — the images and audio are generated deterministically by `make_fixtures.py` at build time, from the descriptions below. The build agent **MUST NOT modify a fixture to make a test pass.**
 
-**`fixtures/memories.json`** — 13 note records (10 `text`, 3 `voice`), ids 1–13:
+All timestamps are offsets from a single declared constant so the recency criteria are deterministic regardless of wall-clock time:
 
-| id | source_type | category | location | timestamp | note / transcript | price |
-|---|---|---|---|---|---|---|
-| 1 | text | transit | Station | NOW−3,600 | "Left the blue bike in rack 3 at the east entrance of the station" | — |
-| 2 | text | home | Home | NOW−1,036,800 (12 d) | "Side gate code is 1145" | — |
-| 3 | text | home | Home | NOW−7,200 | "Replaced the lock on the side gate this morning, so the code to get in is 8890 now" | — |
-| 4 | text | food | Alder St | NOW−9,000 | "Soup and bread at the corner canteen, quick and cheap" | 11.5 |
-| 5 | text | food | Harbour | NOW−345,600 (4 d) | "Tasting menu at the harbour place, worth it once" | 68.0 |
-| 6 | voice | food | Alder St | NOW−8,600 | "Note to self, the canteen on Alder does a lentil soup that is better than it looks" | 9.0 |
-| 7 | text | work | Office | NOW−18,000 | "Sprint review moved to Thursday, bring the migration numbers" | — |
-| 8 | text | errand | Market | NOW−172,800 (2 d) | "Parking permit for the market runs out at the end of the month" | 45.0 |
-| 9 | voice | transit | Station | NOW−3,500 | "Quick memo, the east entrance rack was nearly full this morning" | — |
-| 10 | text | garden | Home | NOW−2,592,000 (30 d) | "The fig cutting needs water twice a week until it roots" | — |
-| 11 | text | work | Office | NOW−432,000 (5 d) | "Handed the spare office key to the facilities desk" | — |
-| 12 | text | food | Alder St | NOW−518,400 (6 d) | "Canteen closes at 2pm on Saturdays" | — |
-| 13 | text | home | Home | *(none — deliberately absent)* | "Spare fuse box key lives in the tin on the shelf" | — |
+```
+CORPUS_NOW = 1750000000   # epoch seconds; the corpus anchor. Every captured_at below is
+                          # CORPUS_NOW minus a fixed offset, so the corpus never depends on
+                          # wall-clock time. The newest record (id 2) sits at CORPUS_NOW - 7200,
+                          # and that — not CORPUS_NOW — is R6's decay target.
+```
 
-Planted failure instances: **ids 2 and 3** are the same fact twelve days apart (the stale-value
-case, R‑D9); **id 8** is the lexical near-miss for a bike question ("parking" without a bike);
-**ids 4, 5, 6, 12** exercise the category/price filter, with id 12 carrying no `price` at all;
-**id 13** carries no timestamp; **ids 6 and 9** are voice records stored by transcript;
-**id 10** is the only `garden` point and is semantically unrelated to food (AC7b).
+**`fixtures/day_memories.json`** — 14 records, ids 1–14, exactly these facts:
 
-**`fixtures/gen_images.py`** — a deterministic generator (no randomness, no network) writing PNGs
-under `fixtures/images/`. Every image is 512×512, a flat background with one centred filled glyph:
+| id | source_type | captured_at | category | location | content |
+|---|---|---|---|---|---|
+| 1 | text | `CORPUS_NOW - 9*86400` | home | Flat | text: "Bike lock combination is 3812" |
+| 2 | text | `CORPUS_NOW - 7200` | home | Flat | text: "Changed the bike lock combination to 7590" |
+| 3 | text | `CORPUS_NOW - 18000` | food | Harbour Road | text: "Pastel de nata at the bakery on Harbour Road, 2.40"; price 2.40 |
+| 4 | text | `CORPUS_NOW - 108000` | food | Harbour Road | text: "Soup and bread at the canteen, 11.00"; price 11.00 |
+| 5 | text | `CORPUS_NOW - 100800` | food | Old Town | text: "Set lunch at the fish grill in the Old Town, 21.00"; price 21.00 |
+| 6 | text | `CORPUS_NOW - 21600` | errands | Flat | text: "Umbrella stand by the front door is broken" |
+| 7 | text | `CORPUS_NOW - 25200` | work | Studio | text: "Moved the Thursday review to the following Monday" |
+| 8 | voice | `CORPUS_NOW - 14400` | errands | Tram stop | text (transcript): "Left the spare charger in the grey bag at the tram stop"; audio_ref "note_one.wav" |
+| 9 | voice | `CORPUS_NOW - 93600` | home | Flat | text (transcript): "The window latch in the back room sticks and needs oil"; audio_ref "note_two.wav" |
+| 10 | photo | `CORPUS_NOW - 18000` | food | Harbour Road | image_ref "red_circle.png" |
+| 11 | photo | `CORPUS_NOW - 14400` | errands | Tram stop | image_ref "blue_square.png" |
+| 12 | photo | `CORPUS_NOW - 25200` | work | Studio | image_ref "green_triangle.png" |
+| 13 | text | `CORPUS_NOW - 259200` | home | Flat | text: "Recycling is collected on Tuesday mornings" |
+| 14 | text | `CORPUS_NOW - 180000` | travel | Ferry terminal | text: "The ferry to the island leaves at 07:15 on Saturdays" |
 
-| file | ids | background | glyph | glyph colour | scale | rotation |
-|---|---|---|---|---|---|---|
-| `circle_red_on_white.png` | 100 | #FFFFFF | circle | #D7263D | 60% | — |
-| `circle_blue_on_white.png` | 101 | #FFFFFF | circle | #1B4FA0 | 60% | — |
-| `square_red_on_white.png` | 102 | #FFFFFF | square | #D7263D | 60% | 0° |
-| `square_blue_on_white.png` | 103 | #FFFFFF | square | #1B4FA0 | 60% | 0° |
-| `triangle_green_on_black.png` | 104 | #101010 | triangle | #2E9E4F | 60% | 0° |
-| `triangle_yellow_on_black.png` | 105 | #101010 | triangle | #E8C020 | 60% | 0° |
-| `cross_black_on_white.png` | 106 | #FFFFFF | cross | #101010 | 60% | 0° |
-| `ring_purple_on_grey.png` | 107 | #9A9A9A | ring | #6B2FA0 | 60% | — |
-| `widget_a_1.png` / `_2.png` / `_3.png` | 200, 201, *(held out)* | #FFFFFF / #F2F2F2 / #EAEAEA | filled pentagon | #D7263D | 60 / 56 / 64% | 0 / 18 / 36° |
-| `widget_b_1.png` / `_2.png` / `_3.png` | 210, 211, *(held out)* | #FFFFFF / #F2F2F2 / #EAEAEA | filled five-point star | #1B4FA0 | 60 / 56 / 64% | 0 / 18 / 36° |
+Deliberate instances planted in this corpus, one per demonstrated failure mode: **ids 1 + 2** are the contradicting-fact pair (CTX-B5); **id 6** is the lexical near-miss for a question about a lost umbrella (CTX-B4); **id 8** is the memory deleted by AC6 (CTX-B6); **id 13** is a memory no plausible test question is about; and **no record at all** is about vehicle maintenance, which is what makes AC7's unanswerable question unanswerable (CTX-B2).
 
-Photo records (ids 100–107) carry `source_type: "photo"`, `category: "fixture"`, their `file`, and
-`timestamp` = NOW − (id − 99) × 600. Object records carry `source_type: "object"` and `label`
-`"widget-a"` / `"widget-b"`. `widget_a_3.png` and `widget_b_3.png` are **held out** — never stored
-until a test teaches with them.
+**`fixtures/make_fixtures.py`** — a module (importable identifier; no hyphens anywhere in a fixture module name) that writes, deterministically and with no network:
 
-**Two standing rules about fixtures.** (a) Fixture *records* are never edited to make an assertion
-pass — that is a defect in the build, not in the corpus. (b) The generator's *parameters* are part
-of the fixture definition: if the two subjects turn out not to separate under the chosen image
-model, report it as a fixture-design defect and regenerate with more visually distinct subjects,
-documenting the change in the test evidence — but never weaken the assertion.
+- Three scene photos, 512×512, white background, one flat-coloured shape each, centred: **`red_circle.png`**, **`blue_square.png`**, **`green_triangle.png`**.
+- Three views of one subject to teach, 512×512 on white, a flat **yellow five-pointed star**, differing only in size, position and rotation: **`taught_view_one.png`**, **`taught_view_two.png`** (taught), **`taught_view_held_out.png`** (never taught; used to test).
+- The taught subject's own note, used by AC22 when the subject is written into the day store as a single dual-vector memory (id 15): **"The yellow star came from the market stall"**.
+- Two 16 kHz mono PCM WAV files, ~1.5 s, a fixed tone: **`note_one.wav`**, **`note_two.wav`**. Their *content* is irrelevant: they exist so the audio→transcript→store path is exercised on a real file. The transcript text comes from the transcriber (R12, AC16).
 
-**Absolute course scores are never asserted on fixture data.** 0.80, 0.6 and 0.23 are the course's
-calibrated values on the course's own photos and notes; on synthetic fixtures they mean nothing.
-The criteria below assert *mechanisms and relative order*; the constants are asserted only as
-configuration and as threshold **semantics**.
+**Transcriber seam (project hardening).** Transcription is reached through an injectable interface. The default suite injects a deterministic fake that returns the record's own transcript for the matching `audio_ref`; a `live`-marked criterion may run the real model against a recording the learner supplies. The course calls its speech model directly; this seam is added so the voice contract is testable without a synthesized human voice.
 
-### Given / When / Then
+### 5.2 Given / When / Then
 
-Tiers: **core** criteria must pass for the build to be complete; **voice** criteria additionally
-need the speech package and its model. Both tiers are keyless and offline after the one-time
-download.
-
-| # | Tier | Given | When | Then |
+| # | Given | When | Then | Rule |
 |---|---|---|---|---|
-| AC1 | core | a clean store directory | the store is initialised | it reports 0 points, and its config declares exactly two named vector spaces: `text` size 768 cosine and `image` size 512 cosine |
-| AC2 | core | the freshly initialised, empty store | the text lane is queried with "a place to eat nearby", limit 3 | zero results are returned and no exception is raised |
-| AC3 | core | the freshly initialised store | its indexes are inspected | a keyword index exists on `category` and a float index on `price` |
-| AC4 | core | the 13 note records and 8 photo records | they are ingested | the store reports 21 points; every text/voice point has a 768-length `text` vector and no `image` vector; every photo point has a 512-length `image` vector and no `text` vector |
-| AC5 | core | voice record id 6 | it is ingested and then read back | its payload carries the transcript, carries no audio bytes under any key, and is retrievable by a text query like any note |
-| AC6 | core | the ingested corpus | the text lane is queried with "where did I leave the bike" | id 1 is the top text result, and it outranks id 8 ("parking permit…") |
-| AC7 | core | the ingested corpus | the same question is run with a filter of `category == "food"` **and** `price < 15` | exactly ids 4 and 6 come back — id 5 fails the price bound and id 12, which has no `price`, cannot satisfy the range condition |
-| AC7b | core | the ingested corpus, in which id 10 is the only `garden` point and is semantically unrelated to food | "somewhere to eat" is searched with a filter of `category == "garden"`, limit 3 | id 10 comes back. *This separates a filter applied **inside** the search from one applied to its results: id 10 would never enter an unfiltered top 3 for this question, so a post-filtered implementation returns nothing and fails.* |
-| AC8 | core | the ingested photos | the image lane is queried with the stored vector of `circle_red_on_white.png` | that same point is the top hit with a score ≥ 0.99 |
-| AC8b | core | the 8 fixture photos stored | the image lane is queried with the **text** "a red circle" | `circle_red_on_white.png` outranks both `triangle_green_on_black.png` and `cross_black_on_white.png` — a typed description reaching the image space, which is the cross-modal half of R4 |
-| AC9 | core | the ingested corpus | a recall for "soup" is requested | the response validates against *recall-response*: exactly the three lanes, no id in more than one lane, every item carrying its own `weak` verdict, and both cutoffs reported |
-| AC10 | core | the ingested corpus | a recall runs with the text cutoff set above every returned score | every text item comes back with `weak: true`, none is presented as the answer, and none is dropped from the response |
-| AC11 | core | the ingested corpus and the top hit for "where did I leave the bike" | that memory is deleted and the question re-run | the previously second result is now first with its score unchanged to within 1e-6, the deleted id is absent, and the point count has dropped by exactly one |
-| AC12 | core | a store holding the corpus, optimised and flushed | the store is closed and reopened from the same directory **in a new process** | the point count is unchanged and the same question returns the same top id with the same score |
-| AC13 | core | the 8 fixture photos stored, nothing taught yet | `widget_a_3.png` is recognised | the nearest point is one of the 8 photos, not a widget view, and its score is lower than the score the same photo reaches in AC14 |
-| AC14 | core | views `widget_a_1/2` taught under label "widget-a" and `widget_b_1/2` under "widget-b" | `widget_a_3.png` is recognised | the nearest point is a taught **widget-a** view and the reported label is "widget-a" |
-| AC15 | core | the taught object store | recognition of `widget_a_3.png` runs with the threshold set to 1.01, then to 0.0 | the first returns verdict `UNKNOWN` while still reporting the nearest label and score; the second returns verdict "widget-a" — and the shipped configuration carries exactly one threshold constant, 0.80 |
-| AC16 | core | ids 2 and 3 (same fact, 12 days apart; id 2 is the closer paraphrase of the question, id 3 the newer and wordier note) | "side gate code" is asked by similarity only, then with the D9 freshness ranking | similarity alone ranks id 2 above id 3; with freshness applied id 3 ranks first. *If similarity alone already ranks id 3 first, the fixture has failed to reproduce the stale-value case — a fixture-design defect: report it and regenerate so the older note is the closer paraphrase. The assertion does not move.* |
-| AC17 | core | id 13, which has no timestamp | the D9 freshness ranking is applied | id 13 is scored as current and is still returned — not dropped and not scored as infinitely old |
-| AC18 | core | the built interface (server or CLI, per §2) | a question is asked through it end to end | it returns the *recall-response* shape for a fixture question, with no network call on the query path |
-| AC19 | core | the built source tree | it is searched | no import of an LLM SDK and no outbound HTTP call exists on the query path |
-| AC20 | core | no provider API keys set in the environment, and the models already downloaded | the full core suite is run | every core criterion still passes |
-| AC21 | voice | a voice record whose `audio_file` is present on disk | it is ingested | the stored payload holds the transcript the speech model produced and no audio bytes, and the speech session is released before any embedding model is loaded |
-| AC22 | core | the built app and its output | every number it displays is traced | each is either computed from this build's own store or measured by this build at run time; none of the course's latency figures appears as this build's measurement |
+| **AC0** | a directory that does not yet exist | the store is initialized fresh, before anything else runs | it matches `StoreDescriptor`: the directory exists on disk; it declares space `text` size 768 cosine **and** space `image` size 512 cosine; and it declares payload indexes `category` (keyword) and `price` (float) | R1, R14 |
+| **AC1** | the freshly-initialized, empty store | any question is asked in any lane | every lane returns zero hits, `has_confident_answer` is false, and no exception is raised | R2 |
+| **AC2** | the empty store | all 14 fixture records are ingested | the store reports exactly **14** memories; reading back id 3 returns payload `category` "food", `price` 2.40, `location` "Harbour Road" and its exact text; ids 10–12 carry an `image` vector of length 512 and ids 1–9, 13, 14 carry a `text` vector of length 768 | R1 |
+| **AC3** | the ingested store | asking *"where did I leave the spare charger"* | the top hit of the **voice_notes** lane is **id 8**, and its `confident` is true | R1 |
+| **AC4** | the ingested store (14 memories) | the same 14 fixture records are ingested a second time | the store still reports exactly **14** memories, and each id still resolves to the same source record — the second ingest updated points, it did not duplicate them | R16 |
+| **AC5** | the ingested store | asking *"somewhere to eat"* with the filter `category == "food"` AND `price < 15` | the text_notes lane returns exactly **{id 3, id 4}** in some order — id 5 is excluded by price, id 10 is excluded because it is a photo with no price, and every returned hit still carries a similarity score | R14 |
+| **AC6** | the ingested store, and AC3's result | id 8 is deleted, then AC3's question is asked again | the store reports exactly **13** memories; **id 8 appears in no lane**; the voice_notes lane's new top hit is **id 9**; and every remaining hit's score is identical to its score before the deletion | R7, R9 |
+| **AC7** | the ingested store | asking *"how do I change a tyre on a motorbike"* | `has_confident_answer` is **false**, and no hit in any lane has `confident: true` — the app returns no answer rather than the nearest one | R3 |
+| **AC8** | the ingested store | any question is asked | the result matches `RecallResult`: three separate lanes, every hit naming its `space`, and **no** combined or cross-lane ordering exists anywhere in the returned object or in the CLI rendering; the `text` floor and the `image` floor are two distinct configured values | R4 |
+| **AC9** | the ingested store, with the **text** floor set for this run to `(top text score for the question) + 0.01` | asking *"where did I leave the umbrella"* | id 6 is returned in the text_notes lane with `confident: false`; `has_confident_answer` is false; and under Ledger D9's default the hit is still present and flagged weaker (under D9 *suppress*, it is absent from the lane instead) | R3, R5 |
+| **AC10** | the ingested store, recency ranking enabled with half-life 604800 s and weight 0.2 | asking *"what is the bike lock combination"* | the top text_notes hit is **id 2** (the newer combination), and its `ranking_score` exceeds id 1's | R6 |
+| **AC11** | the same store and ranking | asking *"when does the ferry leave"* | the top text_notes hit is **id 14** — the **third-oldest** memory in the corpus, older than nine others — proving the recency bonus is bounded and cannot pull a fresher but less relevant memory above a clearly better meaning match | R6 |
+| **AC12** | an object store holding only the three scene photos as labelled views ("a red circle", "a blue square", "a green triangle") | `taught_view_held_out.png` is shown to it | a nearest match is returned with a **wrong** label (one of the three shapes), and the verdict is **`unknown`** because its score is below the calibrated recognition threshold — nearest-neighbour always answers, the threshold is what makes it an answer | R3, R13 |
+| **AC13** | the text encoder | the identical string is embedded once through the document path and once through the query path | the two vectors differ, and the build uses the query path for questions and the document path for stored text throughout (if the encoder chosen in D4 has no separate query form, the build records that fact and uses one path consistently for both) | R8 |
+| **AC14** | the ingested store, written and flushed, with its handle closed and **the process exited** | a **new process** loads the store from the same directory and asks AC3's question | the store reports the same memory count and the top voice_notes hit is **id 8** with the same score, to within floating-point equality | R10 |
+| **AC15** | an open store handle on a populated directory | the build's reset path is asked to remove that directory | it refuses (or closes the handle first) and no native crash occurs; after an explicit close, the same call removes the directory and a fresh initialization succeeds | R11 |
+| **AC16** | `note_one.wav` on disk and the fake transcriber injected | id 8 is ingested | the stored searchable text equals the transcriber's returned string exactly; the stored record carries `audio_ref` "note_one.wav" and **no audio bytes**; and asking AC3's question afterwards reads the audio file **zero** times | R12 |
+| **AC17** | the AC12 object store, after `taught_view_one.png` and `taught_view_two.png` are taught under the label "yellow star" | `taught_view_held_out.png` is shown again | the nearest match is one of the two taught views, `nearest_label` is "yellow star", the verdict is **`known`**, and the score is **strictly greater** than the score recorded in AC12 | R13 |
+| **AC18** | the completed build, after the one-time model download | the full suite runs with outbound network blocked, excluding `live`-marked criteria | every criterion passes; the ingest and answer paths make **zero** outbound network calls; and no generative or remote model is referenced anywhere in the source | R15 |
+| **AC19** | the ingested store | a second source is registered whose id range overlaps the first, and ingest is attempted | the allocator **raises**; no existing memory's payload has changed; the store's count is unchanged | R16 |
+| **AC20** | the six fixture images (three scene photos, three views of the taught subject) | the held-out calibration procedure of R17 is run | it reports the highest non-match score and the lowest match score, the chosen threshold lies strictly between them, and the value plus the corpus it came from is written to a named file that the build reads its recognition threshold from | R17 |
+| **AC21** *(`live` — inactive under the baseline; applies only if Ledger D7 is changed)* | a reachable Qdrant server and valid `QDRANT_URL`/`QDRANT_API_KEY` in the environment | the local store is synced | every local point is present on the server with the same id, vectors and payload, **and** AC3 and AC7 still pass with the network then blocked — the sync never became the read path | R15, D7 |
+| **AC22** | the ingested store, into which the taught subject of AC17 is written as one memory carrying **both** an image vector (a taught view) and a text vector (the note "The yellow star came from the market stall") | that one memory is reached twice — once by showing `taught_view_held_out.png`, once by asking *"where did the yellow star come from"* | **both** routes return the **same single id**; that point carries both a 512-length `image` vector and a 768-length `text` vector; the two hits report different `space` values and their scores are never compared | R1, R4, R13 |
 
-Every business rule reaches ≥1 criterion above, and every criterion traces back to a rule.
+Every demonstrated failure mode appears in all four places: **CTX-B1**→R2/AC1, **B2**→R3/AC7+AC12, **B3**→R4/AC8, **B4**→R5/AC9 (fixture id 6), **B5**→R6/AC10+AC11 (fixture ids 1+2), **B6**→R7/AC6 (fixture id 8), **B7**→R8/AC13, **B8**→R9/AC6, **B9**→R10/AC14, **B10**→R11/AC15.
 
 ---
 
 ## 6. Standing Permissions (in force for the entire build)
 
 **Always**
-- Install the whole dependency set in one early batch, and say what it costs before starting it.
-- Run the core suite after each milestone and paste the real output.
-- Write decisions, thresholds and cutoffs into files (`resolved-decisions.md`, a config module),
-  not only into chat.
-- Report a blocked or failing criterion as failed, with its output.
+- Read this spec, `resolved-decisions.md`, and anything inside the build folder.
+- Create, run and re-run the fixture generator, the store, the CLI, and the test suite.
+- Install the pinned dependencies of §2, and download the local models on first run.
+- Write the calibration record (R17) and the resolved-decision checklist.
+- Report every acceptance criterion with cited evidence.
 
-**Ask First** *(each entry is a trade-off the course argued aloud, whose wrong side either forces
-rework or changes a guarantee no test would catch)*
-- **Changing the recognition threshold from 0.80** — the instructor calibrated it against 6 matches
-  and 220 non-matches and says plainly that the right value depends on how much a false positive
-  costs you versus a false negative (Lesson 5). Changing it silently re-draws the known/unknown
-  line.
-- **Changing either lane cutoff (0.6 text, 0.23 photo)** — Lesson 4 sets them per model; a change
-  moves results between "answer" and "weak" without failing any criterion.
-- **Changing the freshness weight or half-life, or turning ranking off** — cross-referenced to
-  **D9**. Weight 0.2 is what keeps meaning ahead of recency; raising it lets recent-but-irrelevant
-  win.
-- **Switching to, or adding, a server-backed store** — cross-referenced to **D7**. It introduces a
-  credential and re-uploads every point.
-- **Changing an embedding model or a vector width** — cross-referenced to **D4**. Every stored
-  point must be re-embedded, and stored scores stop being comparable with anything recorded
-  before.
-- **Deleting any memory the person did not ask to forget**, including wiping the store to "start
-  clean" — deletion is irreversible and the course teaches it as a deliberate act.
+**Ask First** — each of these is a trade-off the course argued aloud, or a change that forces rework; none of them is the agent's call.
+1. **Changing either embedding model, or any vector width.** Forces a full re-embed and re-ingest of every memory, and invalidates every calibrated floor. (Ledger D4; argued in Lessons 1, 3 and 4.)
+2. **Enabling any sync, upload, or off-device transfer of memories.** Silently converts a privacy guarantee into a conditional one and no acceptance criterion catches it. (Ledger D7; argued in Lesson 1.)
+3. **Deleting, wiping or re-creating a populated store.** Irreversible, and the course's own reset helper does exactly this — which is why it needs a human. (Lesson 3 argues that forgetting is valuable *and* that vector stores comfortably hold far more than this corpus.)
+4. **Changing any confidence floor or the recognition threshold away from its calibrated value.** Directly moves the false-positive / false-negative balance the course spends a whole section calibrating. (Lesson 5; R17.)
+5. **Changing the recency half-life or weight, or applying recency ranking to a lane that did not have it.** The clearest instance of a silent guarantee change: raise the weight and recency starts overruling meaning, with every acceptance criterion still green. (Lesson 5; R6.)
+6. **Making any optional operation automatic** — e.g. re-ranking every query by default, auto-teaching a subject from a low-scoring match, or auto-pruning the store. No test catches this class of change.
+7. **Changing the memory id scheme after any data exists.** Forces re-ingest. (Ledger D11.)
+8. **Introducing an LLM, a remote model, or any network call into the ingest or answer path.** Excluded by §1 and R15; if a learner wants it, it is a scope change, not an implementation detail.
 
 **Never**
-- Add an LLM, or route any answer through a generative model.
-- Read a provider API key, or commit any secret.
-- Present the course's measured latency numbers — or any number not measured by this build — as
-  this build's own.
-- Edit a fixture record to make a criterion pass.
-- Claim a criterion passes without its output.
+- Never invent provenance: no citation to a lesson, parameter or behavior that is not in this file.
+- Never return a below-floor hit as a confident answer, or a recognition verdict of `known` without a label — abstain instead.
+- Never modify, delete or regenerate-with-different-facts a fixture in order to make a test pass.
+- Never commit, print, or write to a repo file any credential — `QDRANT_API_KEY` included.
+- Never store raw audio bytes or image bytes inside a memory record.
+- Never compare, merge, or jointly scale a text score and an image score.
 
 ---
 
 ## 7. Test Plan & Self-Verification
 
 ```bash
-python3 --version                      # must be >= 3.12; report the actual value
-python3 -m venv .venv && . .venv/bin/activate
-pip install -r requirements.txt        # the pins in §2, one batch
+python -m venv .venv
+source .venv/bin/activate          # Windows: .venv\Scripts\activate
+pip install -r requirements.txt
 
-python -m fixtures.gen_images          # writes fixtures/images/, deterministic
-pytest -q tests                        # the core tier
-pytest -q tests -m voice               # the voice tier (needs the speech model)
+python -m fixtures.make_fixtures   # writes the images and audio of §5.1; deterministic, offline
 
-# then start the interface chosen in §2 and ask a fixture question through it
+python -m app.cli warmup           # one-time model download; the ONLY step that needs the network
+python -m app.cli ingest --corpus fixtures/day_memories.json
+python -m app.cli calibrate        # R17; writes the calibration record
+python -m app.cli ask "where did I leave the spare charger"
+
+pytest -q -m "not live"            # the completion run — this is what "done" means
+pytest -q                          # includes AC21; requires a credential, and is NOT part of completion
 ```
 
-After the suite runs, report **per acceptance criterion**: its id, pass or fail, and the evidence
-— the test name and the assertion output, or the file path and line where the behaviour lives.
-Numbers that appear in the app (point counts, scores, any timing) must be traceable to this
-build's own run.
-
-"Should pass", "looks correct" and "works as expected" are treated as failures: they mean it was
-not run. A criterion that cannot run in this environment is reported as blocked, with the reason —
-never quietly skipped.
+The building agent **MUST** report results **per acceptance criterion (AC0–AC22)** with cited evidence: the pytest node id, the relevant lines of its output, and the file path of anything it wrote. A criterion reported as *"should pass"*, *"looks correct"*, or *"implemented"* without cited output is treated as **failed** — those phrasings mean it was not run. AC18's network assertion must cite how outbound traffic was actually blocked, not merely that no call was expected. AC21, when it is not run, is reported as `skipped (live, no credential)` — never as passed.
 
 ---
 
 ## Course Context Pack (embedded — agent-readable)
 
+*Concepts, not code. Everything in CTX-A…CTX-C is durable; only CTX-D is perishable.*
+
 ### CTX-A. The pattern
 
-`capture → embed per modality → store as points (vector + payload) → retrieve (nearest, filtered,
-re-ranked) → decide and present` — with two operations hanging off the store: **teach** (write
-example vectors under a label) and **forget** (delete points). The course draws this as a closed
-four-stage loop — *capture → embed → store → recall*, with recall feeding back into capture — and
-every lesson adds one stage or one modality to it.
+**`capture → transcribe (audio only) → embed → store → retrieve → threshold → rank → answer`**, with a second entrance for recognition: `show a photo → embed → retrieve nearest → threshold → label or UNKNOWN`.
 
-**The framing underneath it all: the model is frozen, the memory grows.** Nothing is trained,
-fine-tuned or adapted; what changes between "it doesn't know this" and "it does" is a set of
-vectors written to disk. That is why teaching costs a few photos instead of a training run, and
-why the capability of the finished thing is a property of its memory rather than of its weights.
+- **capture** — a memory arrives as text, as a still image, or as audio. It is a fact worth recalling, with a time attached.
+- **transcribe** — audio has no meaning a text encoder can read, so speech becomes text on the device at ingest; what is remembered is the transcript, never the recording. After this step a voice memory is indistinguishable from a typed one, which is why a *spoken* question works with no new machinery.
+- **embed** — an encoder turns the memory into a vector: a list of numbers whose position encodes meaning. Text and images use different encoders, so a memory can live in more than one space at once; an image encoder whose text and vision towers share a space is what lets words find pictures.
+- **store** — vectors are written as points into an embedded store that organizes them into a navigable graph, so a lookup over a large corpus stays fast. The payload — the original words and the metadata — rides along on the point, so a hit is already an answer and needs no second lookup.
+- **retrieve** — a question goes through the *same* encoder as the memories and the store returns the approximate nearest neighbours. Payload conditions are pushed **into** the query so similarity is only computed where they hold. Closeness of vectors **is** the similarity score.
+- **threshold** — retrieval always returns its nearest point. The floor is what turns "nearest" into "an answer", and it is a property of the encoder, so each space needs its own.
+- **rank** — similarity decides the order, with an exponential decay on capture time added as a bounded bonus so the newer of two contradicting memories wins without recency ever outranking meaning.
+- **answer** — the memories themselves come back, per lane, with their scores and their metadata. No model composes anything; the whole loop runs with the model weights frozen, and what changes over time is only the memory.
 
-- **Capture** — a memory arrives as typed text, as a photo, or as speech. Speech is turned into
-  text at the boundary and never stored as audio, so everything downstream has only two modalities
-  to handle.
-- **Embed** — a text model turns notes and questions into vectors; a joint image/text model turns
-  photos into vectors and lets a typed description reach them. The two models produce different
-  widths on different score scales, which is why their vectors live in separate named spaces and
-  their results are never merged.
-- **Store** — one point per memory: an id, its named vector(s), and the whole memory as payload.
-  The payload is what lets a result be shown and filtered; the vector is what lets it be found.
-  Fields you intend to filter on must be indexed before the filter runs.
-- **Retrieve** — *approximate* nearest-neighbour search inside one named space: the engine
-  organises stored vectors into a navigable graph and walks it, which is what makes lookup fast
-  enough to feel instant and why the index has to be built before it can be searched well.
-  Optionally narrowed by payload conditions *evaluated inside the search* (R7), and optionally
-  re-scored by a formula over payload values — which is where recency enters.
-- **Decide and present** — nearest search always returns its closest point, however poor. Turning
-  a neighbour into an answer is a separate act: compare against a cutoff, show what cleared it,
-  dim what did not.
-- **Teach** — recognition without training: store a handful of example views under one label. More
-  views of the same subject make it easier to recognise; nothing is retrained.
-- **Forget** — delete the point. The next-best answer moves up; nothing else changes. Stores handle
-  very large numbers of memories, but lookup cost still grows with size, so forgetting has value
-  beyond privacy.
-
-This whole loop runs locally, with no inference provider anywhere in it.
+**Why the pattern is worth taking away:** it gives an application a memory that grows without any training, runs where the data already is, answers with no connection, and keeps private data private — and it is the same loop whether the device is a computer, a wearable, a camera rig, or a robot. The device is incidental; the memory loop is the asset.
 
 ### CTX-B. Failure-mode catalog
 
-1. **An answer that sounds authored.** *Symptom:* the assistant explains rather than recalls.
-   *Cause:* a generative model in the answer path. *Fix:* the pipeline has none — what comes back
-   is the memory itself and its score. *Enforced by R1, R2 / AC19, AC20.*
-2. **One blended result list.** *Symptom:* photo results and note results interleave, and the
-   ordering looks arbitrary. *Cause:* two models' scores compared as if they shared a scale.
-   *Fix:* separate lanes, separate cutoffs, no cross-model sorting. *Enforced by R5 / AC9.*
-3. **A weak match presented as the answer.** *Symptom:* a question about a bike returns a note
-   about parking. *Cause:* nearest search always returns something; without a cutoff the closest
-   thing becomes "the answer". *Fix:* score against the lane's cutoff and mark what falls below it.
-   *Enforced by R6 / AC10.*
-4. **A filter that quietly does nothing.** *Symptom:* narrowing by category or price changes no
-   results. *Cause:* filtering a payload field that was never indexed. *Fix:* create the field
-   indexes at initialisation; a point missing the field cannot satisfy a range condition on it.
-   *Enforced by R7 / AC3, AC7, AC7b.*
-5. **A forgotten memory that keeps answering.** *Symptom:* a deleted note still tops the results.
-   *Cause:* deletion that never reached the store, or an index left stale. *Fix:* delete the point,
-   then confirm the next-best has moved up and the remaining scores are untouched. *Enforced by
-   R8 / AC11.*
-6. **Every score slightly wrong.** *Symptom:* retrieval is plausible but consistently mediocre.
-   *Cause:* the text model applies different task prefixes to documents and to queries, and one
-   call was used for both. *Fix:* embed questions with the query call, stored text with the
-   document call. *Enforced by R9 / AC6.*
-7. **Dimension and space mistakes.** *Symptom:* writes rejected, or a photo query scored against
-   notes. *Cause:* one shared vector space, or a width that does not match its model. *Fix:*
-   declare both named spaces with their widths up front and embed the question once per space.
-   *Enforced by R3, R4 / AC1, AC4, AC8, AC8b.*
-8. **Audio kept as audio.** *Symptom:* voice memories cannot be searched. *Cause:* storing the
-   recording instead of its transcript. *Fix:* transcribe at ingest and store the text; a voice
-   memory is a text memory that remembers where it came from. *Enforced by R10 / AC5, AC21.*
-9. **The process killed mid-build.** *Symptom:* the run dies during ingestion of a mixed corpus.
-   *Cause:* a speech model and both embedding models resident at once. *Fix:* transcribe first,
-   release that session, then load the embedding models. *Enforced by R11 / AC21.*
-10. **Memories that do not survive a restart.** *Symptom:* a taught object is gone after a reopen.
-    *Cause:* writes never optimised and flushed to disk. *Fix:* flush before announcing success,
-    and prove it by reopening in a new process. *Enforced by R12 / AC12.*
-11. **A confident wrong name.** *Symptom:* an object never taught is named as something else.
-    *Cause:* treating the nearest hit as the verdict. *Fix:* a threshold decision, with `UNKNOWN`
-    below it and the nearest label still reported. *Enforced by R13 / AC13, AC14, AC15.*
-12. **Recognition treated as training.** *Symptom:* adding a subject is expected to need a training
-    run. *Cause:* the mental model of fine-tuning. *Fix:* teaching writes example vectors; a few
-    views of one subject are enough, and more views improve it. *Enforced by R15 / AC14.*
+**CTX-B1 — The store answers nothing before it holds anything.** *Symptom:* a well-formed question returns an empty result. *Cause:* retrieval can only rank what was written; an empty store has no neighbours. *Fix:* treat empty as a legitimate, non-error answer and make the empty state visible in the UI rather than an exception. *Enforced by R2, AC1.*
 
-### CTX-C. Decision background *(reference only — decisions live in the Decision Ledger)*
+**CTX-B2 — Nearest-neighbour always answers, even when it should not.** *Symptom:* an unfamiliar photo is confidently labelled as the closest thing the store happens to hold; an off-topic question returns a top hit. *Cause:* similarity search is a ranking, not a classifier — it has no notion of "none of these". *Fix:* a decision threshold on the score, below which the verdict is UNKNOWN / no confident answer. The right value is found by scoring held-out matches against non-matches and placing the line in the gap between them. *Enforced by R3, AC7, AC12.*
 
-1. **On-device versus server → D7.** Lesson 1 makes the case for keeping memory local: it works
-   with no connection, recall is faster and more reliable than a network round trip, and private
-   memories stay private with no cloud storage or API involved. The same lesson concedes what a
-   server buys — sharing memories between devices, and compute and storage a small device does not
-   have — and states the two can be combined. The course works locally throughout; the sync path is
-   named and shipped as helper functions, but no lesson in the supplied materials exercises it, and
-   it needs a cluster URL and an API key.
-2. **One store or several → D8.** The course does both: the finished assistant keeps text and image
-   spaces in one store, while object recognition is built in a store of its own before the taught
-   object is folded into the assistant's store as a single point carrying both a photo vector and a
-   note vector. The pattern is indifferent; the operational consequences are not. Two drafted
-   slides make the one-store arrangement explicit: *Two Encoders, One Shard* (one store, two named
-   vectors, 768-d text from one model and 512-d image from another) and *One Point, Two Doors* (a
-   single point carrying an image vector, a text vector and a note, reachable "by sight" or "by
-   words"). Neither appears in a video, but both match what the Lesson 5 notebook builds.
-3. **Meaning versus recency → D9.** Lesson 5 builds the failure deliberately: two memories hold a
-   code, the older one wins on meaning alone, and the newer one is the one you want. The fix adds
-   an exponential decay over the timestamp to the similarity score, capped by a weight so meaning
-   still leads. The mechanism is a two-step query — pull a wider candidate set by meaning, then
-   re-score just those. A memory with no timestamp is treated as current rather than discarded.
-4. **Where the thresholds came from.** The recognition threshold was calibrated, not guessed: the
-   instructor scored a held-out view of each known subject against its own taught views (6 matches)
-   and against unrelated subjects and scene photos (220 non-matches), found the lowest match at
-   0.86 and the highest non-match at 0.74, and settled on 0.80 as the middle. He says explicitly
-   that the right value depends on the relative cost of false positives and false negatives in your
-   application. The two recall cutoffs (0.6 text, 0.23 photo) differ because the two models score
-   on different scales — not because photos matter less.
-5. **The latency figures are background, not a target.** The course's curve was measured on the
-   instructor's own machine (a desktop-class CPU, medians over 300 queries per size) and replayed
-   in the lesson rather than timed live, because a store of a quarter-million vectors does not fit
-   in a course container and a number timed on a shared sandbox moves every run. The shape is the
-   lesson: growing the store 250× raised lookup time roughly 50×, while the cost of embedding the
-   question stays flat regardless of store size. Treat it as intuition about where time goes, never
-   as a benchmark to reproduce (R14).
-6. **Course identifiers, for reading the lessons.** The course calls a store directory a *shard*
-   (also "collection"), names them per lesson, and allocates ids by purpose — seed objects at 0–2,
-   taught views from 100, bulk photos from 1000, an ad-hoc note at 900, the assistant's taught
-   memory at 5000. None of these names or ranges is binding here; they exist so the lessons are
-   recognisable when you go back to them. This spec picks its own ranges in §5. The lessons' own
-   result sets are small throughout — searches fetch between 3 and 10 candidates depending on the
-   call site, and after a bulk write the lessons preview only the first 4 notes or 6 photos. Those
-   are presentation conventions for a recorded lesson, not constraints on the pattern; R5 fixes
-   what this build fetches.
-7. **Scale of the course's own corpus, for context.** The lessons work with a day of 42 captures
-   (20 text, 17 photo, 5 voice), a 165-photo image bank, about a hundred notes of earlier history,
-   and six object subjects with two or three views each. The fixture corpus in §5 is deliberately
-   smaller and wholly invented; nothing about the pattern depends on corpus size.
-8. **The merged inbox the course drafted and dropped → backs R5.** A slide titled *What comes back*
-   was drafted for Lesson 4: one question fanned out to both models, and the photo, voice and text
-   results "merged into one inbox ranked by score", with low scores flagged as weak. It appears in
-   no video, and the display the course actually shipped does the opposite — three side-by-side
-   lanes, with its own source stating that a blended list is never the right rendering. The
-   mechanical reason is the one Lesson 4 narrates aloud: the two lanes come from different models,
-   so their scores do not share a scale and a single ranked list would be ordering incomparable
-   numbers. Two supplied materials genuinely disagree here; the shipped code and the narration win
-   over a slide that was cut, so this resolves as a business rule (R5) and **not** as a decision
-   anyone is asked to make — offering "merged or lanes?" as a menu would invite picking the side
-   the course removed.
-9. **What a store is on disk → backs D7, D8 and R12.** A drafted slide, *In-Process and On-Disk*,
-   draws the engine as a library living inside the application's own process — not a server — with
-   the memory itself a directory holding a config file, segment files and a write-ahead log, and a
-   dashed, explicitly *optional* link out to a central server. Lesson 2 says the same in words:
-   "there is no separate vector database server, and the memory is stored in a folder on the
-   device." That shape is why durability is an explicit act (R12): a write reaches the log and the
-   segments only when the store is optimised and flushed, and why "back up your memories" means
-   copying a directory.
-10. **A third lesson numbering exists — do not use it.** Both decks were built against an earlier
-    six-lesson plan: their title cards read "Lesson 2: Store and Recall", "Lesson 3: Finding the
-    Right Memory", "Lesson 5: Teaching It to See", and a *Course Map* slide lists six lessons
-    ending with one on the robot. The final course has five, and every deck number is off by one.
-    Transcript numbering is authoritative throughout this spec (CTX-E).
+**CTX-B3 — Scores from two encoders are not on the same scale.** *Symptom:* a photo hit at 0.30 and a note hit at 0.65 get ranked against each other, and the photo lane effectively disappears — or a shared cutoff silently drops one whole modality. *Cause:* each model's similarity distribution is its own; the numbers are not commensurable even though both are called "cosine similarity". *Fix:* one lane and one floor per named vector space; never a blended list, never a shared bar scale. *Enforced by R4, AC8.*
+
+**CTX-B4 — Lexical near-misses ride to the top of a lane.** *Symptom:* a note about a park surfaces for a question about a parked bike; a note about an umbrella *stand* surfaces for a question about a lost umbrella. *Cause:* the embedding is dominated by a shared token or a nearby concept; within a small corpus that is enough to be the nearest. *Fix:* the floor again — the near-miss is allowed to appear, but marked as below-confidence and never presented as the answer. Seeing the near-misses is itself diagnostic: it tells you where the boundary of the corpus is. *Enforced by R5, AC9.*
+
+**CTX-B5 — Meaning alone returns the stale fact.** *Symptom:* two memories carry the same kind of fact — a code, an address, a schedule — recorded weeks apart, and the older one wins because it happens to be phrased slightly closer to the question. *Cause:* similarity has no notion of time. *Fix:* a recency bonus with an exponential decay and a **bounded** weight, computed over a wider prefetch than the result count so a fresher candidate outside the top *k* can still surface. Bounded is the load-bearing word: unbounded recency turns the assistant into a reverse-chronological log. *Enforced by R6, AC10, AC11.*
+
+**CTX-B6 — A deleted memory that still answers.** *Symptom:* a memory removed from the corpus keeps coming back. *Cause:* the point was removed from a source file but not from the store, or the store's index was not compacted after the delete. *Fix:* delete by point id in the store itself and compact; verify by re-running the query that used to return it, and watch the next-best result take its place while every other score stays put. *Enforced by R7, AC6.*
+
+**CTX-B7 — The question was embedded as if it were a document.** *Symptom:* every score is mediocre and retrieval feels blunt, with no single thing obviously broken. *Cause:* the text encoder applies different task prefixes to documents and to queries; using the document path for a question puts it in a slightly different region of the space. *Fix:* use the encoder's query path for questions and its document path for stored text, always and everywhere. This is the quietest failure in the catalog — it never throws. *Enforced by R8, AC13.*
+
+**CTX-B8 — Recall slows as memory grows.** *Symptom:* lookups that were sub-millisecond creep upward as the corpus grows by orders of magnitude. *Cause:* graph traversal grows with the number of vectors, while the fixed cost of embedding the question does not — so their ratio inverts as the store fills. *Fix:* expect sub-linear growth (the course's own measurements grow the lookup roughly 50× while the corpus grows 250×), keep the question-embedding cost in view as the other half of the answer's latency, and treat forgetting as ordinary maintenance rather than an exception. *Enforced by R9, AC6.*
+
+**CTX-B9 — A memory that did not survive the power going out.** *Symptom:* memories written just before a crash or an unclean exit are gone on restart. *Cause:* the write reached the store's in-memory state but was never compacted and flushed to disk. *Fix:* compact and flush as part of the write operation, not as an afterthought, and prove it by closing the handle and reloading from the directory in a **new process** — the only test that actually exercises the disk path. *Enforced by R10, AC14.*
+
+**CTX-B10 — Deleting the store directory under an open handle crashes natively.** *Symptom:* a reset that used to work produces a native-level crash rather than a Python exception, usually only on a re-run inside a live session. *Cause:* the open handle flushes when it is dropped; if its files are already gone, that flush fails inside a destructor where no exception can be raised cleanly. *Fix:* close every open handle first, then remove the directory — and make the reset path do this itself, so a re-run is as safe as a clean start. *Enforced by R11, AC15.*
+
+**CTX-B11 — Id ranges that collide once two sources share a store.** *(Project hardening — this one is latent in the course's code, not demonstrated by it.)* *Symptom:* memories vanish silently after ingesting a second source; the count is lower than the sum of the parts. *Cause:* ids were hand-allocated per source as disjoint ranges, and two sources' ranges overlap; an upsert with an existing id overwrites rather than erroring. *Fix:* one allocator that owns every range in a store, and an ingest that raises on an overlap instead of writing. *Enforced by R16, AC19.*
+
+### CTX-C. Decision background
+
+*Reference only. Every live decision is a Decision Ledger row; this section is the durable background behind those rows.*
+
+**CTX-C1 — On-device versus a server. → Ledger D7.** The argument the course makes for keeping memory on the device has four distinct legs, and they are not equally strong for every project: it works with no connection at all; it avoids a network round trip, which makes recall both faster and more *reliable*; private memories stay private with no cloud storage and no API in the path; and a frozen model plus a growing local memory needs no retraining to learn something new. Against that, the course is explicit that a device has less compute and less storage than a server, and that a server earns its place when memories must be **shared between devices** — which is why the embedded engine offers sync at all, and why local and cloud retrieval can be combined. The decision is not ideological; it turns on whether anything other than this device needs to read these memories.
+
+**CTX-C2 — One store with named spaces, versus a store per purpose. → Ledger D8.** A point may carry several independently-named vectors, which is what makes one memory reachable two ways: show the device a photo and the image vector answers; type a question and the text vector answers; both return the same point. That is the argument for one store. The argument for more than one is lifecycle: taught subjects and captured days are written, re-taught and forgotten on completely different schedules, and separating them lets you wipe one without touching the other. Note what you cannot do either way — you cannot merge results across the two spaces (CTX-B3), so "one store" buys a shared handle and a shared flush, not a shared ranking.
+
+**CTX-C3 — Marking a weak result versus hiding it. → Ledger D9.** Both behaviors exist in the course, in different operations: recall renders sub-threshold hits dimmed and still visible, while recognition rejects them outright as UNKNOWN. That is not an inconsistency — it reflects the surface. A dimmed row on a screen is honest; the same row read aloud by a device with no screen is an answer. Choose by what the output surface can express.
+
+**CTX-C4 — How the threshold was found, and why its value does not travel.** The course calibrates on real data rather than guessing: it scores a held-out view of each known subject against that subject's taught views (the matches) and against every other subject and every unrelated scene photo (the non-matches), then reads the gap. In the course's own run — a set with 220 non-matches and 6 matches — the lowest match landed at **0.86** and the highest non-match at **0.74**, so the line went in the middle at **0.80**, and the instructor immediately adds that the right value depends on how much a false positive costs you relative to a false negative. The same reasoning produced the recall floors: **0.6** for the text lane and **0.23** for the photo lane, two very different numbers for the same idea, precisely because they come from two different models (CTX-B3). Carry the **procedure**; re-derive the numbers. → Ledger D4, and R17.
+
+**CTX-C5 — Retrieval breadth, and why it is a lever rather than a Ledger row.** The materials set the result count several ways: the lesson that introduces querying narrates a **limit of 3** out loud; the shared search helper defaults to 4; the assistant fetches 10 text candidates before splitting them into per-modality lanes of 3; the photo lane is fetched at 1 in one place and at 3-then-sliced-to-1 in another; the recency re-rank prefetches 20 candidates and returns 3, and the final demo returns 1. None of those choices changes a box, an arrow, an owner or a guarantee — only how many rows appear — so they are body defaults, not decisions to put to a learner. This spec resolves the **per-lane result count to 3**, selecting it by the first branch of the lever rule: *the value the transcript narration states aloud in the lesson that introduces the concept*. The two widths that are genuinely separate parameters keep their own single-valued settings: **10** candidates fetched before the text lane is split by source type, and a **20**-candidate prefetch before recency re-scoring (the prefetch must exceed the result count or R6's fix cannot work). All three are **post-build levers** — tune them after the build; nothing needs re-ingesting.
+
+**CTX-C6 — Latency, and why this spec sets no performance target.** The course's latency curve is replayed from numbers measured once on the instructor's own laptop across corpora from 1,000 to 250,000 vectors, against a fixed question-embedding cost; the lesson states plainly that different machines produce different numbers and only the *trend* should be expected to hold. Any absolute millisecond target in this spec would therefore be invented rather than course-derived, which is why §1 excludes performance tuning and there is no performance-targets section. What does transfer is the shape: sub-linear growth in lookup, a constant embedding cost, and the conclusion that forgetting is ordinary maintenance. → R9.
+
+**CTX-C7 — Where the materials contradict themselves, and how each was resolved.**
+- *Result counts:* resolved as a body default by the lever rule — see CTX-C5.
+- *Two definitions of the recall function:* a shared helper exports one signature while the lesson that teaches it defines a second, differently-shaped one in the notebook that then shadows the import for the rest of the lesson. The lesson's own version is the one that runs. Neither is contract-participating; this spec defines recall by its output contract (§3 `RecallResult`) instead of by either signature.
+- *Blended results versus lanes:* one unused draft slide describes results from all modalities "merged into one inbox ranked by score", while the shipped display code states it renders "side-by-side lanes, never one blended list" and deliberately suppresses the proportional score bar wherever a column would mix scales, because comparing a score from one model with a score from another "means nothing". The shipped code and its stated reasoning win; blending is carried as the warned-against anti-pattern (CTX-B3) rather than as an option, which is why there is no Ledger row offering it.
+- *An undefined threshold constant:* the calibration cell defines one name for the recognition threshold and then refers to a second, differently-spelled name that nothing in the materials defines — so that cell raises a `NameError` as written; the intent is unambiguously the value defined on the line above. Carried here as the reason the threshold lives in exactly one named place, written by the calibration step (R17).
+- *A field's type:* the price field is a float on every record but one, where it is an integer, while the store's index for it is declared as a float index. The §3 schema therefore types it as a number, not an integer.
+- *Lesson titles and numbering:* the slide decks are built on an earlier six-lesson plan whose title cards and course map are off by one from the final videos, and one notebook's own title cell disagrees with the title its video, transcript and README use. Transcript numbering and titles are authoritative throughout — see CTX-E.
+
+**CTX-C8 — The id scheme. → Ledger D11.** The materials allocate point ids as hand-picked disjoint ranges, one per source: a day's captures low, a bulk photo import at one base, taught views at another, an ad-hoc new memory at a third, a taught assistant memory at a fourth. It reads clearly and it survives the lessons only because the two sources whose ranges actually overlap are never loaded into the same store. Once they are — which is exactly what a single-store topology does — an upsert with a colliding id overwrites silently. The pattern to carry is "ids are owned by one allocator per store"; the hand-picked ranges are the part to leave behind.
+
+**CTX-C9 — Two ways a subject gets taught.** Teaching writes example vectors with a shared label — two or more views, so an unseen view has more than one neighbour to be close to, and the score for a new view rises as views accumulate. Where those points *live* is Ledger D8's business; what they *are* is not a decision: a taught subject is example vectors plus a label, never a trained classifier, and the final assistant stores a taught subject as one point carrying both its image vector and the text vector of its own note, so it answers to a photo and to a question alike.
+
+**CTX-C10 — Name map: this spec's terms ↔ the course's own terms.** *Provenance only — none of the right-hand names is binding on this build. It exists so a learner who watched the lessons can map what they saw on screen onto what is specified here; the names in bold on the left are the ones this spec uses.*
+
+| This spec | The course's word for it | Note |
+|---|---|---|
+| **memory store** | *shard* — and the instructor also calls it a *collection* | In the materials it is literally a directory on disk; the lessons create one per purpose with names like `mem_shard`, `day_shard`, `object_shard`, `assistant_shard`. This spec names one store per Ledger row D8 and does not inherit those directory names. |
+| **point** | *point* | Binding, in effect: id + named vectors + payload is the storage unit (R1, §3 `StoredPoint`). |
+| **payload** | *payload* | The metadata and original words carried on the point. Binding (§3). |
+| **named vector space** | *named vector* | The two the course declares — `text` and `image` — **are binding here** (§3, AC0): the schema, the lanes and the floors are all keyed on those two names. |
+| **source_type** values `text` / `voice` / `photo` | same three values | Binding — the lane split and the schema's conditionals depend on them (§3). |
+| **capture time** (`captured_at`) | *timestamp*, an epoch integer | Renamed here only to say what it means; the type and role are the course's. |
+| **confidence floor** | *minimum score* / *threshold* / *cutoff* — used interchangeably | One idea, three words in the materials. |
+| **teaching a subject** | *teach* / *taught views* / *label* | R13. |
+| **forgetting** | *forget*, implemented as deleting points | R7. |
+| **compact + flush** | *optimize* then *flush* | R10. Two operations, in that order. |
 
 ### CTX-D. Perishable assumptions
 
-Concepts in CTX-A, CTX-B and CTX-C are durable. The following names are **era-specific — treat
-them as search keywords against current documentation, not as guaranteed imports**:
+**The concepts in CTX-A, CTX-B and CTX-C are durable. Everything in this subsection is not — treat every name below as a search keyword against current documentation, never as a guaranteed import.** The materials' store library is **pre-1.0** (pinned at 0.7.2), which is precisely the era where type names, constructor shapes and module paths move between minor versions.
 
-- Store package and symbols: `qdrant-edge-py` / `qdrant_edge`; `EdgeShard`, `EdgeConfig`,
-  `EdgeVectorParams`, `Distance.Cosine`, `Point`, `UpdateOperation` (upsert / delete / create field
-  index), `QueryRequest`, `Query.Nearest(using=…)`, `PayloadSchemaType.Keyword` / `.Float`,
-  `Filter`, `FieldCondition`, `MatchValue`, `RangeFloat`, `Prefetch`, `Formula`,
-  `Expression.Decay`, `DecayKind.Exp`, `ScrollRequest`, `info().points_count`, `optimize()`,
-  `flush()`, `close()`, `load()`. On-disk artefacts of a store directory, as the deck draws them:
-  `edge_config.json`, `segments/`, `wal/` — implementation detail that may be renamed at any
-  version; never depend on these paths, only on the directory being the unit you copy or delete.
-- Embedding packages and models: `fastembed` (`TextEmbedding`, `ImageEmbedding`, its
-  document-embed versus query-embed calls); `nomic-ai/nomic-embed-text-v1.5` (768),
-  `Qdrant/clip-ViT-B-32-vision` and `Qdrant/clip-ViT-B-32-text` (512).
-- Speech: `onnx-asr`, model `whisper-base`, CPU execution provider.
-- Version pins as the course froze them: store 0.7.2, fastembed 0.8.0, onnx-asr 0.12.0,
-  onnxruntime 1.27.0, tokenizers 0.23.1, numpy 2.5.1, Pillow 12.3.0; Python 3.12+ (validated on
-  3.14.6).
-- **Known defect in the course material, worth knowing before you copy a pattern from it:** the
-  recognition lesson defines its threshold constant under one name and reads it under another in
-  the same cell, so that cell raises a `NameError` as written. The value is the one on the line
-  above. R13's single-named-constant requirement exists because of exactly this.
-- **No "current best model" names are pinned anywhere in this spec.** The models above are the
-  course's own, recorded as provenance. If a newer local embedding or speech model is worth using
-  at build time, that is the gate-time "(Recommended)" judgment (§0) against **D4**, not a fact
-  this file should carry.
-- **Parameter compatibility.** Nothing here calls a hosted inference API, so no
-  request-parameter-compatibility question arises. If a hosted embedding API is chosen at D4, note
-  that its widths must match the store config in §2 or points will not load; and if server sync is
-  ever enabled (D7), the server-side collection must declare the same named spaces and widths as
-  the local store.
+- **Store library surface, era-specific:** the package installs under a hyphenated distribution name and imports under an underscored module name; its types cover a store handle with create/load/close/query/update/optimize/flush operations, a config object holding one vector-parameter object per named space, a distance enum, a point type carrying id + named vectors + payload, a request object for queries, a nearest-query constructor that names which space to search, update operations for upserting points, creating a payload field index, and deleting points, a payload-schema-type enum, filter/condition/match/range types, a prefetch type, and a formula/expression/decay family for score re-ranking.
+- **Embedding library surface:** separate text-embedding and image-embedding classes, each taking a model identifier; the text class exposes a *document* embed and a separate *query* embed (see CTX-B7).
+- **Model identifiers:** the course's text model, the two CLIP towers, and the speech model are named in §2. They are provenance — what the course actually used — and they stay true; they are **not** a claim about what is current. Choosing a currently-recommended model is a gate-time judgment, not something this spec bakes in.
+- **Pinned versions:** every version in §2 is the course's own pin. Reproduce them for a first build; float them deliberately and re-run the full suite, not casually.
+- **Request-parameter compatibility:** these are *local embedding and ASR* models, not chat completions — there is no sampling-parameter surface (`temperature` and friends do not exist here), and the only runtime knobs are the execution provider and thread counts. If Ledger row D4 is changed to a hosted API, that changes: hosted embedding endpoints differ in whether they accept a dimensionality parameter, an input-type/task parameter (the document-versus-query distinction of CTX-B7 is often expressed as exactly such a parameter), and batch size limits — check those before assuming R8 is satisfied.
+- **Model download:** the models are fetched once, keyless, on first use, then cached. Size and cache location are library- and version-specific.
 
 ### CTX-E. Provenance map
 
-Lesson numbering follows the transcripts, which are authoritative. **Three numberings exist in the
-materials** — the transcripts' (used here), the notebook filenames' (`L3`–`L5`, which happen to
-agree), and the slide decks', which follow an abandoned six-lesson plan and is off by one; never
-cite the deck's. Lessons 1 and 2 are video only and have no notebook. Slides are cited as **shown**
-(8 of them appear in a lesson video) or **drafted** (15 exist only in the decks); a drafted slide
-is weaker evidence than shipped code or spoken narration, and where the two conflict the drafted
-slide loses — see CTX-C8. **Nothing in this spec requires course-platform access.**
+Lesson numbering and titles below are **the transcripts'** — the authoritative source. The slide decks carry an earlier six-lesson plan whose numbering is off by one, and one notebook's own title cell disagrees with its lesson's title; neither was used here. **Nothing in this spec requires access to the course platform, the videos, the notebooks, or the repository.**
 
 | Lesson (transcript numbering) | What came from it |
 |---|---|
-| **1. Why Devices Need Memory** | CTX-A (the retrieval loop, text and image in one space via a joint model); CTX-B1; CTX-C1 (the on-device versus server argument) → **D7**; the "no LLM, no retraining" guarantee → R1 |
-| **2. Building the Device** | CTX-A framing — everything including the models and the search runs inside the application, with no separate database server and memory in a folder on the device; the point that the memory loop is the transferable part, not the specific hardware → **D5** Options |
-| **3. Store, Find, and Forget Memories** | The store/query/index/filter/delete surface → R3, R7, R8; the empty-store demonstration → AC2; the two named spaces and their widths → R3; cross-modal retrieval from a typed description → R4; CTX-B4, B5, B7; CTX-C5 (the latency curve) |
-| **4. Your On-Device Assistant** | Three lanes with per-model cutoffs 0.6 / 0.23 → R5, R6; voice transcribed on-device and stored as text → R10; releasing the speech model before embedding → R11; the near-miss ("park" versus "parking the bike") → CTX-B3; adding a memory and recalling it immediately |
-| **5. Teaching Your Assistant to See** | Teaching as writing example vectors → R15; the threshold decision and its calibration → R13, CTX-C4; the stale-code failure and the freshness formula → **D9**, CTX-C3; closing and reloading the store from disk → R12; the finished assistant answering from both lanes with no LLM |
-| *Slide descriptions (across lessons)* | **Shown:** Lesson 1's five "Answered on Device" slides → CTX-A's note→vector→memory→top-matches loop, the two-encoder shared space, and "a match is a decision rule, not a model" → R13; Lesson 3's *Anatomy of a point* → the §3 record contract, and *Cross-Model recall* → R4. **Drafted (in no video):** *Frozen and Growing* → CTX-A's framing; *In-Process and On-Disk* → CTX-C9, R12; *Filter inside Query* → **R7's pre-filtering clause and AC7b**; *Two Encoders, One Shard* and *One Point, Two Doors* → CTX-C2, D8; *What comes back* → CTX-C8, the design R5 rejects; *Course Map* → CTX-C10's numbering warning |
+| **Lesson 1 — Why Devices Need Memory** | CTX-A (the whole loop: note → vector → navigable graph → nearest neighbour → similarity score; the same idea extended to images by a two-tower encoder); CTX-A's threshold step; **CTX-C1** and **Ledger D7** (the on-device argument and the case for a server); the "frozen model, growing memory" framing behind R13; **R15**. |
+| **Lesson 2 — Building the Device** | **Ledger D5** (no specific hardware is needed; the same code runs on a small board or a personal computer); the store-is-a-directory-in-one-process fact behind **R10**, **R11** and Ledger D10's invariant; **Ledger D1**'s framing that the goal is the memory, not any one device. |
+| **Lesson 3 — Store, Find, and Forget Memories** | The store's shape: named vector spaces at their two widths with cosine distance, and the point = id + named vectors + payload (**R1**, §3, AC0); **R14** and AC5 (indexed fields, filter inside the query); cross-modal recall by embedding a text query into the image space; **CTX-B1/R2**, **CTX-B2** (the "always returns its closest photo" warning), **CTX-B6/R7** (forgetting, before-and-after), **CTX-B8/R9** and **CTX-C6** (the latency curve and what it does and does not transfer); **CTX-C5** (the narrated result limit that resolves the lever). |
+| **Lesson 4 — Your On-Device Assistant** | **R12/AC16** (a voice note is stored as its transcript, not as audio; a spoken question travels the same text path); **CTX-B3/R4** and the two very different per-lane floors; **CTX-B4/R5** (the weak match that is shown but greyed out) and **CTX-C3**; the per-modality lane structure of §3's `RecallResult`; the add-a-memory-and-recall-it-immediately behavior behind **R1** and **AC3**. |
+| **Lesson 5 — Teaching Your Assistant to See** | **R13/AC12/AC17** (teach from a few views, test on a held-out one, no retraining); **CTX-B2** in its sharpest form (the wrong confident label before teaching) and **CTX-C4/R17** (the calibration experiment and its numbers); **CTX-B5/R6/AC10/AC11** (two contradicting memories, exponential decay, half-life, bounded weight, wider prefetch); **CTX-B9/R10/AC14** (close, reload from disk, still answers); **Ledger D8** and **CTX-C9** (one point carrying both vectors, reachable by sight and by words); the closing claim that the whole thing answers with no LLM involved (**R15**). |
+| *(referenced, not supplied)* | Lessons 2 and 5 both refer forward to a further lesson that runs the assistant on a personal machine, and the repository README names a cloud-sync appendix; **neither is present in the supplied materials.** Nothing in this spec depends on either — the sync option on Ledger D7 is marked as carrying no worked parameters for exactly this reason. |
 
 ---
 
-## Final deliverable note to the build agent
+## 8. Finish with a diagram
 
-When the build is complete and the criteria have been reported with their evidence, close by
-drawing the app's infra/structure diagram — the processes, the store and its two named vector
-spaces, the ingest path for each modality, the query path with its two lanes and cutoffs, and
-where the teaching and forgetting operations write — and introduce it with exactly this sentence:
+When the build is complete and §7's per-criterion evidence has been reported, close by drawing the **infra/structure diagram of this app**: the processes and files that exist on disk, the store directory and its named vector spaces, where each model is loaded and cached, the ingest path from a source file to a stored point, and the answer path from a question to a lane of hits — marking clearly which boxes ever touch the network (under the baseline: only the one-time model download) and which Ledger row owns each box. Present it, then end with the sentence:
 
-**"This is the infra/structure diagram of this app."**
+**"This is the infra/structure diagram of this app"**
 
 ---
 
-*Spec version 1.0 · Course: Building On-Device AI Memory with Qdrant Edge (5 lessons, transcript
-numbering) · Learner project: `[project]` — defaults to the D1 target · Generated 2026-09-13 by
-spec-generation-guide `8e44ecb`.*
+*Status: v1 · Course: Building On-Device AI Memory with Qdrant Edge (5 lessons, transcript numbering) · Learner project: `[project]` — defaults to Ledger row D1's day-memory assistant on the §5 fixture corpus until you substitute your own · Generated 2026-09-14 from the supplied notebook dump, transcripts and slide descriptions by spec-generation-guide.md @ `8e44ecba383841fd78b6fc157a331f94d0ab5f68`.*
 
-*Living document: if the build produces something this spec did not intend, add the missing
-constraint here and re-run — do not patch it only in the code.*
+***This is a living document.*** *When the building agent produces something you did not expect, the missing constraint belongs here — add it as a business rule with an acceptance criterion, or as a Decision Ledger row if it is a genuine choice, and re-run the build. Do not patch the code and leave the spec behind.*
