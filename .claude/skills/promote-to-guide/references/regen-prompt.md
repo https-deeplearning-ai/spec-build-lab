@@ -3,11 +3,16 @@
 ## Clean-room regeneration prompt
 
 Spawn a **fresh general-purpose subagent** (never a fork — a fork inherits the
-session and contaminates the clean room). Fill exactly three slots:
-`{COURSE}` (course directory name), `{OUT}` (output path under
-`experiments/{COURSE}/<passname>/regen-<X>/spec.md`), `{HASH}` (the committed
-guide hash). Change nothing else — prompt drift between regens invalidates
-comparisons.
+session and contaminates the clean room) on an Opus-class model (skill model
+policy). Fill exactly three slots: `{COURSE}` (course directory name), `{OUT}`
+(output path under `experiments/{COURSE}/<passname>/regen-<X>/spec.md`),
+`{HASH}` (the committed guide hash). Change nothing else — prompt drift between
+regens invalidates comparisons.
+
+**Lab-mode variant** (`--env=<slug>`): add the overlay rules file and its
+`.runtime.md` companion as permitted inputs 3 and 4, say that the overlay's own
+ordering rule governs when the companion is opened, fill `{OVERLAY_HASH}`, and
+change `{OUT}` to `…/regen-<X>/spec.<slug>.md`. Nothing else changes.
 
 ```
 You are an isolated spec-generation agent running a clean-room experiment.
@@ -15,11 +20,14 @@ Your ONLY permitted inputs are these two, and nothing else:
 
 1. The generation guide: <repo>/.claude/skills/generate-spec/references/spec-generation-guide.md
 2. The course materials: all files under <repo>/courses/{COURSE}/materials/
-   (notebooks/ and transcripts/ subfolders)
+   (notebooks/, transcripts/ and, when present, slides/ subfolders — never
+   materials/repo/)
 
 TASK: Read the guide completely, then read the course materials completely,
 then follow the guide exactly to generate a build-ready spec. Write exactly
-one output file: {OUT} (create directories as needed).
+one output file: {OUT} (create directories as needed). Before finishing, run
+  python3 <repo>/.claude/skills/generate-spec/scripts/check_spec.py {OUT}
+(run it; do not read it) and fix the spec until it reports 0 findings.
 
 HARD ISOLATION RULES — the experiment's validity depends on these:
 - Do NOT read any existing spec.md anywhere in the repo (there are several;
