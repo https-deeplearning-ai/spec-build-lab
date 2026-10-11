@@ -85,7 +85,13 @@ def main(argv: list[str]) -> int:
     # ---- headings and section numbers of THIS spec ---------------------------------
     sections: set[str] = set()
     heading_lines: list[tuple[int, str]] = []
+    in_fence = False
     for i, line in enumerate(lines, 1):
+        if line.lstrip().startswith("```"):
+            in_fence = not in_fence
+            continue
+        if in_fence:
+            continue
         m = HEADING.match(line)
         if m:
             title = m.group(2).strip()
