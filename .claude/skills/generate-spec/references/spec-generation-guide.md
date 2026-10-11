@@ -408,9 +408,9 @@ But author each Decision Ledger row's **Invariant** field so it can *become* tha
 
 **Every fixture an AC names is declared first.** Every file, script, planted state, or stand-in that any AC's Given relies on appears in §5's fixture corpus, with its facts, before any AC uses it; an AC may not rely on a fixture the corpus does not declare. Judged at handoff over the whole AC table.
 
-**Schema constraints that encode behavior are tested.** A `minLength`, an enum, a length band, or a `const` the contract imposes to encode a taught behavior (not merely a type) has ≥1 AC asserting it; otherwise the constraint is prose in a schema's costume.
+**Schema constraints that encode behavior are tested.** A `minLength`, an enum, a length band, or a `const` the contract imposes to encode a taught behavior (not merely a type) has ≥1 AC asserting it; otherwise the constraint is prose in a schema's costume. For an enum, **every value a rule can produce is reached by some AC** — a status a rule names but no criterion ever observes is either untested behavior or a value to remove from the enum; decide which at handoff, never leave both.
 
-**Fixture numbers reproduce the verdict.** Where an AC asserts an outcome a rule computes from fixture facts (a pass count, a regression verdict, a threshold crossing), the generator replays the rule over the declared fixture before handoff and confirms the asserted outcome follows; an AC whose fixture cannot yield its verdict is a defect in the fixture or the AC, never in the rule.
+**Fixtures reproduce every asserted outcome.** Where an AC asserts an outcome that follows from the declared fixtures — a value a rule computes from fixture facts (a pass count, a regression verdict, a threshold crossing), or content a declared script produces (a line the scripted model writes, a file it creates) — the generator replays the rule or the script over the declared fixture before handoff and confirms the asserted outcome follows; an AC whose fixture cannot yield what it asserts is a defect in the fixture or the AC, never in the rule. Replay content assertions, not only numeric ones. (Left unstated, one generation asserted a phrase its own scripted worker never writes.)
 
 **Citations run both ways, in a fixed form.** Every business rule ends with `→ AC<n>…` listing exactly the criteria that cite it, and every AC cites its rules as `(R<n>…)`; the two lists are reciprocal. The form is fixed so the check can be mechanical.
 
@@ -550,7 +550,7 @@ Fix, don't annotate.
 - [ ] Every behavior-changing Ledger default is exercised by ≥1 AC through that default (§8).
 - [ ] Every fixture, script, planted state, or stand-in an AC relies on is declared in §5 before use (§8).
 - [ ] Every behavior-encoding schema constraint has an AC (§8).
-- [ ] Every verdict an AC asserts was replayed against its declared fixture per §8 and follows.
+- [ ] Every outcome an AC asserts — numeric or content — was replayed against its declared fixtures and scripts per §8 and follows; every enum value a rule can produce is reached by an AC (§8).
 - [ ] Always / Ask First / Never all populated (§6 Standing Permissions); Ask First was derived by walking Pass B's mined trade-off list per the §6 rule — every qualifying trade-off appears, none dropped.
 - [ ] §7 test plan has real commands + the evidence-citation requirement.
 - [ ] No copied code anywhere (incl. the Context Pack); no pseudo-code; no vague adjectives; no implementation hints where an outcome would do.
