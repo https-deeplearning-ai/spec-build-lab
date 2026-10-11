@@ -1,0 +1,77 @@
+venv/
+.venv/
+.DS_Store
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+.env
+
+# Editor autosave and lock files. These can mirror .env and leak secrets.
+# The leading # must be escaped or git reads the pattern as a comment.
+\#*\#
+.\#*
+*~
+
+# The agent's filesystem root, kept at repo root for agent_for_slides.py and
+# L5_event_driven_no_notebook/automation.py. L3/L4/L6 each have their own
+# decoupled copy below. Contents are scratch, with one exception: AGENTS.md is
+# tracked course content and lives here because `memory=` reads it from inside
+# the agent's own root. The directory has to be unignored before a negation
+# inside it is evaluated, hence the four lines, repeated per copy.
+workspace/*
+!workspace/memories/
+workspace/memories/*
+!workspace/memories/AGENTS.md
+
+L3/workspace/*
+!L3/workspace/memories/
+L3/workspace/memories/*
+!L3/workspace/memories/AGENTS.md
+
+L4/workspace/*
+!L4/workspace/memories/
+L4/workspace/memories/*
+!L4/workspace/memories/AGENTS.md
+
+L6/workspace/*
+!L6/workspace/memories/
+L6/workspace/memories/*
+!L6/workspace/memories/AGENTS.md
+
+# Traces from a learner's own live run. The committed *_prebaked_trace.json
+# files are the reference runs and are never overwritten.
+*_live_trace.json
+
+# Local agent and editor config
+.claude/
+.cursor/
+
+claude.md
+course.md
+course_lesson_spec.md
+/skills/
+
+# A learner's own live batches, inside L6 now that run_history/ moved there.
+# The committed run_history/v1 and v2 are the reference runs for Lesson 6 and
+# are never overwritten.
+L6/run_history/*_live/
+L6/run_history/proposal_*_live.*
+L6/run_history/proposal.md
+L6/run_history/**/ws_*/
+
+# The primer agent's filesystem root, now inside L2. Its instructions and
+# skills are tracked course content; the poems it writes are output. Same
+# negation ordering as workspace/ above: the directory must be unignored
+# before rules inside it are evaluated.
+L2/primer_workspace/*
+!L2/primer_workspace/memories/
+L2/primer_workspace/memories/*
+!L2/primer_workspace/memories/AGENTS.md
+!L2/primer_workspace/skills/
+
+# Lesson 5's simulated Jira/Confluence. The JSON "database" is seeded fresh by
+# data_store.seed_if_missing() on first run, so a learner's own tickets and
+# edits are never committed. .run_workspace/ holds one throwaway agent
+# filesystem per automation run and is deleted right after each run anyway.
+L5_event_driven_no_notebook/data/*.json
+L5_event_driven_no_notebook/.run_workspace/

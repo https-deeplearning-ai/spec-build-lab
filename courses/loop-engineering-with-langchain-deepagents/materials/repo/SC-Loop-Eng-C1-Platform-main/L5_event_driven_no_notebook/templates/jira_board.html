@@ -1,0 +1,46 @@
+{% extends "jira_base.html" %}
+{% block content %}
+<h1>Tickets</h1>
+
+<div class="card">
+  <table>
+    <tr><th>Key</th><th>Title</th><th>Assignee</th><th>Status</th></tr>
+    {% for t in tickets %}
+    <tr class="clickable" onclick="location.href='{{ url_for('jira_ticket', key=t.key) }}'">
+      <td>{{ t.key }}</td>
+      <td>{{ t.title }}</td>
+      <td>{{ t.assignee }}</td>
+      <td>
+        {% if t.status == 'Open' %}<span class="badge badge-open">Open</span>
+        {% elif t.status == 'Analysis Ready' %}<span class="badge badge-ready">Analysis Ready</span>
+        {% else %}<span class="badge badge-done">Done</span>{% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+
+<div class="card">
+  <h2>Create ticket</h2>
+  <form method="post" action="{{ url_for('jira_create_ticket') }}">
+    <label>Title</label>
+    <input type="text" name="title" required placeholder="Review requirements: ...">
+    <label>Description</label>
+    <textarea name="description" style="min-height:70px" placeholder="Why this ticket exists"></textarea>
+    <label>Linked Confluence page</label>
+    <select name="linked_page_id" required>
+      {% for p in pages %}
+      <option value="{{ p.id }}">{{ p.title }}</option>
+      {% endfor %}
+    </select>
+    <label>Assignee</label>
+    <select name="assignee">
+      {% for person in people %}
+      <option value="{{ person }}">{{ person }}</option>
+      {% endfor %}
+    </select>
+    <p class="muted">Submitting runs the requirements agent right away — allow under a minute.</p>
+    <button class="btn btn-primary" type="submit">Create ticket</button>
+  </form>
+</div>
+{% endblock %}

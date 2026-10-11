@@ -1,0 +1,37 @@
+{% extends "jira_base.html" %}
+{% block content %}
+<p><a class="muted" href="{{ url_for('jira_ticket', key=ticket.key) }}">← {{ ticket.key }}</a></p>
+
+<div class="card">
+  <h1>Run {{ run.id }}</h1>
+  <p class="muted">{{ run.timestamp }} · requirement version {{ run.requirement_version }} · report version {{ run.report_version }}</p>
+  <p>Status: <span class="badge {% if run.status == 'satisfied' %}badge-pass{% else %}badge-fail{% endif %}">{{ run.status }}</span></p>
+
+  <h3>Evaluation loop</h3>
+  {% for g in run.grading %}
+  <p class="muted">Pass {{ g.iteration }}:
+    <span class="badge {% if g.result == 'satisfied' %}badge-pass{% else %}badge-fail{% endif %}">{{ g.result }}</span>
+  </p>
+  <table>
+    <tr><th>Criterion</th><th>Result</th><th>Gap</th></tr>
+    {% for c in g.criteria %}
+    <tr>
+      <td>{{ c.name }}</td>
+      <td>{% if c.passed %}<span class="badge badge-pass">pass</span>{% else %}<span class="badge badge-fail">fail</span>{% endif %}</td>
+      <td class="muted">{{ c.gap or '' }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+  {% endfor %}
+
+  <h3>Execution trace</h3>
+  <table>
+    <tr><th>#</th><th>Actor</th><th>Action</th><th>Detail</th></tr>
+    {% for step in run.trace %}
+    <tr class="{% if step.actor == 'Model reasoning' %}trace-row-model{% endif %}">
+      <td>{{ step.step }}</td><td>{{ step.actor }}</td><td>{{ step.action }}</td><td class="muted">{{ step.detail }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+{% endblock %}

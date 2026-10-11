@@ -1,0 +1,32 @@
+{
+  "label": "v1",
+  "model": "openai:gpt-5.4-mini",
+  "runs": 5,
+  "graded": 5,
+  "grader_errors": 0,
+  "first_attempt": {
+    "completeness": {
+      "passed": 5,
+      "total": 5,
+      "pass_rate": 1.0
+    },
+    "clarity": {
+      "passed": 0,
+      "total": 5,
+      "pass_rate": 0.0
+    },
+    "depth": {
+      "passed": 0,
+      "total": 5,
+      "pass_rate": 0.0
+    }
+  },
+  "revisions_needed": 5,
+  "documents": [
+    "01_user_authentication",
+    "02_notification_system",
+    "03_payment_retry_policy",
+    "04_access_control_rules",
+    "05_alert_escalation_rules"
+  ]
+}

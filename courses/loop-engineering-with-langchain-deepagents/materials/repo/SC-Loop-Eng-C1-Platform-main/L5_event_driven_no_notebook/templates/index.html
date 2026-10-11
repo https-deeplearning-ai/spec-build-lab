@@ -1,0 +1,35 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Lesson 5: The Automation Loop</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='common.css') }}">
+  <style>.topbar { background: #172b4d; }</style>
+</head>
+<body>
+  <div class="topbar"><span class="brand">Lesson 5 — The Automation Loop</span></div>
+  <main>
+    <div class="card">
+      <h1>Two simulated tools, one automation loop</h1>
+      <p>This is a stand-in for a real Jira + Confluence setup, so the lesson
+      runs with no accounts and no API tokens. The same Requirements Analysis
+      Agent from Lessons 3-4 sits behind both.</p>
+      <ul>
+        <li><strong>Confluence</strong> holds the requirement document. It is
+        the source of truth, and the agent only ever reads it.</li>
+        <li><strong>Jira</strong> holds the ticket. Creating a ticket, or
+        editing the linked requirement page while a ticket is open, triggers
+        the agent automatically.</li>
+      </ul>
+      <p>Try this: open the ticket below, then open its linked Confluence
+      page and edit the requirement. Save it, then come back to the ticket —
+      the analysis re-ran on its own.</p>
+      <p>
+        <a class="btn btn-primary" style="background:#0052cc;color:#fff" href="{{ url_for('jira_board') }}">Open Jira →</a>
+        &nbsp;
+        <a class="btn btn-primary" style="background:#00875a;color:#fff" href="{{ url_for('confluence_list') }}">Open Confluence →</a>
+      </p>
+    </div>
+  </main>
+</body>
+</html>

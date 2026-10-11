@@ -9,8 +9,9 @@ description: >
   from this course", "turn the materials into a spec", "build the spec
   out of materials/", "regenerate spec.md", "run the spec generation",
   "I've added the notebooks, please create the spec", or "/generate-spec".
-  Reads every file under materials/notebooks/ and materials/transcripts/
-  and follows references/spec-generation-guide.md. Writes spec.md in the
+  Reads every file under materials/notebooks/, materials/transcripts/ and
+  (when present) materials/slides/, and follows
+  references/spec-generation-guide.md. Writes spec.md in the
   current working directory. Must run from inside a course folder
   (courses/<name>/). Do NOT use this skill for editing an existing
   spec.md or for writing product specs unrelated to a course.
@@ -55,9 +56,12 @@ another engineer (or coding agent) can implement end-to-end.
    and reading its facts early corrupts the derivation they are meant to resolve.
    The base guide is never edited for an environment; the overlay declares what
    it overrides.
-3. **Read every material.** Glob `materials/notebooks/**/*` and
-   `materials/transcripts/**/*`, then read each non-empty file. If both
-   directories are empty (only `.gitkeep`), refuse with: "No materials
+3. **Read every material.** Glob `materials/notebooks/**/*`,
+   `materials/transcripts/**/*` and `materials/slides/**/*`, then read each
+   non-empty file. Slides are optional: most courses have none, and an
+   absent or empty `materials/slides/` is never a reason to refuse — the
+   guide's §4 says how slide evidence is weighted. If the notebooks and
+   transcripts directories are both empty (only `.gitkeep`), refuse with: "No materials
    found. Add notebooks to materials/notebooks/ and transcripts to
    materials/transcripts/, then re-run — or optionally run
    /ingest-course-repo <course-folder-URL> to add the course repo's
