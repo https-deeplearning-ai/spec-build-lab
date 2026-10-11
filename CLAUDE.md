@@ -43,9 +43,13 @@ supported automatically — see "Building" below.
   bare-root URL is refused. **The agent does NOT WebFetch that index** — the
   user browses it and pastes a URL; the agent only clones what it's handed.
   Writes nothing under `materials/transcripts/`, which stays a manual download.
-- `/generate-spec` — reads `materials/notebooks/` and `materials/transcripts/`,
+- `/generate-spec` — reads `materials/notebooks/`, `materials/transcripts/` and,
+  when present, `materials/slides/` (optional; most courses have none),
   follows `.claude/skills/generate-spec/references/spec-generation-guide.md`, and
-  writes `spec.md`. Pass `--env=<slug>` to generate for a known build
+  writes `spec.md`. Slide decks (PDF/PPTX) are not readable by the skill: put a
+  rendered `<course>-slide-descriptions.md` under `materials/slides/` and keep
+  the raw decks (and any raw course repo) under `materials/repo/`, which no
+  skill reads. Pass `--env=<slug>` to generate for a known build
   environment instead of the agnostic learner takeaway: it additionally reads
   the overlay `references/spec-generation-guide.<slug>.md` and writes
   `spec.<slug>.md`, leaving `spec.md` alone. The overlay declares what it

@@ -116,6 +116,8 @@ evaluated run:
 #     your filesystem.
 #     notebooks   -> courses/langchain-rag/materials/notebooks/
 #     transcripts -> courses/langchain-rag/materials/transcripts/
+#     slides      -> courses/langchain-rag/materials/slides/   (optional; a rendered
+#                    *-slide-descriptions.md — raw decks go under materials/repo/)
 
 # 3 · move into the course and generate the spec
 cd courses/langchain-rag
