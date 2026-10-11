@@ -3,7 +3,7 @@
 **Applies only when `/generate-spec` is invoked with `--env=coding-agent-lab`.** Without that
 flag this file is not read and the base guide governs alone.
 
-Written against base guide **`a757248`**. This file carries the **rules**; its companion
+Written against base guide **`3584b8f`**. This file carries the **rules**; its companion
 `spec-generation-guide.coding-agent-lab.runtime.md` carries the environment's **facts**, and is
 opened later, at OVERRIDE 2 Phase 2. Both are distilled from `environments/coding-agent-lab.md`.
 
@@ -54,7 +54,7 @@ and the pre-build gate applies unchanged.
 
 ## OVERRIDE 1 — §3, the input gate
 
-Base guide `a757248` §3 reads, verbatim:
+Base guide `3584b8f` §3 reads, verbatim:
 
 > Generation is gated on **two inputs**. Verify each is actually present before generating.
 
@@ -70,7 +70,7 @@ way. It gets its own label (see ADD 2) and its own row in CTX-E.
 
 ## OVERRIDE 2 — §5.5, procedure step (f)
 
-Base guide `a757248` §5.5 **Procedure** reads, verbatim:
+Base guide `3584b8f` §5.5 **Procedure** reads, verbatim:
 
 > (f) add the six §3 learner-context rows, each Invariant holding only the pattern's capability requirements on that dimension (empty when none) — learner rows still get a course-derived default (e.g. project defaults to the §3 example-shape target);
 
@@ -101,17 +101,40 @@ the six against the Resolutions in ADD 1 and emit the resolution table into the 
 the environment makes one of its Options impractical, mark that Option in its own cell with the
 reason — never delete it, and never move the "(course default)" label.
 
+**Resolving a dimension fixes what is built, never which course-argued choices the learner is
+asked.** No course-owned row is retired by a resolution; a row that a resolution makes moot is
+still presented, answered, and recorded in the resolved-decisions checklist. A **lever attached to
+a CONSTRAINED dimension** — a trade-off the course argued about the resolved subject (a model
+tiering, a provider feature) — becomes a body lever with a §6 Ask-First entry; it does not vanish
+with the row. (Left unstated, one lab-mode generation surfaced half the course-owned rows its
+standalone twin did.)
+
 ---
 
 ## OVERRIDE 3 — §6, the title line
 
-Base guide `a757248` §6's section template opens, verbatim:
+Base guide `3584b8f` §6's section template opens, verbatim:
 
 > # Spec: <Project> — Standalone Takeaway
 
 **Replaced by:** `# Spec: <Project> — Coding-Agent-Lab Build`. Nobody takes this spec away:
 the lab fixes the assignment and the learner builds it there. Everything else in the §6
 template stands.
+
+---
+
+## OVERRIDE 4 — §6, the gate template's verbatim rule
+
+Base guide `3584b8f` §6's anatomy note reads, verbatim:
+
+> the §6.0 template verbatim (fill in this course's specifics).
+
+**Replaced by:** emit the §6.0 template verbatim, then **append** — under step 1 (the express-lane
+question) and under step 5 (the per-row questions) — one short italic paragraph each, labelled
+`[environment]`, stating the `choices`-fence facts the runtime file requires the spec to say
+(click and typed answers are equivalent; only the latest message's buttons stay live, so a
+changed answer is re-asked as a new question). Nothing else in the template is added, removed,
+or reworded; the appended paragraphs are the only sanctioned environment text inside §0.
 
 ---
 
@@ -127,7 +150,7 @@ and then resolved, not skipped.
 | data/inputs | **ANSWERED** — inputs are seeded into the workspace | spec §5 fixture corpus |
 | goal | **ANSWERED** — the lab fixes what "working" means | spec §1 + the acceptance criteria |
 | model/provider | **CONSTRAINED or KEPT** — decide by the test below | spec §2 (+ CTX-D), or a Ledger row |
-| environment | **ANSWERED** — the container | spec §2 + the Runtime section; capability invariants move to the rows that need them |
+| environment | **ANSWERED** — the container | spec §2 + the Runtime (lab) section (ADD 5); capability invariants move to the rows that need them |
 | scope-boundary | **KEPT** | stays a Ledger row |
 
 **The model/provider row resolves conditionally — do not assume CONSTRAINED.** This environment
@@ -186,6 +209,16 @@ Run the base §14 checklist in full, then these:
       obtained with `git log -1 --format=%h -- <path to this file>` from the repo root — this
       file cannot carry its own hash.
 - [ ] §1 carries the "Adapting this beyond the lab" note.
+- [ ] The `## Runtime (lab)` section is present where ADD 5 places it, and every environment
+      failure mode lives there, none in CTX-A/CTX-B (OVERRIDE 1, ADD 5).
+- [ ] A row a resolution made moot is still presented and recorded; every lever attached to a
+      CONSTRAINED dimension is a body lever with an Ask-First entry (OVERRIDE 2).
+- [ ] The §0 gate's template text is verbatim; the only additions are the `[environment]`
+      paragraphs OVERRIDE 4 sanctions.
+- [ ] The key and base-URL variables the spec reads are exactly the ones the runtime file names;
+      none is hardcoded, asked for, or guessed.
+- [ ] Where a course pin and a preinstalled copy conflict, §2 says the course pin wins inside
+      the venv (runtime: the container).
 
 **Where base §14's learner-row items apply in this mode.** Two of its lines assume six rows exist
 — *"learner-context rows carry only the pattern's §3 capability requirements"* and *"every
@@ -208,6 +241,20 @@ Objective describes the served app that embodies the course's pattern.
 **Escape:** a course whose pattern has no user-facing surface may deliver a library plus its
 test suite instead, and §1 must say so with the reason. Either way, the shape is `[environment]`
 provenance and is stated in §1, not inferred by each run from the runtime facts.
+
+---
+
+## ADD 5 — the "Runtime (lab)" section (spec section)
+
+The generated spec carries a section titled **`## Runtime (lab)`**, placed **between §7 and the
+Course Context Pack**. Everything in it is `[environment]`. It holds: the facts of the container
+the build must obey (preinstalled set, venv rule, memory), the preview rules (one server on
+port 4000, relative URLs, HTTP only), the workspace rules (the workspace is the record; the
+workspace-root `AGENTS.md` is never authored), and **environment failure modes** — the pitfalls
+the environment, not the course, creates (a root-absolute URL under the proxied preview). An
+environment failure mode is written here with its enforcing rule and criterion, exactly as a
+CTX-B entry would be, but it **never appears in CTX-A or CTX-B**, which are the course's.
+ADD 1's environment row points at this section.
 
 ---
 
