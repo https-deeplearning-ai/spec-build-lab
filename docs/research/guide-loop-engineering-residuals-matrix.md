@@ -98,19 +98,25 @@ regen-A by grep (L4 row, D2/D3 route sentences, AC17's phrase, `ungraded` in ACs
 
 | Prop | regen-A | regen-LA | Evidence label | Note |
 |---|---|---|---|---|
-| Core S1–S4, V1–V2, O1, T1–T3 | PRESENT | _(scoring)_ | [verified] S1, T1; rest [reported] | — |
-| Core gate / default / fixtures / rules↔ACs / labels / CTX | PRESENT | _(scoring)_ | [reported] | — |
-| P-F5 | PRESENT | PRESENT | [verified] RR1 row + F7 per-role scripts | — |
-| P-X1 | PRESENT | _(scoring)_ | [verified] L4 row carries model-per-role | — |
-| P-F2 | PRESENT | PRESENT | [verified] "the slide alone is presentation, not an argued trade-off" | — |
-| P-A2 | PRESENT | _(scoring)_ | [reported] | lever cap 40 untested — lever, not a default |
-| P-A3 | PRESENT | PRESENT | [verified] checker FIXTURE = 0 | — |
-| P-A4 | **PARTIAL** | _(scoring)_ | [verified] `ungraded` reached by 0 ACs; `failed` never produced | failure→fix below |
-| P-AU1 | PRESENT | PRESENT | [verified] checker GUIDE-SECT/VOCAB = 0; CTX-C how-to present | scorer worried about Category names; they are the Ledger's own column vocabulary, not guide jargon |
-| P-AU2 | PRESENT | PRESENT | [verified] checker ROWID = 0 | — |
-| P-AU3 | **PARTIAL** | _(scoring)_ | [verified] AC17 asserts "Report Export" in a snapshot; the scripted worker writes only clause bullets, none containing it | failure→fix below |
-| P-AU4 | PRESENT | PRESENT | [verified] checker RECIP = 0 | — |
-| P-O1…P-O6, P-OBS | n/a | _(scoring)_ | — | regen-LA course-owned rows = D1, D2, D3, RR1 = regen-A's (P-OBS looks PRESENT; awaiting quote) |
+| Core S1–S4, V1–V2, O1, T1–T3 | PRESENT | PRESENT | [verified] S1, T1 (A); rest [reported] | — |
+| Core gate / default / fixtures / rules↔ACs / labels / CTX | PRESENT | PRESENT (labels PARTIAL: R32 inherits `[environment]` from its section header, no inline label) | [reported] | minor; not a guide defect |
+| P-F5 | PRESENT | PRESENT | [verified] RR1 row + per-role scripts (A: F7; LA: F10 + R32) | — |
+| P-X1 | PRESENT | PRESENT | [verified] A: L4 row carries model-per-role; LA: folded into the CONSTRAINED dimension → body lever + Ask First (CTX-C quote), per O6 | consistent across modes |
+| P-F2 | PRESENT | PRESENT | [verified] "the slide alone is presentation, not an argued trade-off" / "enters by structure" | — |
+| P-A2 | PRESENT | PRESENT | [reported] | levers (turn cap 40, batch failures 0) untested — levers, not defaults |
+| P-A3 | PRESENT | PRESENT | [verified] checker FIXTURE = 0 (both) | — |
+| P-A4 | **PARTIAL** | PRESENT | [verified] A: `ungraded` reached by 0 ACs, `failed` never produced | failure→fix below |
+| P-AU1 | PRESENT | PRESENT | [verified] checker GUIDE-SECT/VOCAB = 0 (both); CTX-C how-to present | scorers flagged Category/Owner names; they are the Ledger's own column vocabulary, not guide jargon |
+| P-AU2 | PRESENT | PRESENT | [verified] checker ROWID = 0 (both) | — |
+| P-AU3 | **PARTIAL** | **PARTIAL** | [verified] A: AC17 asserts "Report Export" in a snapshot the scripted worker never writes; LA: AC5 asserts "no ticket" on every result while R2's default of 2 simulated failures yields `503`/`timed out` first | failure→fix below (same rule sentence, both modes) |
+| P-AU4 | PRESENT | PRESENT | [verified] checker RECIP = 0 (both) | — |
+| P-O1 | n/a | PRESENT | [verified] Never tier names the workspace-root file; R30 keeps the app's under `data/` | — |
+| P-O2 | n/a | PRESENT | [verified] Runtime (lab) names the four variables; R26 reads the OpenAI pair; no discovery text | — |
+| P-O3 | n/a | PRESENT | [verified] `## Runtime (lab)` at L657 between §7 and the Context Pack; E1 root-absolute URL there, not in CTX-B | — |
+| P-O4 | n/a | PRESENT | [verified] exactly two `[environment]` paragraphs, under the express-lane step and the per-row step | OVERRIDE 4's step numbers were wrong (1, 5 vs 2, 3); fixed by content |
+| P-O5 | n/a | PRESENT | [reported] "the course pin wins inside the venv" | — |
+| P-O6 | n/a | PRESENT | [reported] per-role tiering = body lever + Ask First | — |
+| P-OBS | n/a | PRESENT | [verified] course-owned rows D1, D2, D3, RR1 in both regens | the 4-vs-8 gap did not recur |
 
 Failure→fix traces (base guide):
 - **P-AU3** failed because §8 "Fixture numbers reproduce the verdict" scoped replay to *values a
@@ -131,6 +137,50 @@ Overlay gaps regen-LA reported (precedence rule 3), fixed for round 2:
 - The platform's model set is not enumerated — now stated, with the rule that model ids come
   from environment variables at build time and course ids are provenance only.
 - ADD 1 said environment invariants "move to the rows that need them" — now "rules, or rows".
+
+### Round 2 (base `de49a31`, overlay `9058ca8`; regen-B agnostic, regen-LB lab; both Opus 5.5)
+
+Regens: `regen-B/spec.md` (980 lines, 13 rows: L1–L6, D1 instruction location, D2 model tier
+per role, D3 grader realization, D4 event-trigger composition, RR1 suite model, RR2 store,
+RR3 tracing; 31 rules, 40 ACs; 336k tokens) and `regen-LB/spec.coding-agent-lab.md` (1,196
+lines, 5 rows: L1, D1, D2, RR1, RR2 tracing; 38 rules, 42 ACs; 347k tokens). Both `check_spec.py`
+= 0 at handoff. Scorers: Opus 5.5, one per regen; orchestrator spot-checked D2 litmus, the CTX-C
+litmus table and the D4 row on regen-B by grep.
+
+| Prop | regen-B | regen-LB | Evidence label | Note |
+|---|---|---|---|---|
+| All core | PRESENT | PRESENT | [reported]; T1 [verified] on B (litmus table L908) | — |
+| P-F5 | PRESENT | PRESENT | [verified] RR1 both; per-role scripts | — |
+| P-X1 | PRESENT | PRESENT | [verified] B: D2 row "sides differ in an assignment of roles, not in a value"; LB: lever via the CONSTRAINED dimension | — |
+| P-F2 | PRESENT | PRESENT | [reported] | — |
+| P-A2 | PRESENT | PRESENT | [reported] | — |
+| P-A3 | PRESENT | PRESENT | [verified] checker | — |
+| P-A4 | PRESENT | PARTIAL | [reported] B: every enum value reached; LB: two non-enum constraints unreached (`Ticket.title` minLength, `section` const "") | generator diligence, not wording — documented residual |
+| P-AU1 | PRESENT | PRESENT | [verified] checker | — |
+| P-AU2 | PRESENT | PRESENT | [verified] checker | — |
+| P-AU3 | PRESENT (26/26 replays) | **PARTIAL** | [reported] LB: AC6's Given leaves `simulated_failures` at its schema default of 2, then asserts every result says "no ticket" | failure→fix below |
+| P-AU4 | PRESENT | PRESENT | [verified] checker | — |
+| P-O1, O3, O4, O5, O6 | n/a | PRESENT | [reported] | — |
+| P-O2 | n/a | **PARTIAL** | [reported] only the OpenAI pair named; a model-listing discovery instruction present | failure→fix below |
+| P-OBS | n/a | **PARTIAL** | [reported] D1, D2, RR1 rows; the triggered-run composition subject baked in as R17 with no litmus branch recorded | failure→fix below |
+
+Failure→fix traces:
+- **P-AU3 (lab)** failed because the round-1 sentence said "replays the rule or the script over
+  the declared fixture" without saying that defaults the Given leaves unset stay in force. Fixed:
+  "with every default the AC's Given leaves unset in force … a Given silent about a default has
+  accepted it."
+- **P-O2** failed because the overlay said role model ids come "from what the container exports",
+  which a generator read as "probe the listing endpoint", and did not require naming both key
+  pairs. Fixed: role variables are set at gate time via the "(Recommended)" flag, never by
+  probing; §2 names all four variables and states which pair the app reads.
+- **P-OBS** failed because a subject the generator never recognised as argued cannot record a
+  branch — a detection gap, not a wording gap. Fixed structurally: §4 Pass B now ships the mined
+  trade-off table in CTX-C (every spoken trade-off, lesson, disposition), with a §14 line; an
+  omission is now visible rather than silent. Composition variance between regens of the same
+  mode (A: 10 rows; B: 13 rows; LA vs LB swapped one row) is the standing observation for the
+  next pass.
+
+Agnostic mode passed round 2 → confirmation N=2 on the final guide (`39dfbb6`). Lab mode → round 3.
 
 ## Confirmation & adoption
 
