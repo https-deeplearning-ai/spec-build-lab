@@ -3,7 +3,7 @@
 **Applies only when `/generate-spec` is invoked with `--env=coding-agent-lab`.** Without that
 flag this file is not read and the base guide governs alone.
 
-Written against base guide **`3584b8f`**. This file carries the **rules**; its companion
+Written against base guide **`de49a31`**. This file carries the **rules**; its companion
 `spec-generation-guide.coding-agent-lab.runtime.md` carries the environment's **facts**, and is
 opened later, at OVERRIDE 2 Phase 2. Both are distilled from `environments/coding-agent-lab.md`.
 
@@ -54,7 +54,7 @@ and the pre-build gate applies unchanged.
 
 ## OVERRIDE 1 — §3, the input gate
 
-Base guide `3584b8f` §3 reads, verbatim:
+Base guide `de49a31` §3 reads, verbatim:
 
 > Generation is gated on **two inputs**. Verify each is actually present before generating.
 
@@ -70,7 +70,7 @@ way. It gets its own label (see ADD 2) and its own row in CTX-E.
 
 ## OVERRIDE 2 — §5.5, procedure step (f)
 
-Base guide `3584b8f` §5.5 **Procedure** reads, verbatim:
+Base guide `de49a31` §5.5 **Procedure** reads, verbatim:
 
 > (f) add the six §3 learner-context rows, each Invariant holding only the pattern's capability requirements on that dimension (empty when none) — learner rows still get a course-derived default (e.g. project defaults to the §3 example-shape target);
 
@@ -113,7 +113,7 @@ standalone twin did.)
 
 ## OVERRIDE 3 — §6, the title line
 
-Base guide `3584b8f` §6's section template opens, verbatim:
+Base guide `de49a31` §6's section template opens, verbatim:
 
 > # Spec: <Project> — Standalone Takeaway
 
@@ -125,12 +125,13 @@ template stands.
 
 ## OVERRIDE 4 — §6, the gate template's verbatim rule
 
-Base guide `3584b8f` §6's anatomy note reads, verbatim:
+Base guide `de49a31` §6's anatomy note reads, verbatim:
 
 > the §6.0 template verbatim (fill in this course's specifics).
 
-**Replaced by:** emit the §6.0 template verbatim, then **append** — under step 1 (the express-lane
-question) and under step 5 (the per-row questions) — one short italic paragraph each, labelled
+**Replaced by:** emit the §6.0 template verbatim, then **append** — under the express-lane
+question step and under the one-question-per-row step (the template's steps 2 and 3 as it
+stands; identify them by their content, never by number) — one short italic paragraph each, labelled
 `[environment]`, stating the `choices`-fence facts the runtime file requires the spec to say
 (click and typed answers are equivalent; only the latest message's buttons stay live, so a
 changed answer is re-asked as a new question). Nothing else in the template is added, removed,
@@ -150,7 +151,7 @@ and then resolved, not skipped.
 | data/inputs | **ANSWERED** — inputs are seeded into the workspace | spec §5 fixture corpus |
 | goal | **ANSWERED** — the lab fixes what "working" means | spec §1 + the acceptance criteria |
 | model/provider | **CONSTRAINED or KEPT** — decide by the test below | spec §2 (+ CTX-D), or a Ledger row |
-| environment | **ANSWERED** — the container | spec §2 + the Runtime (lab) section (ADD 5); capability invariants move to the rows that need them |
+| environment | **ANSWERED** — the container | spec §2 + the Runtime (lab) section (ADD 5); capability invariants move to the rules, or the rows, that need them |
 | scope-boundary | **KEPT** | stays a Ledger row |
 
 **The model/provider row resolves conditionally — do not assume CONSTRAINED.** This environment
@@ -168,6 +169,17 @@ built app. It fixes **nothing** about models the course's own pipeline uses. So 
 Getting this wrong deletes a legitimate learner decision: a course whose models are local
 encoders has a real choice here, with a real invariant and a real switching cost (changing one
 means re-embedding every stored item).
+
+**The acceptance-suite model row is course-owned and stays.** Base §3's "when the model itself
+is the keyed dependency" row (which model the *offline acceptance suite* runs against) is a
+`realization` row, not the learner's model/provider dimension; CONSTRAINED resolves the latter
+only. The row stays in the Ledger with its scripted stand-in Default; its live Option notes that
+the lab supplies the key, so choosing it costs no setup here.
+
+**The platform's model set is not enumerated** in the runtime file, because it changes. The spec
+takes each role's model id from an environment variable the build agent fills at build time
+from what the container exports, carries the course's own model ids as provenance only, and
+never asserts that a course model id is served by the proxy.
 
 The generated spec must also carry a short *"Adapting this beyond the lab"* note in §1, naming
 where each ANSWERED or CONSTRAINED dimension now lives, so a reader taking the spec elsewhere
