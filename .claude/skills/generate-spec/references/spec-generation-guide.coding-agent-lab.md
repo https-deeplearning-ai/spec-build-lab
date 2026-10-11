@@ -178,8 +178,11 @@ the lab supplies the key, so choosing it costs no setup here.
 
 **The platform's model set is not enumerated** in the runtime file, because it changes. The spec
 declares one environment variable per model role (names of its choosing, listed in §2) and says
-the build agent sets them **at gate time**: the §6.0 "(Recommended)" flag owns model currency,
-so the agent proposes the platform model it recommends and the learner confirms. The spec never
+the build agent sets them **when it writes the resolved-decisions checklist** (base §6.0's last
+step): the checklist carries one "model roles" line with the agent's "(Recommended)" platform
+model per role, and the learner's confirmation of the checklist confirms them — no new gate
+question is added (OVERRIDE 4 governs §0), and the "(Recommended)" flag owns model currency as
+in base §6.0. The spec never
 instructs probing a listing endpoint, never asks the learner for a key, carries the course's
 own model ids as provenance only, and never asserts that a course model id is served by the
 proxy. **Key variables:** §2 names all four the runtime file lists and says which pair the app
@@ -222,7 +225,8 @@ Run the base §14 checklist in full, then these:
 - [ ] CTX-E carries an environment row separate from the lesson rows.
 - [ ] The provenance header pins **both** the base guide's commit and this overlay's. The base
       commit is the one named in this file's "Written against" line; the overlay's own commit is
-      obtained with `git log -1 --format=%h -- <path to this file>` from the repo root — this
+      obtained with `git log -1 --format=%h -- <path to this file>` from the repo root — or, in
+      a clean-room run where git is forbidden, taken as supplied by the invoking prompt — this
       file cannot carry its own hash.
 - [ ] §1 carries the "Adapting this beyond the lab" note.
 - [ ] The `## Runtime (lab)` section is present where ADD 5 places it, and every environment

@@ -32,7 +32,10 @@ one, so **this is an input to that rule, not an override of it.** The mechanism 
 
 ### The container — feeds spec §2
 
-Debian, non-root user, Node 22, Python 3 with venv, sqlite3, git, build tooling.
+Debian, non-root user, Node 22, Python 3 with venv, sqlite3, git, build tooling. The Python
+minor version is not stated here (it tracks the image): the spec has the build agent run
+`python3 --version`, record it, and stop with a report if a course-pinned package refuses the
+interpreter — never assume the course's floor is met.
 **Preinstalled:** `fastapi`, `uvicorn`, `python-dotenv`, `openai`, `anthropic`; Node `express`,
 `cors`, `better-sqlite3`, `vite`, `nodemon`. **Nothing else** — no vector stores, no embedding
 models, no ML frameworks.

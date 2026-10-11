@@ -184,5 +184,40 @@ Agnostic mode passed round 2 → confirmation N=2 on the final guide (`39dfbb6`)
 
 ## Confirmation & adoption
 
-- Confirmation set: N=2 per mode after a passing round.
+### Agnostic confirmation (base `39dfbb6`; regen-C, regen-D; Opus 5.5)
+
+- regen-C: 776 lines, 11 rows (L1–L6, D1 event trigger, D2 model tiering, D3 grader type, D4
+  persistent store, RR1), 29 rules, 40 ACs, 318k tokens, checker 0. **Full scorer** (adoption
+  candidate): every core and pass property PRESENT except P-A4 PARTIAL (three non-enum
+  constraints unreached; one of them, `revision_budget minimum 1`, contradicts R9's budget-0
+  mode — a real defect) and P-AU3 PARTIAL (24/26 replays clean; the analyst script's input route
+  to rubric labels is undeclared; one trace-row count hangs on a wording ambiguity). P-AU1 flagged
+  "keyed-dependency substitution" and "contradicted lever" as undefined; checker passes (its
+  vocabulary list is narrower) — [verified] opener present.
+- regen-D: 958 lines, 14 rows (L1–L6, D1 instruction placement, D2 model-per-role, D3 grader
+  type, D4 event-intake surface, D5 event-loop nesting, RR1–RR3), 34 rules, 45 ACs, 340k tokens,
+  checker 0. **Targeted greps** (cost policy): D2 litmus "an assignment of roles, not a value"
+  [verified]; CTX-C how-to + 32-row trade-off table with legend [verified]; RR1 scripted default
+  [verified]; no row count in the gate [verified].
+- TRADEOFF-TABLE (new §4 rule): present in C (20 rows) and D (32 rows) [verified]. In C it
+  dispositions instruction placement as *narrative* (B and D made it a row) and labels the
+  triggered-run-composition subject "row D1" while D1's options do not actually offer it — the
+  table makes both visible, which is its job; neither is a wording failure of this pass.
+
+**Verdict:** agnostic mode confirmed with two **documented residuals**: P-A4 and P-AU3 recur at
+low intensity in every regen (1–3 small slips each, none mechanical) — the kind the `/generate-spec`
+step 4b independent audit exists to catch at handoff. No further rounds for them.
+
+**Standing observation for the next pass — Ledger composition variance.** Four agnostic regens
+on near-identical guides produced 10, 13, 11, 14 rows. The stable core: the six learner rows,
+grader type, acceptance-suite model. The variable set: instruction placement (row in A, B, D;
+narrative in C), model-per-role (L4 option in A; row in B, C, D), persistent store (row in B, C,
+D; L5 default in A), hosted tracing (row in B, D), event-intake surface / trigger composition
+(different shapes in each). Every reading is defensible under the surfacing bar; the bar does not
+force one answer on these subjects. The trade-off table now records each regen's reading, so the
+next pass can decide subject by subject rather than by wording alone.
+
+### Lab confirmation
+
+- Round 3 (regen-LC) pending; confirmation N=2 after a pass, by owner decision on cost.
 - Adoption decision: deferred (D14).
