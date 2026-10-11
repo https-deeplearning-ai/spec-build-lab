@@ -55,9 +55,12 @@ another engineer (or coding agent) can implement end-to-end.
    and reading its facts early corrupts the derivation they are meant to resolve.
    The base guide is never edited for an environment; the overlay declares what
    it overrides.
-3. **Read every material.** Glob `materials/notebooks/**/*` and
-   `materials/transcripts/**/*`, then read each non-empty file. If both
-   directories are empty (only `.gitkeep`), refuse with: "No materials
+3. **Read every material.** Glob `materials/notebooks/**/*`,
+   `materials/transcripts/**/*` and `materials/slides/**/*`, then read each
+   non-empty file. Slides are optional: most courses have none, and an
+   absent or empty `materials/slides/` is never a reason to refuse — the
+   guide's §4 says how slide evidence is weighted. If the notebooks and
+   transcripts directories are both empty (only `.gitkeep`), refuse with: "No materials
    found. Add notebooks to materials/notebooks/ and transcripts to
    materials/transcripts/, then re-run — or optionally run
    /ingest-course-repo <course-folder-URL> to add the course repo's
