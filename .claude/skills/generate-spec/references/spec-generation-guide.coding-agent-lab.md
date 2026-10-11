@@ -3,7 +3,7 @@
 **Applies only when `/generate-spec` is invoked with `--env=coding-agent-lab`.** Without that
 flag this file is not read and the base guide governs alone.
 
-Written against base guide **`8e44ecb`**. This file carries the **rules**; its companion
+Written against base guide **`8fd521e`**. This file carries the **rules**; its companion
 `spec-generation-guide.coding-agent-lab.runtime.md` carries the environment's **facts**, and is
 opened later, at OVERRIDE 2 Phase 2. Both are distilled from `environments/coding-agent-lab.md`.
 
@@ -24,6 +24,11 @@ must not be in play while the six learner-context dimensions are being derived.
    spec, and report the tension to the user as an *overlay gap*. It gets fixed in this file,
    not judged at generation time. (This rule exists because the first lab-targeted spec was
    produced by exactly such silent judgments, and none of them was recoverable afterwards.)
+
+**`environments/coding-agent-lab.md` is provenance, not an input.** Do not open it during
+generation. The two overlay files are its complete distillation for this pipeline. If a fact
+seems to be missing, that is an overlay bug to report as an *overlay gap* (precedence rule 3),
+not a gap to fill by reading around it.
 
 **Staleness check — do this before generating.** Each OVERRIDE below quotes the base text it
 replaces. Confirm each quoted passage still appears verbatim in the base guide. If one does
@@ -49,7 +54,7 @@ and the pre-build gate applies unchanged.
 
 ## OVERRIDE 1 — §3, the input gate
 
-Base guide `8e44ecb` §3 reads, verbatim:
+Base guide `8fd521e` §3 reads, verbatim:
 
 > Generation is gated on **two inputs**. Verify each is actually present before generating.
 
@@ -65,7 +70,7 @@ way. It gets its own label (see ADD 2) and its own row in CTX-E.
 
 ## OVERRIDE 2 — §5.5, procedure step (f)
 
-Base guide `8e44ecb` §5.5 **Procedure** reads, verbatim:
+Base guide `8fd521e` §5.5 **Procedure** reads, verbatim:
 
 > (f) add the six §3 learner-context rows, each Invariant holding only the pattern's capability requirements on that dimension (empty when none) — learner rows still get a course-derived default (e.g. project defaults to the §3 example-shape target);
 
@@ -95,6 +100,18 @@ the six against the Resolutions in ADD 1 and emit the resolution table into the 
 `realization` or `contradicted` row is never removed, merged or silently defaulted here. Where
 the environment makes one of its Options impractical, mark that Option in its own cell with the
 reason — never delete it, and never move the "(course default)" label.
+
+---
+
+## OVERRIDE 3 — §6, the title line
+
+Base guide `8fd521e` §6's section template opens, verbatim:
+
+> # Spec: <Project> — Standalone Takeaway
+
+**Replaced by:** `# Spec: <Project> — Coding-Agent-Lab Build`. Nobody takes this spec away:
+the lab fixes the assignment and the learner builds it there. Everything else in the §6
+template stands.
 
 ---
 
@@ -141,6 +158,12 @@ knows what to change.
   never by the course. Requires this mode. It must never also carry a *course-demonstrated*
   label, and CTX-E must carry one row attributing these facts to the environment rather than
   to any lesson.
+- **Course-demonstrated, reinforced `[environment]`** — the one sanctioned co-label, for a
+  constraint the course demonstrates *and* the environment independently requires (e.g. release
+  one model before loading the next: shown by the course's own helper for a memory reason, and
+  required by the container's shared memory). Write it as one rule with both citations, never as
+  two near-duplicate rules. The ban above is on claiming course provenance for an
+  environment-only fact, not on recording that both sources require the same thing.
 
 ---
 
@@ -150,13 +173,18 @@ Run the base §14 checklist in full, then these:
 
 - [ ] The Environment Resolutions table is present and accounts for **all six** dimensions.
 - [ ] Every ANSWERED or CONSTRAINED dimension's Invariant is exercised by ≥1 acceptance
-      criterion at its new home, or the table states why it cannot be.
+      criterion at its new home, or the table states why it cannot be, or the table says
+      "Invariant empty" — a dimension whose derived Invariant is empty (base §3: typically
+      project, data, goal, scope-boundary) owes no AC, and that entry discharges it.
 - [ ] No course-owned row was removed by this mode; an Option the environment makes impractical
       is marked in its own cell, not deleted.
 - [ ] Every constraint traceable to this overlay carries `[environment]`, and none is labelled
       course-demonstrated.
 - [ ] CTX-E carries an environment row separate from the lesson rows.
-- [ ] The provenance header pins **both** the base guide's commit and this overlay's.
+- [ ] The provenance header pins **both** the base guide's commit and this overlay's. The base
+      commit is the one named in this file's "Written against" line; the overlay's own commit is
+      obtained with `git log -1 --format=%h -- <path to this file>` from the repo root — this
+      file cannot carry its own hash.
 - [ ] §1 carries the "Adapting this beyond the lab" note.
 
 **Where base §14's learner-row items apply in this mode.** Two of its lines assume six rows exist
@@ -165,6 +193,21 @@ non-empty row Invariant is exercised by ≥1 AC"*. With dimensions resolved, rea
 **Environment Resolutions table** instead: an ANSWERED or CONSTRAINED dimension discharges both
 obligations at its **named home**, and a KEPT dimension discharges them as an ordinary Ledger
 row. Neither line is waived; only its target moves.
+
+---
+
+## ADD 4 — the deliverable's shape
+
+The base guide never says what artifact a build produces, because in standalone mode the
+learner's project decides. In this mode the environment decides: the lab's default artifact is
+**one server on port 4000 serving both a page and its API**, because the preview pane is the
+learner's only view of the running app. The course's own artifact — a notebook, a script, a
+CLI — is never the deliverable, even when the course shipped nothing else; the spec's §1
+Objective describes the served app that embodies the course's pattern.
+
+**Escape:** a course whose pattern has no user-facing surface may deliver a library plus its
+test suite instead, and §1 must say so with the reason. Either way, the shape is `[environment]`
+provenance and is stated in §1, not inferred by each run from the runtime facts.
 
 ---
 
