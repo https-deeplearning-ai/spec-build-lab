@@ -3,7 +3,7 @@
 **Applies only when `/generate-spec` is invoked with `--env=coding-agent-lab`.** Without that
 flag this file is not read and the base guide governs alone.
 
-Written against base guide **`f1ab452`**. This file carries the **rules**; its companion
+Written against base guide **`a757248`**. This file carries the **rules**; its companion
 `spec-generation-guide.coding-agent-lab.runtime.md` carries the environment's **facts**, and is
 opened later, at OVERRIDE 2 Phase 2. Both are distilled from `environments/coding-agent-lab.md`.
 
@@ -54,7 +54,7 @@ and the pre-build gate applies unchanged.
 
 ## OVERRIDE 1 — §3, the input gate
 
-Base guide `f1ab452` §3 reads, verbatim:
+Base guide `a757248` §3 reads, verbatim:
 
 > Generation is gated on **two inputs**. Verify each is actually present before generating.
 
@@ -70,7 +70,7 @@ way. It gets its own label (see ADD 2) and its own row in CTX-E.
 
 ## OVERRIDE 2 — §5.5, procedure step (f)
 
-Base guide `f1ab452` §5.5 **Procedure** reads, verbatim:
+Base guide `a757248` §5.5 **Procedure** reads, verbatim:
 
 > (f) add the six §3 learner-context rows, each Invariant holding only the pattern's capability requirements on that dimension (empty when none) — learner rows still get a course-derived default (e.g. project defaults to the §3 example-shape target);
 
@@ -105,7 +105,7 @@ reason — never delete it, and never move the "(course default)" label.
 
 ## OVERRIDE 3 — §6, the title line
 
-Base guide `f1ab452` §6's section template opens, verbatim:
+Base guide `a757248` §6's section template opens, verbatim:
 
 > # Spec: <Project> — Standalone Takeaway
 
