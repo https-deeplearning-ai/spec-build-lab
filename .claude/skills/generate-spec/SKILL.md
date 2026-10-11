@@ -9,8 +9,9 @@ description: >
   from this course", "turn the materials into a spec", "build the spec
   out of materials/", "regenerate spec.md", "run the spec generation",
   "I've added the notebooks, please create the spec", or "/generate-spec".
-  Reads every file under materials/notebooks/ and materials/transcripts/
-  and follows references/spec-generation-guide.md. Writes spec.md in the
+  Reads every file under materials/notebooks/, materials/transcripts/ and
+  (when present) materials/slides/, and follows
+  references/spec-generation-guide.md. Writes spec.md in the
   current working directory. Must run from inside a course folder
   (courses/<name>/). Do NOT use this skill for editing an existing
   spec.md or for writing product specs unrelated to a course.
