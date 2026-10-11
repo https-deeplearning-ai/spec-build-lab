@@ -1,0 +1,51 @@
+{% extends "confluence_base.html" %}
+{% block content %}
+<p><a class="muted" href="{{ url_for('confluence_list') }}">← Spaces</a></p>
+
+{% set viewing = request.args.get('v', page.versions[-1].n)|int %}
+{% set shown = page.versions | selectattr('n', 'equalto', viewing) | first %}
+
+<div class="card">
+  <h1>{{ page.title }}</h1>
+  <p class="muted">
+    {% if page.kind == 'requirement' %}Source of truth — only a human edits this.
+    {% else %}Agent-authored — written by the automation loop, never edited by hand.{% endif %}
+  </p>
+  {% if linked_ticket %}
+  <p>Generated for ticket <a href="{{ url_for('jira_ticket', key=linked_ticket.key) }}">{{ linked_ticket.key }}</a></p>
+  {% endif %}
+
+  <p class="muted">Viewing version {{ shown.n }} of {{ page.versions[-1].n }} · by {{ shown.author }} · {{ shown.timestamp }}</p>
+  <pre class="page-body">{{ shown.body }}</pre>
+</div>
+
+{% if page.kind == 'requirement' %}
+<div class="card">
+  <h2>Edit this requirement</h2>
+  <form method="post" action="{{ url_for('confluence_save', page_id=page.id) }}">
+    <label>Your name</label>
+    <select name="author">
+      {% for person in people %}
+      <option value="{{ person }}">{{ person }}</option>
+      {% endfor %}
+    </select>
+    <label>Body</label>
+    <textarea name="body">{{ page.versions[-1].body }}</textarea>
+    <p class="muted">If a ticket is already open against this page, saving re-runs the agent automatically.</p>
+    <button class="btn btn-primary" type="submit">Save new version</button>
+  </form>
+</div>
+{% endif %}
+
+<div class="card">
+  <h2>Version history</h2>
+  {% for v in page.versions | reverse %}
+  <div class="version-row">
+    <span><a href="{{ url_for('confluence_page', page_id=page.id) }}?v={{ v.n }}">v{{ v.n }}</a> — {{ v.author }} · {{ v.timestamp }}</span>
+    {% if v.n > 1 %}
+    <span><a href="{{ url_for('confluence_compare', page_id=page.id, a=v.n-1, b=v.n) }}">compare to v{{ v.n - 1 }}</a></span>
+    {% endif %}
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

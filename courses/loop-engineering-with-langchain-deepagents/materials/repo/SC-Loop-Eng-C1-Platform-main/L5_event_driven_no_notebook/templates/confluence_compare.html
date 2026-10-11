@@ -1,0 +1,30 @@
+{% extends "confluence_base.html" %}
+{% block content %}
+<p><a class="muted" href="{{ url_for('confluence_page', page_id=page.id) }}">← {{ page.title }}</a></p>
+
+{% if run_a and run_b %}
+<div class="card">
+  <h2>What changed between these two runs</h2>
+  <table>
+    <tr><th></th><th>v{{ a }}</th><th>v{{ b }}</th></tr>
+    <tr><td>Requirement version analyzed</td><td>{{ run_a.requirement_version }}</td><td>{{ run_b.requirement_version }}</td></tr>
+    <tr><td>Verification status</td>
+      <td><span class="badge {% if run_a.status == 'satisfied' %}badge-pass{% else %}badge-fail{% endif %}">{{ run_a.status }}</span></td>
+      <td><span class="badge {% if run_b.status == 'satisfied' %}badge-pass{% else %}badge-fail{% endif %}">{{ run_b.status }}</span></td>
+    </tr>
+    {% for section in ['Confirmed Facts', 'Ambiguities', 'Clarification Questions', 'Assumptions'] %}
+    <tr><td>{{ section }} (bullets)</td><td>{{ run_a.counts[section] }}</td><td>{{ run_b.counts[section] }}</td></tr>
+    {% endfor %}
+  </table>
+</div>
+{% endif %}
+
+<div class="card">
+  <h1>Comparing version {{ a }} → {{ b }}</h1>
+  <pre class="diff">{% for line in diff %}{% if line.startswith('@@') or line.startswith('---') or line.startswith('+++') %}<span class="diff-meta">{{ line }}</span>
+{% elif line.startswith('+') %}<span class="diff-add">{{ line }}</span>
+{% elif line.startswith('-') %}<span class="diff-del">{{ line }}</span>
+{% else %}{{ line }}
+{% endif %}{% endfor %}</pre>
+</div>
+{% endblock %}

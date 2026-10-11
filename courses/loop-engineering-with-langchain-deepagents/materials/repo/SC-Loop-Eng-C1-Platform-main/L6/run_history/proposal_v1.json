@@ -1,0 +1,17 @@
+{
+  "target": "prompt",
+  "issue": "The agent writes Ambiguities bullets with only a `Reason:` line, so it systematically omits the required `Resolved by:` line for clarity and `Edge case:` line for depth.",
+  "recurrence": "5/5 runs: run_01_01_user_authentication, run_02_02_notification_system, run_03_03_payment_retry_policy, run_04_04_access_control_rules, and run_05_05_alert_escalation_rules all failed first attempt on clarity and depth for this same omission.",
+  "evidence": [
+    "\"each ambiguity bullet is missing the required indented 'Resolved by:' line and 'Edge case:' line\"",
+    "\"the Ambiguities section lacks the required indented \\\"Resolved by:\\\" and \\\"Edge case:\\\" lines for each ambiguity bullet\"",
+    "\"the Ambiguities section is missing the required indented 'Resolved by:' lines and 'Edge case:' lines for each ambiguity bullet\"",
+    "\"Each ambiguity needs an indented \\\"Resolved by:\\\" line and an indented \\\"Edge case:\\\" line; instead, the file uses \\\"Reason:\\\" lines and lacks edge-case failure descriptions\"",
+    "\"the Ambiguities section does not contain the required indented 'Resolved by:' and 'Edge case:' lines for each bullet\""
+  ],
+  "section": "### Ambiguities",
+  "change": "For every ambiguity bullet, include two additional indented labelled lines after `Reason:`:\n\n```\n  Resolved by: the specific fact or decision that would settle the ambiguity\n  Edge case: a concrete production failure that could happen if the ambiguity remains unresolved\n```",
+  "rejected": [
+    "Some runs produced duplicate `## Assumptions` headings or edit-file ambiguity errors, but these were not the failing rubric criteria in `/summary.json` and were not the repeated grader correction that drove revisions across all five runs."
+  ]
+}

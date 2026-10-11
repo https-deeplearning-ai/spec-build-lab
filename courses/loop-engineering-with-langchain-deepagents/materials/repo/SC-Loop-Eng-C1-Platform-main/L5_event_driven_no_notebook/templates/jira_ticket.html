@@ -1,0 +1,111 @@
+{% extends "jira_base.html" %}
+{% block content %}
+<p><a class="muted" href="{{ url_for('jira_board') }}">← Board</a></p>
+
+<div class="card">
+  <h1>{{ ticket.key }} — {{ ticket.title }}
+    {% if ticket.status == 'Open' %}<span class="badge badge-open">Open</span>
+    {% elif ticket.status == 'Analysis Ready' %}<span class="badge badge-ready">Analysis Ready</span>
+    {% else %}<span class="badge badge-done">Done</span>{% endif %}
+  </h1>
+  <p class="muted">Assignee: {{ ticket.assignee }} · Created {{ ticket.created_at }}</p>
+  <p>{{ ticket.description }}</p>
+  <p>Linked requirement:
+    <a href="{{ url_for('confluence_page', page_id=page.id) }}">{{ page.title }}</a>
+    (currently version {{ page.versions[-1].n }})
+  </p>
+
+  {% if ticket.status != 'Done' %}
+  <form method="post" action="{{ url_for('jira_rerun', key=ticket.key) }}" style="display:inline">
+    <button class="btn btn-secondary" type="submit">Re-run analysis now</button>
+  </form>
+  <form method="post" action="{{ url_for('jira_close', key=ticket.key) }}" style="display:inline">
+    <button class="btn btn-primary" type="submit">Mark Done</button>
+  </form>
+  {% endif %}
+</div>
+
+{% if ticket.comments %}
+<div class="card">
+  <h2>Activity</h2>
+  {% for c in ticket.comments %}
+  <div class="comment {% if 'bot' in c.author %}bot{% endif %}">
+    <strong>{{ c.author }}</strong> · <span class="muted">{{ c.timestamp }}</span><br>
+    {{ c.text }}
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+{% if latest_run %}
+<div class="card">
+  <h2>Latest automation run</h2>
+  <p>
+    Status: <span class="badge {% if latest_run.status == 'satisfied' %}badge-pass{% else %}badge-fail{% endif %}">{{ latest_run.status }}</span>
+    · {{ latest_run.turns }} model turns · {{ latest_run.grading|length }} grading pass(es)
+    · analyzed requirement version {{ latest_run.requirement_version }}
+  </p>
+  <p><a href="{{ url_for('confluence_page', page_id=report_page.id) }}">View the generated Analysis Report →</a></p>
+
+  <h3>Evaluation loop</h3>
+  {% for g in latest_run.grading %}
+  <p class="muted">Pass {{ g.iteration }}:
+    <span class="badge {% if g.result == 'satisfied' %}badge-pass{% else %}badge-fail{% endif %}">{{ g.result }}</span>
+  </p>
+  <table>
+    <tr><th>Criterion</th><th>Result</th><th>Gap</th></tr>
+    {% for c in g.criteria %}
+    <tr>
+      <td>{{ c.name }}</td>
+      <td>{% if c.passed %}<span class="badge badge-pass">pass</span>{% else %}<span class="badge badge-fail">fail</span>{% endif %}</td>
+      <td class="muted">{{ c.gap or '' }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+  {% endfor %}
+
+  <h3>Execution trace</h3>
+  <table>
+    <tr><th>#</th><th>Actor</th><th>Action</th><th>Detail</th></tr>
+    {% for step in latest_run.trace %}
+    <tr class="{% if step.actor == 'Model reasoning' %}trace-row-model{% endif %}">
+      <td>{{ step.step }}</td><td>{{ step.actor }}</td><td>{{ step.action }}</td><td class="muted">{{ step.detail }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+{% endif %}
+
+{% if runs|length > 1 %}
+{% set previous_run = runs[-2] %}
+<div class="card">
+  <h2>What changed since the previous run</h2>
+  <table>
+    <tr><th></th><th>Previous run</th><th>Latest run</th></tr>
+    <tr><td>Requirement version analyzed</td><td>{{ previous_run.requirement_version }}</td><td>{{ latest_run.requirement_version }}</td></tr>
+    <tr><td>Verification status</td>
+      <td><span class="badge {% if previous_run.status == 'satisfied' %}badge-pass{% else %}badge-fail{% endif %}">{{ previous_run.status }}</span></td>
+      <td><span class="badge {% if latest_run.status == 'satisfied' %}badge-pass{% else %}badge-fail{% endif %}">{{ latest_run.status }}</span></td>
+    </tr>
+    {% for section in ['Confirmed Facts', 'Ambiguities', 'Clarification Questions', 'Assumptions'] %}
+    <tr><td>{{ section }} (bullets)</td><td>{{ previous_run.counts[section] }}</td><td>{{ latest_run.counts[section] }}</td></tr>
+    {% endfor %}
+  </table>
+  <p class="muted">For the full text, open the Analysis Report page in Confluence and use "compare to v{{ previous_run.report_version }}".</p>
+</div>
+{% endif %}
+
+{% if runs|length > 1 %}
+<div class="card">
+  <h2>Run history</h2>
+  <table>
+    <tr><th>When</th><th>Requirement version</th><th>Status</th></tr>
+    {% for r in runs|reverse %}
+    <tr class="clickable" onclick="location.href='{{ url_for('jira_run_detail', key=ticket.key, run_id=r.id) }}'">
+      <td>{{ r.timestamp }}</td><td>{{ r.requirement_version }}</td><td>{{ r.status }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+{% endif %}
+{% endblock %}

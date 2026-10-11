@@ -1,0 +1,54 @@
+{% extends "confluence_base.html" %}
+{% block content %}
+<h1>Pages</h1>
+
+<div class="card">
+  <h2>Requirements</h2>
+  <table>
+    <tr><th>Title</th><th>Latest version</th><th>Last edited by</th></tr>
+    {% for p in requirement_pages %}
+    <tr class="clickable" onclick="location.href='{{ url_for('confluence_page', page_id=p.id) }}'">
+      <td>{{ p.title }}</td>
+      <td>v{{ p.versions[-1].n }}</td>
+      <td>{{ p.versions[-1].author }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+
+<div class="card">
+  <h2>Analysis Reports (agent-authored)</h2>
+  {% if report_pages %}
+  <table>
+    <tr><th>Title</th><th>Latest version</th><th>Last edited by</th></tr>
+    {% for p in report_pages %}
+    <tr class="clickable" onclick="location.href='{{ url_for('confluence_page', page_id=p.id) }}'">
+      <td>{{ p.title }}</td>
+      <td>v{{ p.versions[-1].n }}</td>
+      <td>{{ p.versions[-1].author }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+  {% else %}
+  <p class="muted">None yet. Create a Jira ticket linked to a requirement page to generate one.</p>
+  {% endif %}
+</div>
+
+<div class="card">
+  <h2>Create a new requirement page</h2>
+  <form method="post" action="{{ url_for('confluence_create_page') }}">
+    <label>Title</label>
+    <input type="text" name="title" required placeholder="e.g. Notification Preferences — Requirements">
+    <label>Written by</label>
+    <select name="author">
+      {% for person in people %}
+      <option value="{{ person }}">{{ person }}</option>
+      {% endfor %}
+    </select>
+    <label>Body</label>
+    <textarea name="body" required placeholder="Write it the way a real first draft reads: a few plain sentences, deliberately vague."></textarea>
+    <p class="muted">This becomes a new page you can link a Jira ticket to.</p>
+    <button class="btn btn-primary" type="submit">Create page</button>
+  </form>
+</div>
+{% endblock %}

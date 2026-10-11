@@ -1,0 +1,117 @@
+{
+  "requirement_doc": "\nREQUIREMENT: User Profile File Upload\n\nUsers shall be able to upload files to their profile.\n\nUploaded files should be stored securely.\n\nThe system should support common file types.\n",
+  "trace": [
+    {
+      "step": 1,
+      "actor": "Model reasoning",
+      "action": "Calls fetch_requirement",
+      "detail": ""
+    },
+    {
+      "step": 2,
+      "actor": "Tool",
+      "action": "fetch_requirement",
+      "detail": "Error fetching ticket from Jira: 503 Service Unavailable. The Jira API is temporarily unreachable, please retry."
+    },
+    {
+      "step": 3,
+      "actor": "Model reasoning",
+      "action": "Calls fetch_requirement",
+      "detail": ""
+    },
+    {
+      "step": 4,
+      "actor": "Tool",
+      "action": "fetch_requirement",
+      "detail": "Error fetching ticket from Jira: request timed out after 10s. Please retry."
+    },
+    {
+      "step": 5,
+      "actor": "Model reasoning",
+      "action": "Calls fetch_requirement",
+      "detail": ""
+    },
+    {
+      "step": 6,
+      "actor": "Tool",
+      "action": "fetch_requirement",
+      "detail": "REQUIREMENT: User Profile File Upload Users shall be able to upload files to their profile. Uploaded files should be stored securely. The system should support common file types.\u2026"
+    },
+    {
+      "step": 7,
+      "actor": "Model reasoning",
+      "action": "Calls write_file: Confirmed Facts",
+      "detail": ""
+    },
+    {
+      "step": 8,
+      "actor": "Tool",
+      "action": "write_file: Confirmed Facts",
+      "detail": "Updated file /analysis.md"
+    },
+    {
+      "step": 9,
+      "actor": "Model reasoning",
+      "action": "Calls edit_file: Ambiguities",
+      "detail": ""
+    },
+    {
+      "step": 10,
+      "actor": "Tool",
+      "action": "edit_file: Ambiguities",
+      "detail": "Successfully replaced 1 instance(s) of the string in '/analysis.md'"
+    },
+    {
+      "step": 11,
+      "actor": "Model reasoning",
+      "action": "Calls edit_file: Clarification Questions",
+      "detail": ""
+    },
+    {
+      "step": 12,
+      "actor": "Tool",
+      "action": "edit_file: Clarification Questions",
+      "detail": "Successfully replaced 1 instance(s) of the string in '/analysis.md'"
+    },
+    {
+      "step": 13,
+      "actor": "Model reasoning",
+      "action": "Calls edit_file: Assumptions",
+      "detail": ""
+    },
+    {
+      "step": 14,
+      "actor": "Tool",
+      "action": "edit_file: Assumptions",
+      "detail": "Successfully replaced 1 instance(s) of the string in '/analysis.md'"
+    },
+    {
+      "step": 15,
+      "actor": "Model reasoning",
+      "action": "Calls edit_file: Summary",
+      "detail": ""
+    },
+    {
+      "step": 16,
+      "actor": "Tool",
+      "action": "edit_file: Summary",
+      "detail": "Successfully replaced 1 instance(s) of the string in '/analysis.md'"
+    },
+    {
+      "step": 17,
+      "actor": "Model reasoning",
+      "action": "Finishes the review",
+      "detail": ""
+    }
+  ],
+  "analysis_markdown": "# Requirements Analysis\n\n## Confirmed Facts\n- The requirement document is titled \"User Profile File Upload\".\n- Users shall be able to upload files to their profile.\n- Uploaded files should be stored securely.\n- The system should support common file types.\n\n## Ambiguities\n- **\"upload files to their profile\"**\n  Reason: no limit is stated on file size or on how many files a single profile may hold, so unbounded uploads are not explicitly ruled out.\n- **\"stored securely\"**\n  Reason: \"securely\" names no specific standard, so it is unclear whether this means encryption at rest, encryption in transit, access control, malware scanning, or some combination.\n- **\"common file types\"**\n  Reason: the document does not list which file types count as \"common\", so it is unclear whether images, documents, video, or executables are included or excluded.\n- **\"Users shall be able to upload files to their profile\"**\n  Reason: the document does not say whether every authenticated user can upload, or whether upload access depends on role, account tier, or verification status.\n\n## Clarification Questions\n- What is the maximum file size and the maximum number of files allowed per profile?\n- Which specific security measures satisfy \"stored securely\": encryption at rest, encryption in transit, access control, malware scanning, or a combination?\n- Which file types are considered \"common\" and must be supported, and are any types explicitly disallowed?\n- Can any authenticated user upload files, or is upload access restricted by role, account tier, or verification status?\n\n## Assumptions\n- Assume a default maximum file size of 10MB and up to 5 files per profile, until confirmed otherwise.\n- Assume \"stored securely\" means encryption at rest plus access-controlled retrieval, since no specific standard is named.\n- Assume supported file types are limited to JPG, PNG, and PDF, unless the product team specifies a broader list.\n- Assume any authenticated user can upload with no additional role restriction, until told otherwise.\n\n## Summary\nThe requirement describes a basic profile file upload capability but leaves file size, security standard, supported file types, and upload permissions unspecified. These four gaps are exactly what a developer would otherwise have to guess at, so resolving them before implementation avoids inconsistent enforcement of size, security, and type rules across clients and services.\n",
+  "instructions": "# Requirements Review Agent\n\nYou turn a raw requirement document into a structured review report held in a\nsingle file, `/analysis.md`.\n\n## Procedure\n\nWork through these stages in order, one tool call per turn. Do not skip a stage\nand do not combine two stages into one call.\n\n1. Call `fetch_requirement` to get the requirement document.\n2. Call `write_file` to create `/analysis.md` with this exact skeleton, filling\n   in only the Confirmed Facts section:\n\n```\n# Requirements Analysis\n\n## Confirmed Facts\n- one bullet per fact\n\n## Ambiguities\n\n## Clarification Questions\n\n## Assumptions\n\n## Summary\n```\n\n3. Call `edit_file` to fill in the Ambiguities section. One bullet per clause, in\n   this shape:\n\n```\n- **\"the exact clause\"**\n  Reason: why it is under-specified\n```\n\n4. Call `edit_file` to fill in the Clarification Questions section. One bullet each.\n5. Call `edit_file` to fill in the Assumptions section. One bullet each.\n6. Call `edit_file` to fill in the Summary section with two or three sentences.\n\nTool calls can fail transiently, for example an unreachable external system. If a\ntool call returns an error message instead of a result, call the exact same tool\nagain with the same arguments. This is expected and normal, so keep retrying\nuntil it succeeds.\n\nYou never modify the requirement document itself; it is always the source of\ntruth. You never edit this file either.\n\nOnce the Summary is written the review is finished. Reply with one short sentence\nconfirming completion and call no further tools.\n\n## Review guidance\n\n### Confirmed facts\n\nRecord only what the document states directly. Do not infer.\n\n### Ambiguities\n\nQuote the exact clause, then give the reason it is under-specified.\n\n### Clarification questions\n\nAsk what a reviewer would need answered before work could start.\n\n### Assumptions\n\nState what a developer would end up assuming if nobody answered the questions.\n",
+  "stage_order": [
+    "Confirmed Facts",
+    "Ambiguities",
+    "Clarification Questions",
+    "Assumptions",
+    "Summary"
+  ],
+  "turns": 9
+}

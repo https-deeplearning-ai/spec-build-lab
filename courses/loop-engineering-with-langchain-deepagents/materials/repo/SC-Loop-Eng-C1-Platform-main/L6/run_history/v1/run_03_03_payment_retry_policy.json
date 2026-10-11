@@ -1,0 +1,318 @@
+{
+  "run_id": 3,
+  "doc_name": "03_payment_retry_policy",
+  "label": "v1",
+  "model": "openai:gpt-5.4-mini",
+  "requirement_doc": "REQUIREMENT: Payment Retry Policy\n\nFailed payment attempts shall be retried automatically.\n\nRetries must be spaced out sensibly to avoid overwhelming the payment provider.\n\nThe system should stop retrying after a reasonable number of attempts.\n\nCustomers must be notified if their payment ultimately fails.\n\nCertain failures should not be retried at all.\n\nThe system shall record the outcome of each attempt.\n",
+  "instructions": "# Requirements Review Agent\n\nYou turn a raw requirement document into a structured review report held in a\nsingle file, `/analysis.md`.\n\n## Procedure\n\nWork through these stages in order, one tool call per turn. Do not skip a stage\nand do not combine two stages into one call.\n\n1. Call `fetch_requirement_from_jira` to get the requirement document.\n2. Call `write_file` to create `/analysis.md` with this exact skeleton, filling\n   in only the Confirmed Facts section:\n\n```\n# Requirements Analysis\n\n## Confirmed Facts\n- one bullet per fact\n\n## Ambiguities\n\n## Clarification Questions\n\n## Assumptions\n\n## Summary\n```\n\n3. Call `edit_file` to fill in the Ambiguities section. One bullet per clause, in\n   this shape:\n\n```\n- **\"the exact clause\"**\n  Reason: why it is under-specified\n```\n\n4. Call `edit_file` to fill in the Clarification Questions section. One bullet each.\n5. Call `edit_file` to fill in the Assumptions section. One bullet each.\n6. Call `edit_file` to fill in the Summary section with two or three sentences.\n\nTool calls can fail transiently, for example an unreachable external system. If a\ntool call returns an error message instead of a result, call the exact same tool\nagain with the same arguments. This is expected and normal, so keep retrying\nuntil it succeeds.\n\nYou never modify the requirement document itself; it is always the source of\ntruth. You never edit this file either.\n\nOnce the Summary is written the review is finished. Reply with one short sentence\nconfirming completion and call no further tools.\n\n## Review guidance\n\n### Confirmed facts\n\nRecord only what the document states directly. Do not infer.\n\n### Ambiguities\n\nQuote the exact clause, then give the reason it is under-specified.\n\n### Clarification questions\n\nAsk what a reviewer would need answered before work could start.\n\n### Assumptions\n\nState what a developer would end up assuming if nobody answered the questions.\n",
+  "messages": [
+    {
+      "type": "human",
+      "content": "The requirement document is tracked in Jira as ticket AUTH-142. Fetch it to begin.",
+      "tool_calls": [],
+      "tool_call_id": null,
+      "status": null
+    },
+    {
+      "type": "ai",
+      "content": "",
+      "tool_calls": [
+        {
+          "name": "fetch_requirement_from_jira",
+          "args": {
+            "ticket_id": "AUTH-142"
+          }
+        }
+      ],
+      "tool_call_id": null,
+      "status": null
+    },
+    {
+      "type": "tool",
+      "content": "REQUIREMENT: Payment Retry Policy\n\nFailed payment attempts shall be retried automatically.\n\nRetries must be spaced out sensibly to avoid overwhelming the payment provider.\n\nThe system should stop retrying after a reasonable number of attempts.\n\nCustomers must be notified if their payment ultimately fails.\n\nCertain failures should not be retried at all.\n\nThe system shall record the outcome of each attempt.\n",
+      "tool_calls": [],
+      "tool_call_id": "call_Mam9Ys9TVFET25LtotTjGbT1",
+      "status": "success"
+    },
+    {
+      "type": "ai",
+      "content": "",
+      "tool_calls": [
+        {
+          "name": "write_file",
+          "args": {
+            "file_path": "/analysis.md",
+            "content": "# Requirements Analysis\n\n## Confirmed Facts\n- The requirement document is titled \"Payment Retry Policy\".\n- Failed payment attempts shall be retried automatically.\n- Customers must be notified if their payment ultimately fails.\n- The system shall record the outcome of each attempt.\n\n## Ambiguities\n\n## Clarification Questions\n\n## Assumptions\n\n## Summary\n"
+          }
+        }
+      ],
+      "tool_call_id": null,
+      "status": null
+    },
+    {
+      "type": "tool",
+      "content": "Updated file /analysis.md",
+      "tool_calls": [],
+      "tool_call_id": "call_TQZo0zfVwPzY3UygNmsp4JTE",
+      "status": "success"
+    },
+    {
+      "type": "ai",
+      "content": "",
+      "tool_calls": [
+        {
+          "name": "edit_file",
+          "args": {
+            "file_path": "/analysis.md",
+            "old_string": "## Ambiguities\n\n## Clarification Questions\n",
+            "new_string": "## Ambiguities\n- **\"Retries must be spaced out sensibly to avoid overwhelming the payment provider.\"**\n  Reason: \"sensibly\" and \"avoid overwhelming\" do not define an actual retry schedule, backoff strategy, or rate limit.\n- **\"The system should stop retrying after a reasonable number of attempts.\"**\n  Reason: \"reasonable number\" is subjective and does not specify the maximum retry count or stopping condition.\n- **\"Certain failures should not be retried at all.\"**\n  Reason: it does not identify which failure types are non-retriable.\n\n## Clarification Questions\n",
+            "replace_all": false
+          }
+        }
+      ],
+      "tool_call_id": null,
+      "status": null
+    },
+    {
+      "type": "tool",
+      "content": "Successfully replaced 1 instance(s) of the string in '/analysis.md'",
+      "tool_calls": [],
+      "tool_call_id": "call_eyh4Rw6azOIkt0HopIesgcqs",
+      "status": "success"
+    },
+    {
+      "type": "ai",
+      "content": "",
+      "tool_calls": [
+        {
+          "name": "edit_file",
+          "args": {
+            "file_path": "/analysis.md",
+            "old_string": "## Clarification Questions\n",
+            "new_string": "## Clarification Questions\n- What retry schedule should be used, including delay strategy, maximum interval, and any jitter?\n- What is the maximum number of retry attempts before the payment is marked as failed?\n- Which payment failure conditions must not be retried?\n- How and when should customers be notified of ultimate payment failure?\n- What fields must be recorded for each retry attempt?\n\n## Assumptions\n",
+            "replace_all": false
+          }
+        }
+      ],
+      "tool_call_id": null,
+      "status": null
+    },
+    {
+      "type": "tool",
+      "content": "Successfully replaced 1 instance(s) of the string in '/analysis.md'",
+      "tool_calls": [],
+      "tool_call_id": "call_v439XjQOlVf1lc4V14k7IiBw",
+      "status": "success"
+    },
+    {
+      "type": "ai",
+      "content": "",
+      "tool_calls": [
+        {
+          "name": "edit_file",
+          "args": {
+            "file_path": "/analysis.md",
+            "old_string": "## Assumptions\n",
+            "new_string": "## Assumptions\n- If nobody clarifies the retry policy, developers would likely choose an exponential backoff with jitter.\n- If nobody clarifies the limit, developers would likely pick a small fixed maximum retry count.\n- If nobody clarifies non-retriable failures, developers would likely treat hard declines and invalid payment details as terminal.\n- If nobody clarifies notification behavior, developers would likely send a failure notice after the final attempt.\n\n## Summary\n",
+            "replace_all": false
+          }
+        }
+      ],
+      "tool_call_id": null,
+      "status": null
+    },
+    {
+      "type": "tool",
+      "content": "Error: String '## Assumptions\n' appears 2 times in file. Use replace_all=True to replace all instances, or provide a more specific string with surrounding context.",
+      "tool_calls": [],
+      "tool_call_id": "call_ZznYr9UarQsR9rSEA1JmOFgV",
+      "status": "error"
+    },
+    {
+      "type": "ai",
+      "content": "",
+      "tool_calls": [
+        {
+          "name": "read_file",
+          "args": {
+            "file_path": "/analysis.md",
+            "offset": 1,
+            "limit": 120
+          }
+        }
+      ],
+      "tool_call_id": null,
+      "status": null
+    },
+    {
+      "type": "tool",
+      "content": " 2  \n 3  ## Confirmed Facts\n 4  - The requirement document is titled \"Payment Retry Policy\".\n 5  - Failed payment attempts shall be retried automatically.\n 6  - Customers must be notified if their payment ultimately fails.\n 7  - The system shall record the outcome of each attempt.\n 8  \n 9  ## Ambiguities\n10  - **\"Retries must be spaced out sensibly to avoid overwhelming the payment provider.\"**\n11    Reason: \"sensibly\" and \"avoid overwhelming\" do not define an actual retry schedule, backoff strategy, or rate limit.\n12  - **\"The system should stop retrying after a reasonable number of attempts.\"**\n13    Reason: \"reasonable number\" is subjective and does not specify the maximum retry count or stopping condition.\n14  - **\"Certain failures should not be retried at all.\"**\n15    Reason: it does not identify which failure types are non-retriable.\n16  \n17  ## Clarification Questions\n18  - What retry schedule should be used, including delay strategy, maximum interval, and any jitter?\n19  - What is the maximum number of retry attempts before the payment is marked as failed?\n20  - Which payment failure conditions must not be retried?\n21  - How and when should customers be notified of ultimate payment failure?\n22  - What fields must be recorded for each retry attempt?\n23  \n24  ## Assumptions\n25  \n26  ## Assumptions\n27  \n28  ## Summary",
+      "tool_calls": [],
+      "tool_call_id": "call_5jHoi5vLhJ6AA5UhSJAhmdI9",
+      "status": "success"
+    },
+    {
+      "type": "ai",
+      "content": "",
+      "tool_calls": [
+        {
+          "name": "edit_file",
+          "args": {
+            "file_path": "/analysis.md",
+            "old_string": "## Assumptions\n\n## Assumptions\n\n## Summary",
+            "new_string": "## Assumptions\n- If nobody clarifies the retry policy, developers would likely choose an exponential backoff with jitter.\n- If nobody clarifies the limit, developers would likely pick a small fixed maximum retry count.\n- If nobody clarifies non-retriable failures, developers would likely treat hard declines and invalid payment details as terminal.\n- If nobody clarifies notification behavior, developers would likely send a failure notice after the final attempt.\n\n## Summary",
+            "replace_all": false
+          }
+        }
+      ],
+      "tool_call_id": null,
+      "status": null
+    },
+    {
+      "type": "tool",
+      "content": "Successfully replaced 1 instance(s) of the string in '/analysis.md'",
+      "tool_calls": [],
+      "tool_call_id": "call_O9O1KoLhEoCC5FcJAmSMWu7S",
+      "status": "success"
+    },
+    {
+      "type": "ai",
+      "content": "",
+      "tool_calls": [
+        {
+          "name": "edit_file",
+          "args": {
+            "file_path": "/analysis.md",
+            "old_string": "## Summary",
+            "new_string": "## Summary\nThe requirement describes an automated payment retry policy with notification and attempt logging, but it does not define the operational parameters needed to implement it safely. The main gaps are the retry timing, maximum retry count, and the list of failure cases that should not be retried.",
+            "replace_all": false
+          }
+        }
+      ],
+      "tool_call_id": null,
+      "status": null
+    },
+    {
+      "type": "tool",
+      "content": "Successfully replaced 1 instance(s) of the string in '/analysis.md'",
+      "tool_calls": [],
+      "tool_call_id": "call_l8OOwhHmThIr7zox8Bx9LVuB",
+      "status": "success"
+    },
+    {
+      "type": "ai",
+      "content": "Completed the requirements review in `/analysis.md`.",
+      "tool_calls": [],
+      "tool_call_id": null,
+      "status": null
+    },
+    {
+      "type": "human",
+      "content": "A grader reviewed your work against the rubric and asked for revisions before we can finish.\n\nGrader feedback: The analysis covers the requirement well, but the Ambiguities section is missing the required indented 'Resolved by:' lines and 'Edge case:' lines for each ambiguity bullet. Because those exact lines are absent, the clarity and depth criteria fail.\n\nCriteria that still need work:\n- clarity: every bullet in the Ambiguities section has an indented \"Resolved by:\" line naming the specific fact or decision that would settle it: The Ambiguities bullets at lines 10, 12, and 14 are followed only by 'Reason:' lines; there are no indented 'Resolved by:' lines naming the deciding fact or decision.\n- depth: every bullet in the Ambiguities section has an indented \"Edge case:\" line naming a concrete production failure that ambiguity could cause: The Ambiguities bullets at lines 10, 12, and 14 do not include any indented 'Edge case:' lines describing a concrete production failure.\n\nCriteria already satisfied -- do not regress these:\n- completeness: every clause of the requirement document is addressed somewhere in the analysis\n\nAddress every failing criterion without regressing any criterion that already passes, then respond when you believe the rubric is satisfied.",
+      "tool_calls": [],
+      "tool_call_id": null,
+      "status": null
+    },
+    {
+      "type": "ai",
+      "content": "",
+      "tool_calls": [
+        {
+          "name": "read_file",
+          "args": {
+            "file_path": "/analysis.md",
+            "offset": 1,
+            "limit": 120
+          }
+        }
+      ],
+      "tool_call_id": null,
+      "status": null
+    },
+    {
+      "type": "tool",
+      "content": " 2  \n 3  ## Confirmed Facts\n 4  - The requirement document is titled \"Payment Retry Policy\".\n 5  - Failed payment attempts shall be retried automatically.\n 6  - Customers must be notified if their payment ultimately fails.\n 7  - The system shall record the outcome of each attempt.\n 8  \n 9  ## Ambiguities\n10  - **\"Retries must be spaced out sensibly to avoid overwhelming the payment provider.\"**\n11    Reason: \"sensibly\" and \"avoid overwhelming\" do not define an actual retry schedule, backoff strategy, or rate limit.\n12  - **\"The system should stop retrying after a reasonable number of attempts.\"**\n13    Reason: \"reasonable number\" is subjective and does not specify the maximum retry count or stopping condition.\n14  - **\"Certain failures should not be retried at all.\"**\n15    Reason: it does not identify which failure types are non-retriable.\n16  \n17  ## Clarification Questions\n18  - What retry schedule should be used, including delay strategy, maximum interval, and any jitter?\n19  - What is the maximum number of retry attempts before the payment is marked as failed?\n20  - Which payment failure conditions must not be retried?\n21  - How and when should customers be notified of ultimate payment failure?\n22  - What fields must be recorded for each retry attempt?\n23  \n24  ## Assumptions\n25  - If nobody clarifies the retry policy, developers would likely choose an exponential backoff with jitter.\n26  - If nobody clarifies the limit, developers would likely pick a small fixed maximum retry count.\n27  - If nobody clarifies non-retriable failures, developers would likely treat hard declines and invalid payment details as terminal.\n28  - If nobody clarifies notification behavior, developers would likely send a failure notice after the final attempt.\n29  \n30  ## Summary\n31  The requirement describes an automated payment retry policy with notification and attempt logging, but it does not define the operational parameters needed to implement it safely. The main gaps are the retry timing, maximum retry count, and the list of failure cases that should not be retried.",
+      "tool_calls": [],
+      "tool_call_id": "call_zN2OSc6HfcigThR8maxNWsCK",
+      "status": "success"
+    },
+    {
+      "type": "ai",
+      "content": "",
+      "tool_calls": [
+        {
+          "name": "edit_file",
+          "args": {
+            "file_path": "/analysis.md",
+            "old_string": "## Ambiguities\n- **\"Retries must be spaced out sensibly to avoid overwhelming the payment provider.\"**\n  Reason: \"sensibly\" and \"avoid overwhelming\" do not define an actual retry schedule, backoff strategy, or rate limit.\n- **\"The system should stop retrying after a reasonable number of attempts.\"**\n  Reason: \"reasonable number\" is subjective and does not specify the maximum retry count or stopping condition.\n- **\"Certain failures should not be retried at all.\"**\n  Reason: it does not identify which failure types are non-retriable.\n",
+            "new_string": "## Ambiguities\n- **\"Retries must be spaced out sensibly to avoid overwhelming the payment provider.\"**\n  Reason: \"sensibly\" and \"avoid overwhelming\" do not define an actual retry schedule, backoff strategy, or rate limit.\n  Resolved by: a specific retry policy decision, such as fixed intervals, exponential backoff, or provider-side rate limits.\n  Edge case: aggressive retries could trigger provider throttling, causing all subsequent payments to fail temporarily.\n- **\"The system should stop retrying after a reasonable number of attempts.\"**\n  Reason: \"reasonable number\" is subjective and does not specify the maximum retry count or stopping condition.\n  Resolved by: an explicit maximum attempt count or a terminal-state rule that defines when retries end.\n  Edge case: without a cap, the system could retry indefinitely and keep charging the provider with repeated failures.\n- **\"Certain failures should not be retried at all.\"**\n  Reason: it does not identify which failure types are non-retriable.\n  Resolved by: a documented classification of retriable versus non-retriable payment error codes.\n  Edge case: retrying hard declines or invalid card details could spam customers and waste processing capacity.\n",
+            "replace_all": false
+          }
+        }
+      ],
+      "tool_call_id": null,
+      "status": null
+    },
+    {
+      "type": "tool",
+      "content": "Successfully replaced 1 instance(s) of the string in '/analysis.md'",
+      "tool_calls": [],
+      "tool_call_id": "call_w39yAI3PwDgbSQ70rBl4KpAK",
+      "status": "success"
+    },
+    {
+      "type": "ai",
+      "content": "Revised the ambiguities section to include the required resolved-by and edge-case detail.",
+      "tool_calls": [],
+      "tool_call_id": null,
+      "status": null
+    }
+  ],
+  "grading": [
+    {
+      "iteration": 0,
+      "result": "needs_revision",
+      "explanation": "The analysis covers the requirement well, but the Ambiguities section is missing the required indented 'Resolved by:' lines and 'Edge case:' lines for each ambiguity bullet. Because those exact lines are absent, the clarity and depth criteria fail.",
+      "criteria": [
+        {
+          "name": "completeness: every clause of the requirement document is addressed somewhere in the analysis",
+          "passed": true
+        },
+        {
+          "name": "clarity: every bullet in the Ambiguities section has an indented \"Resolved by:\" line naming the specific fact or decision that would settle it",
+          "passed": false,
+          "gap": "The Ambiguities bullets at lines 10, 12, and 14 are followed only by 'Reason:' lines; there are no indented 'Resolved by:' lines naming the deciding fact or decision."
+        },
+        {
+          "name": "depth: every bullet in the Ambiguities section has an indented \"Edge case:\" line naming a concrete production failure that ambiguity could cause",
+          "passed": false,
+          "gap": "The Ambiguities bullets at lines 10, 12, and 14 do not include any indented 'Edge case:' lines describing a concrete production failure."
+        }
+      ],
+      "analysis_markdown": "# Requirements Analysis\n\n## Confirmed Facts\n- The requirement document is titled \"Payment Retry Policy\".\n- Failed payment attempts shall be retried automatically.\n- Customers must be notified if their payment ultimately fails.\n- The system shall record the outcome of each attempt.\n\n## Ambiguities\n- **\"Retries must be spaced out sensibly to avoid overwhelming the payment provider.\"**\n  Reason: \"sensibly\" and \"avoid overwhelming\" do not define an actual retry schedule, backoff strategy, or rate limit.\n- **\"The system should stop retrying after a reasonable number of attempts.\"**\n  Reason: \"reasonable number\" is subjective and does not specify the maximum retry count or stopping condition.\n- **\"Certain failures should not be retried at all.\"**\n  Reason: it does not identify which failure types are non-retriable.\n\n## Clarification Questions\n- What retry schedule should be used, including delay strategy, maximum interval, and any jitter?\n- What is the maximum number of retry attempts before the payment is marked as failed?\n- Which payment failure conditions must not be retried?\n- How and when should customers be notified of ultimate payment failure?\n- What fields must be recorded for each retry attempt?\n\n## Assumptions\n- If nobody clarifies the retry policy, developers would likely choose an exponential backoff with jitter.\n- If nobody clarifies the limit, developers would likely pick a small fixed maximum retry count.\n- If nobody clarifies non-retriable failures, developers would likely treat hard declines and invalid payment details as terminal.\n- If nobody clarifies notification behavior, developers would likely send a failure notice after the final attempt.\n\n## Summary\nThe requirement describes an automated payment retry policy with notification and attempt logging, but it does not define the operational parameters needed to implement it safely. The main gaps are the retry timing, maximum retry count, and the list of failure cases that should not be retried.\n"
+    },
+    {
+      "iteration": 1,
+      "result": "satisfied",
+      "explanation": "All three rubric criteria are met in /analysis.md: the analysis addresses the requirement clauses, and each Ambiguities bullet now includes the required indented Resolved by and Edge case lines.",
+      "criteria": [
+        {
+          "name": "completeness: every clause of the requirement document is addressed somewhere in the analysis",
+          "passed": true
+        },
+        {
+          "name": "clarity: every bullet in the Ambiguities section has an indented \"Resolved by:\" line naming the specific fact or decision that would settle it",
+          "passed": true
+        },
+        {
+          "name": "depth: every bullet in the Ambiguities section has an indented \"Edge case:\" line naming a concrete production failure that ambiguity could cause",
+          "passed": true
+        }
+      ],
+      "analysis_markdown": "# Requirements Analysis\n\n## Confirmed Facts\n- The requirement document is titled \"Payment Retry Policy\".\n- Failed payment attempts shall be retried automatically.\n- Customers must be notified if their payment ultimately fails.\n- The system shall record the outcome of each attempt.\n\n## Ambiguities\n- **\"Retries must be spaced out sensibly to avoid overwhelming the payment provider.\"**\n  Reason: \"sensibly\" and \"avoid overwhelming\" do not define an actual retry schedule, backoff strategy, or rate limit.\n  Resolved by: a specific retry policy decision, such as fixed intervals, exponential backoff, or provider-side rate limits.\n  Edge case: aggressive retries could trigger provider throttling, causing all subsequent payments to fail temporarily.\n- **\"The system should stop retrying after a reasonable number of attempts.\"**\n  Reason: \"reasonable number\" is subjective and does not specify the maximum retry count or stopping condition.\n  Resolved by: an explicit maximum attempt count or a terminal-state rule that defines when retries end.\n  Edge case: without a cap, the system could retry indefinitely and keep charging the provider with repeated failures.\n- **\"Certain failures should not be retried at all.\"**\n  Reason: it does not identify which failure types are non-retriable.\n  Resolved by: a documented classification of retriable versus non-retriable payment error codes.\n  Edge case: retrying hard declines or invalid card details could spam customers and waste processing capacity.\n\n## Clarification Questions\n- What retry schedule should be used, including delay strategy, maximum interval, and any jitter?\n- What is the maximum number of retry attempts before the payment is marked as failed?\n- Which payment failure conditions must not be retried?\n- How and when should customers be notified of ultimate payment failure?\n- What fields must be recorded for each retry attempt?\n\n## Assumptions\n- If nobody clarifies the retry policy, developers would likely choose an exponential backoff with jitter.\n- If nobody clarifies the limit, developers would likely pick a small fixed maximum retry count.\n- If nobody clarifies non-retriable failures, developers would likely treat hard declines and invalid payment details as terminal.\n- If nobody clarifies notification behavior, developers would likely send a failure notice after the final attempt.\n\n## Summary\nThe requirement describes an automated payment retry policy with notification and attempt logging, but it does not define the operational parameters needed to implement it safely. The main gaps are the retry timing, maximum retry count, and the list of failure cases that should not be retried.\n"
+    }
+  ],
+  "analysis_markdown": "# Requirements Analysis\n\n## Confirmed Facts\n- The requirement document is titled \"Payment Retry Policy\".\n- Failed payment attempts shall be retried automatically.\n- Customers must be notified if their payment ultimately fails.\n- The system shall record the outcome of each attempt.\n\n## Ambiguities\n- **\"Retries must be spaced out sensibly to avoid overwhelming the payment provider.\"**\n  Reason: \"sensibly\" and \"avoid overwhelming\" do not define an actual retry schedule, backoff strategy, or rate limit.\n  Resolved by: a specific retry policy decision, such as fixed intervals, exponential backoff, or provider-side rate limits.\n  Edge case: aggressive retries could trigger provider throttling, causing all subsequent payments to fail temporarily.\n- **\"The system should stop retrying after a reasonable number of attempts.\"**\n  Reason: \"reasonable number\" is subjective and does not specify the maximum retry count or stopping condition.\n  Resolved by: an explicit maximum attempt count or a terminal-state rule that defines when retries end.\n  Edge case: without a cap, the system could retry indefinitely and keep charging the provider with repeated failures.\n- **\"Certain failures should not be retried at all.\"**\n  Reason: it does not identify which failure types are non-retriable.\n  Resolved by: a documented classification of retriable versus non-retriable payment error codes.\n  Edge case: retrying hard declines or invalid card details could spam customers and waste processing capacity.\n\n## Clarification Questions\n- What retry schedule should be used, including delay strategy, maximum interval, and any jitter?\n- What is the maximum number of retry attempts before the payment is marked as failed?\n- Which payment failure conditions must not be retried?\n- How and when should customers be notified of ultimate payment failure?\n- What fields must be recorded for each retry attempt?\n\n## Assumptions\n- If nobody clarifies the retry policy, developers would likely choose an exponential backoff with jitter.\n- If nobody clarifies the limit, developers would likely pick a small fixed maximum retry count.\n- If nobody clarifies non-retriable failures, developers would likely treat hard declines and invalid payment details as terminal.\n- If nobody clarifies notification behavior, developers would likely send a failure notice after the final attempt.\n\n## Summary\nThe requirement describes an automated payment retry policy with notification and attempt logging, but it does not define the operational parameters needed to implement it safely. The main gaps are the retry timing, maximum retry count, and the list of failure cases that should not be retried.\n",
+  "status": "satisfied",
+  "started_at": "2026-09-04T00:58:39.930845+00:00"
+}
