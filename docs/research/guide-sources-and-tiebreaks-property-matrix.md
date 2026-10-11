@@ -67,7 +67,7 @@ Report: scratchpad `gen-report-agnostic.md` (not committed).
 | T1 | PASS | PASS | "Litmus: row" in all six agnostic design rows; "Litmus branch:" in all five lab rows; levers recorded beside the value and in CTX-C (both) |
 | T2 | PASS | PASS, with a tension (F1) | No row offers a demonstrated-failure side (both); agnostic keeps the warned "analyst on the cheaper model" out of Options and in the Trade-off |
 | T3 | **SPLIT** | PASS | Model-per-role: lab → lever (tie-breaker 2, "sides differ only in a model id"); agnostic → design-argued row D3 (one model vs several across roles). See X1 |
-| P1 | PASS [report] | PASS [report] | Both generators ran §14 in full; no line reported undischarged |
+| P1 | **FAIL** | **FAIL** | Originally recorded PASS on the generators' word. An independent §14 audit (same day, fresh subagents, read-only) found 14 hard / 10 soft defects in spec.md and 8 hard / 13 soft in the lab spec. Agnostic: a systematic rule-renumbering slip (nine citations point at the wrong R-n), rows and rules both named `R1`/`R2`, one AC citing no rule, a scope tag outside the four classes. Lab: AC28 unsatisfiable (its fixtures cannot produce the "regression" it asserts), two ACs needing fake-model scripts no fixture declares, references to the guide's own sections leaking into the spec, four ACs citing no rule, one failure mode without fixture or AC. None touches the properties above; all are consistency defects the generator's self-audit should have caught. Hand-fixed per Loop A, then re-audited — see "Audit and repair" below. |
 
 **Cross-run comparison (the point of running two modes on one course).** Subjects below are
 course-owned, so the mode should not change them.
@@ -173,6 +173,53 @@ course-owned, so the mode should not change them.
 
 - The event-driven loop has shipped code and deck-only slides but no transcript lesson. Not a guide
   defect; recorded because it shaped several judgement calls above.
+
+## Audit and repair (2026-10-11, after generation)
+
+Both specs were then put through a loop the lab had not run before: a **fresh, read-only subagent
+audits the spec against the full §14 checklist plus mechanical checks** (rule↔AC reciprocity,
+cross-reference targets, guide-section leaks, declared fixtures, fixture arithmetic replayed
+against the rules, Options-vs-Invariant, Not Included tags vs §5.5 classes); a repair agent fixes
+the list under a no-decision-change constraint; a new auditor re-reads. Hand edits are Loop A and
+are recorded in each spec's provenance blockquote.
+
+| Round | spec.md hard / soft | spec.coding-agent-lab.md hard / soft |
+|---|---|---|
+| 1 (as generated) | 14 / 10 | 8 / 13 |
+| 2 | 3 / 8 | 4 / 10 |
+| 3 | 2 / 12 | 3 / 14 |
+| 4 | 2 / 9 | 1 / 10 |
+| 5 | 1 / 11 | — |
+
+Each round's one remaining hard item was fixed; the last repairs (agnostic round 5, lab round 4)
+were not re-audited. Final sizes: spec.md 594 lines / 16.3k words; lab 1,237 lines / 18.2k words
+(from 588 / 14.2k and 1,052 / 14.1k) — growth is missing fixtures, scripts, test hooks and ACs
+added rather than assertions dropped. No Ledger row was removed and no default changed in either;
+a few rules gained explicit statements of values the course code fixes but the generated text left
+implicit, and two rows gained an option each by hand (both recorded).
+
+What the hard defects were, by class (both specs, round 1): wrong cross-reference numbers from
+late renumbering (9); ACs citing no rule or rules cited by no AC (6); guide section numbers or
+vocabulary leaking into the spec (5); fixtures or scripts an AC relies on but §5 never declares
+(3); fixture arithmetic that cannot produce the asserted verdict (1); a failure mode without a
+fixture/AC leg (1); identifier collision between rows and rules (1). Roughly two-thirds are
+scriptable.
+
+Later rounds found things earlier rounds missed (round 2 caught guide-section leaks in Ledger
+notes that round 1 passed over), and repairs introduced knock-on defects (adding an option made
+another row's Invariant false). Convergence was real but slow.
+
+**Finding (headline for #33).** The generator's own §14 pass is not a reliable gate: both
+generators reported it done. `/generate-spec` needs (1) a mechanical consistency script run on
+the output (zero LLM cost) and (2) an independent audit subagent before handoff, with the
+generator repairing from its list. Cost of this manual loop: ~3.2M tokens across 18 agent runs;
+the script would have removed most of it.
+
+Remaining soft items (not fixed, judgement calls): B3 has no offline fixture (agnostic); tool
+names asserted by ACs while CTX-D calls them perishable (agnostic); R20 carries two labels for
+two claims (lab); D-A3 option (b) attaches to a tool the build lacks (lab).
+
+Logs: `experiments/loop-engineering/sources-and-tiebreaks/audit/` (local, untracked).
 
 ## Status
 
