@@ -325,10 +325,25 @@ which shows the rule changes generation rather than describing it.
 
 Validation: one agnostic clean-room regen (regen-E, Opus 5.5, guide `340e2c6`): 654 lines, 12
 rows (L1–L6; D1 run trigger, D2 triggered run includes verification, D3 grader kind, D4 model
-tier per role; RR1 suite model, RR2 store), 26 rules, 30 ACs, checker 0 at handoff. **P-LEAD
-PRESENT** [verified]: the opening reads "**What you're building:** a command-line requirements
-reviewer that grades its own reports and learns from repeated mistakes: you open a ticket against
-a vague requirement page, watch the reviewer draft …" — artifact noun phrase, promise, then the
-demo moment in second person, no persona subject. BLOCKQUOTE check passes. The generator reported
-the checker's lead marker as the one thing its first draft missed, and fixed it — which is the
-gate working as designed. N=2 confirmation owed → #35.
+tier per role; RR1 suite model, RR2 store), 26 rules, 30 ACs, checker 0 at handoff. **P-LEAD:
+PASS on form, FAIL on substance.** The opening reads "a command-line requirements reviewer that
+grades its own reports …" — artifact noun phrase, promise, second person, no persona: every
+check green. But §1 says "Build a command-line requirements review agent", §2 lists Flask as
+"only if Not Included item 1 is restored", and the trigger row says "CLI-fired events": the regen
+demoted the course's web app to a restorable exclusion. Regens A–D and the committed spec all
+keep it. Cause: the blockquote sits first, so the generator wrote the lead first and bent §1 to
+it; the rule said what the first words must look like, not where they come from, and the
+standalone guide pins no deliverable shape to stop it. The orchestrator marked this PRESENT from
+the checker line and a quoted sentence without reading §1 — the same trust-the-green mistake as
+P1 and the first AU3 fix. Corrected on owner review.
+
+**Fix (`f1d3c46`):** the lead is written last, after the Ledger and §1 exist, and its first
+clause names the project row's Default as §1 states it — the course's example realization, in
+§1's own words — introducing no kind, surface, or component §1 lacks. It decides nothing. §14
+aligned; the checker's form heuristic unchanged. What this does not do: pin a deliverable shape
+for standalone mode — the guide never has; that is a design decision filed to #35.
+
+Validation of the fix: one regen (regen-F, Opus 5.5, `f1d3c46`), read by eye — the lead's first
+clause, §1's first sentence, §2's Flask row — not by a scorer. Pass = lead consistent with §1 and
+artifact-first in second person. If §1 itself chooses a CLI, the lead rule has done its job and
+the shape gap stands as the finding. No second regen either way. N=2 owed → #35.
