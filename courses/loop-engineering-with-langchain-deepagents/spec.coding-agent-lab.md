@@ -1,14 +1,15 @@
 # Spec: Requirements Review Loops — Coding-Agent-Lab Build
 
-> **What you're building.** A reviewer opens one web page, creates a ticket that links to a vague
-> requirement, and watches an agent fetch that requirement and fill in a five-section analysis
+> **What you're building.** A one-page web app, served on the lab's preview port, whose agent
+> grades its own reports and improves from a batch of them. You create a ticket that links to a
+> vague requirement and watch the agent fetch that requirement and fill in a five-section analysis
 > (confirmed facts, ambiguities, clarification questions, assumptions, summary). A grader reads the
 > finished file, fails two of its three criteria, sends the gaps back, and passes the revised file on
-> the second attempt. The reviewer edits the requirement and sees the analysis re-run on its own; a
-> human — never the agent — marks the ticket done. Then the reviewer runs the same agent over a batch
-> of requirements, sees the same two criteria fail first-attempt on most of them, reads an analyst
-> agent's one-paragraph proposal to the agent's instructions, approves it, re-runs the batch, and
-> watches first-attempt pass rates climb with no criterion regressing.
+> the second attempt. You edit the requirement and see the analysis re-run on its own; a
+> human — never the agent — marks the ticket done. Then you run the same agent over a batch
+> of requirements, see the same two criteria fail first-attempt on most of them, read an analyst
+> agent's one-paragraph proposal to the agent's instructions, approve it, re-run the batch, and
+> watch first-attempt pass rates climb with no criterion regressing.
 > **Fastest path:** answer the gate's first question with the recommended baseline build and this
 > builds end-to-end; the build is COMPLETE when the offline suite in §7 passes (the container's
 > ambient model credentials unlock only the `live` tests and live use of the finished app).
