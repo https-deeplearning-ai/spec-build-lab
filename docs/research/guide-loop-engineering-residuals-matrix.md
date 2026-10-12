@@ -286,3 +286,18 @@ residuals as the agnostic mode, all filed in #35 §4.
   nine regens remain under `experiments/` as evidence. Regenerating the course on the new guide
   is a separate owner decision; the matrix shows what it would produce.
 - Probes: none — this pass added no prompt-enforced guard.
+
+## Post-confirmation addition (guide-only, owner request)
+
+The opening blockquote had grown in the course's two committed specs (457 and 534 words,
+against 243–259 in every earlier spec and 217–302 in this pass's nine regens). The growth was
+entirely the hand-edit record the repair agents were told to write into the provenance line;
+generation never produced it. The guide's template said "provenance line" but pinned neither its
+length nor its content, and nothing scored the blockquote beyond "orientation lead present" — the
+founding observation in miniature (an unpinned detail reproduces by luck; here it drifted by
+hand, not by regeneration). Change: §6 pins the blockquote (four elements in order; under 320
+words; provenance one sentence with at most "Hand-evolved since <date>." — what changed lives
+in the repo, never in the spec, because the reader is the builder); §14 line; `check_spec.py`
+BLOCKQUOTE check. Validated without a regen: all nine regens of this pass pass the check as
+generated; the two committed specs were trimmed to 257 and 258 words and pass. Owner decision:
+no change log section in specs — the harness already has the history.
