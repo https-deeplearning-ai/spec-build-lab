@@ -190,12 +190,16 @@ The spec MUST contain these core sections, in this order (this is the seven-sect
 
 <!-- Opening blockquote MUST state, in this order: (a) an orientation lead — a
      "what you're building" sentence that re-expresses the goal row's default as a
-     USER-VISIBLE INTERACTION, in this fixed order: FIRST CLAUSE = the artifact noun
-     phrase plus a promise of at most about a dozen words ("a terminal chat assistant
-     that remembers"), so the reader knows what kind of thing this is before anything
-     else; THEN the demo moment, addressed to the reader as "you" (what you do, what
-     you see the finished app do — e.g. the course's own closing-demo moment). Never
-     an invented third-person persona as the subject ("a reviewer opens …"): a persona
+     USER-VISIBLE INTERACTION. Write this lead LAST, after the Ledger and §1 exist:
+     it says in plain words what the spec has already decided, and decides nothing
+     itself. Fixed order: FIRST CLAUSE = the artifact noun phrase, naming the project
+     row's Default exactly as §1 states it — the course's example realization, in the
+     kind of words §1 uses (a web app when §1 builds a web app; never a kind, surface,
+     or component that §1 and the project row do not already carry) — plus a promise
+     of at most about a dozen words ("a terminal chat assistant that remembers");
+     THEN the demo moment, addressed to the reader as "you" (what you do, what you see
+     the finished app do — e.g. the course's own closing-demo moment). Never an
+     invented third-person persona as the subject ("a reviewer opens …"): a persona
      noun that is also a component's name collides with it, and the reader is the
      builder, not an audience. Never a component inventory: store counts, memory
      taxonomies, and algorithm names belong to the Ledger and rules, which this reader
@@ -553,7 +557,7 @@ Fix, don't annotate.
 - [ ] Owner labels are present and used only as metadata — no row's default or surfacing depends on its owner.
 
 **Anatomy**
-- [ ] The opening blockquote leads with the orientation sentences per the anatomy spec (artifact noun phrase and promise first, then the demo moment in second person; user-visible interaction, never a persona subject, never a component inventory; fastest-path/completion), carries its four elements in order, stays under 320 words, and its provenance is one sentence with at most a "Hand-evolved since <date>." tail; §0 is still the first section (§6.0).
+- [ ] The opening blockquote leads with the orientation sentences per the anatomy spec (written last; artifact noun phrase naming the project row's Default as §1 states it, then a promise, then the demo moment in second person; introduces no kind or surface §1 lacks; user-visible interaction, never a persona subject, never a component inventory; fastest-path/completion), carries its four elements in order, stays under 320 words, and its provenance is one sentence with at most a "Hand-evolved since <date>." tail; §0 is still the first section (§6.0).
 - [ ] Fixture module filenames are importable identifiers (§5 anatomy note).
 - [ ] Single clear objective; "Not Included" present (learner exclusions + past-course-scope).
 - [ ] §3 contracts are schemas; schema invariants are internally consistent with the ACs.
