@@ -239,6 +239,50 @@ confirmation lives in the resolved-decisions checklist, no new gate question; ov
 supplied in clean-room runs; Python minor version checked, never assumed.
 
 **Verdict:** lab round 3 passes on every property this pass introduced, with the same two
-documented residuals as the agnostic mode. Confirmation N=2 for the lab mode: owner decision on
-cost (two regens plus scoring ≈ 0.9M tokens; the `d4d799e` overlay wording would be tested by it).
-- Adoption decision: deferred (D14).
+documented residuals as the agnostic mode. Owner chose to run the confirmation pair.
+
+### Lab confirmation (base `39dfbb6`, overlay `d4d799e`; regen-LD, regen-LE; Opus 5.5)
+
+- regen-LE: 696 lines, 6 rows (L1; D1 instruction carrier; D2 grader; D3 trigger source; RR1
+  suite model; RR2 hosted tracing), 26 rules, 43 ACs, 341k tokens, checker 0. **Targeted greps**
+  (cost policy): all four key variables named, Anthropic pair "present, never read", the only
+  "listing endpoint" mention is the Never-tier prohibition [verified]; exactly two `[environment]`
+  paragraphs in §0 [verified]; `model roles:` checklist line in §2/§6 with no gate question
+  [verified]; Python version checked, not assumed [verified]; Runtime (lab) present, CTX-C
+  how-to present, Ask First derived from the trade-off table [verified]; co-label used once
+  [verified].
+- regen-LD: 675 lines, 5 rows (L1; D1 what a triggered run executes; D2 instruction placement;
+  D3 grader; RR1), 35 rules, 46 ACs, 342k tokens, checker 0. **Full scorer** (Opus 5.5): every
+  core and pass property PRESENT — P-O1–O6 all [reported] with quotes; P-O2 names all four
+  variables, reads the OpenAI pair, and its only "listing endpoint" mention is a prohibition;
+  P-O4 exactly two `[environment]` paragraphs and nothing else in §0; MODEL-ROLES on the
+  checklist line with no gate question (the `d4d799e` wording held); P-AU3 31/31 replays hold
+  (two minor wording ambiguities); P-OBS: instruction placement, grader, triggered-run
+  composition, suite model all rows, model tiering a lever via O6. Residuals of the known
+  classes: P-A4 (`Ticket.title`/`Page.title` minLength unreached), P-AU1 ("keyed dependency",
+  ANSWERED/CONSTRAINED/KEPT undefined in the how-to), one rule (R29) without an inline label,
+  and the scripted analyst never authoring the required `issue` field (a fixtures-class slip).
+
+**Verdict: lab mode confirmed** (LC pass; LD and LE confirmations) with the same documented
+residuals as the agnostic mode, all filed in #35 §4.
+- Lab composition across LA, LB, LC, LD, LE: the stable core (instruction placement, grader,
+  suite model) is a row in all five; "what a triggered run executes" is a row in LA, LC, LD and a
+  rule in LB, LE; hosted tracing a row in LB, LE. Same shape of variance as the agnostic mode;
+  the round-1 lab-only retirement effect did not recur.
+- Overlay gaps LD/LE reported (next pass): name the spec home of the `model roles:` line
+  explicitly; where the Python version is recorded; the served app's default model mode; whether
+  a preinstalled web framework is preferred over the course's unpinned one; proxied-preview
+  request timeouts; a course `.env` loaded with override clobbering the ambient keys (LD added a
+  rule and an environment failure mode on its own — good instinct, and the overlay should say it);
+  whether "never ask for a key" extends to non-model keyed tools. Base-guide tensions: the §0
+  "(course default)" duty has no target on the scope-boundary row; code-only evidence that
+  carries the deliverable's main surface has no stated weight. Tooling: the checker counted 0 ACs
+  when citations sat in the AC-id cell — regex widened (`check_spec.py`, this branch).
+- **Pass result:** both modes confirmed on base `39dfbb6` / overlay `d4d799e` (lab confirmations
+  ran on `d4d799e`; the agnostic confirmations on `39dfbb6`, which the overlay commits do not
+  touch). Spend: 9 regens + 7 scorers, ≈ 3.9M tokens, all subagents on Opus 5.5.
+- **Adoption decision: not adopted** (owner decision D14 deferred the question; the course's two
+  hand-repaired specs stay, pinned to `f1ab452`/`a63e0e5`, with their hand-evolved notes). The
+  nine regens remain under `experiments/` as evidence. Regenerating the course on the new guide
+  is a separate owner decision; the matrix shows what it would produce.
+- Probes: none — this pass added no prompt-enforced guard.
