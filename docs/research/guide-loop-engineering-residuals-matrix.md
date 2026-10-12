@@ -301,3 +301,27 @@ in the repo, never in the spec, because the reader is the builder); §14 line; `
 BLOCKQUOTE check. Validated without a regen: all nine regens of this pass pass the check as
 generated; the two committed specs were trimmed to 257 and 258 words and pass. Owner decision:
 no change log section in specs — the harness already has the history.
+
+## Post-confirmation addition 2: the orientation lead (template-conformance, one regen)
+
+Reviewing all five openings side by side showed three readings of the same template sentence:
+artifact-first (agent-memory: "a terminal chat assistant that remembers", then a second-person
+demo moment — the hand-tuned form from #26 B's tester feedback), scenario-first (Qdrant: "You type
+— or speak — a question …"), and an invented third-person persona (loop-engineering: "A reviewer
+opens a ticket …", which collides with the course's "review agent" and never names the artifact).
+Owner judged agent-memory's form best. Change: §6 (a) pins the order — first clause = artifact
+noun phrase + a promise of about a dozen words; then the demo moment addressed to "you"; never a
+persona subject — with a §14 line and a `check_spec.py` heuristic (first clause starts with an
+article; no "A <noun> <verb>s" persona; "you" within the first 60 words).
+
+| # | Property | Type |
+|---|---|---|
+| P-LEAD | Orientation lead: first clause is an artifact noun phrase (+ promise); the demo moment follows in second person; no third-person persona subject | template-conformance (mechanical) |
+
+Baseline under the new check (zero LLM cost): agent-memory PASS; Qdrant agnostic FAIL
+(scenario-first); Qdrant lab PASS; the two loop-engineering specs PASS after a Loop A rewrite of
+their first sentences; **7 of this pass's 9 regens FAIL** (scenario-first: "You open the app …"),
+which shows the rule changes generation rather than describing it.
+
+Validation: one agnostic clean-room regen (regen-E, Opus 5.5) on the guide hash carrying the rule;
+pass bar P-LEAD + BLOCKQUOTE by checker and grep. N=2 confirmation owed → #35.
