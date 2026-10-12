@@ -188,8 +188,8 @@ The spec MUST contain these core sections, in this order (this is the seven-sect
      e.g. "<course-example-shape> chatbot" (precedence 1) or "<central-pattern> app"
      (precedence 2). A learner retitles when they fill [project]. -->
 
-<!-- Opening blockquote MUST state, in this order: (a) an orientation lead — a
-     "what you're building" sentence that re-expresses the goal row's default as a
+<!-- Opening blockquote MUST state, in this order: (a) an orientation lead — opened
+     by the literal label "**What you're building:**" — a sentence that re-expresses the goal row's default as a
      USER-VISIBLE INTERACTION. Write this lead LAST, after the Ledger and §1 exist:
      it says in plain words what the spec has already decided, and decides nothing
      itself. Fixed order: FIRST CLAUSE = the artifact noun phrase, naming the project
