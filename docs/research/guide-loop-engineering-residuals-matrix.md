@@ -347,3 +347,14 @@ Validation of the fix: one regen (regen-F, Opus 5.5, `f1d3c46`), read by eye —
 clause, §1's first sentence, §2's Flask row — not by a scorer. Pass = lead consistent with §1 and
 artifact-first in second person. If §1 itself chooses a CLI, the lead rule has done its job and
 the shape gap stands as the finding. No second regen either way. N=2 owed → #35.
+
+**regen-F result (Opus 5.5, `f1d3c46`): PASS, read by eye [verified].** 13 rows, 27 rules,
+43 ACs, checker 0, blockquote 214 words. Lead: "**What you're building:** a requirements review
+agent with a local simulated ticket tracker — an agent that checks its own reviews and learns from
+its runs. You file a ticket against a vague requirement page in the tracker's local web app …".
+§1: "Build a requirements review agent with a local simulated ticket tracker that turns a
+requirement document into a structured review report …". §2 keeps "Tracker web app | `flask`";
+Not Included excludes only deployment/sign-in for that app. The lead names what §1 builds, in
+§1's words; the web app is back. One consistency fix from the run: the checker required the
+literal "**What you're building:**" label while the guide only implied it; the guide now says it
+(every regen of this pass used the label, so no behaviour changes). P-LEAD N=2 owed → #35.
