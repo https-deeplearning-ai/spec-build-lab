@@ -323,5 +323,12 @@ Baseline under the new check (zero LLM cost): agent-memory PASS; Qdrant agnostic
 their first sentences; **7 of this pass's 9 regens FAIL** (scenario-first: "You open the app …"),
 which shows the rule changes generation rather than describing it.
 
-Validation: one agnostic clean-room regen (regen-E, Opus 5.5) on the guide hash carrying the rule;
-pass bar P-LEAD + BLOCKQUOTE by checker and grep. N=2 confirmation owed → #35.
+Validation: one agnostic clean-room regen (regen-E, Opus 5.5, guide `340e2c6`): 654 lines, 12
+rows (L1–L6; D1 run trigger, D2 triggered run includes verification, D3 grader kind, D4 model
+tier per role; RR1 suite model, RR2 store), 26 rules, 30 ACs, checker 0 at handoff. **P-LEAD
+PRESENT** [verified]: the opening reads "**What you're building:** a command-line requirements
+reviewer that grades its own reports and learns from repeated mistakes: you open a ticket against
+a vague requirement page, watch the reviewer draft …" — artifact noun phrase, promise, then the
+demo moment in second person, no persona subject. BLOCKQUOTE check passes. The generator reported
+the checker's lead marker as the one thing its first draft missed, and fixed it — which is the
+gate working as designed. N=2 confirmation owed → #35.
