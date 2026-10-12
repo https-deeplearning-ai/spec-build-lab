@@ -217,7 +217,28 @@ D; L5 default in A), hosted tracing (row in B, D), event-intake surface / trigge
 force one answer on these subjects. The trade-off table now records each regen's reading, so the
 next pass can decide subject by subject rather than by wording alone.
 
-### Lab confirmation
+### Lab round 3 (base `39dfbb6`, overlay `359bf70`; regen-LC; Opus 5.5)
 
-- Round 3 (regen-LC) pending; confirmation N=2 after a pass, by owner decision on cost.
+regen-LC: 874 lines, 5 rows (L1; D1 what a triggered run executes; D2 instruction placement;
+D3 grader; RR1 suite model), 30 rules, 38 ACs, 371k tokens, checker 0. Full scorer (Opus 5.5).
+
+| Prop | regen-LC | Label | Note |
+|---|---|---|---|
+| All core | PRESENT | [reported]; gate paragraphs and rows [verified] | — |
+| P-F5, P-X1, P-F2, P-A2, P-A3, P-AU2, P-AU4 | PRESENT | [verified] checker 0; rows by grep | — |
+| P-O1, P-O3, P-O5, P-O6 | PRESENT | [reported] | — |
+| P-O2 | PRESENT | [reported] all four variables named, OpenAI pair read, Anthropic pair "present, never read"; no discovery text | round-2 fix held |
+| P-O4 | PRESENT | [verified] exactly two `[environment]` paragraphs under the express-lane and per-row steps; nothing else added to §0; the model-role confirmation sits in §2 | the round-3 overlay fix moves it to the checklist line |
+| P-AU3 | PRESENT (13/13 replays incl. defaults) | [reported] one R24 timing ambiguity | round-2 defaults fix held |
+| P-AU1 | PARTIAL | [reported] "keyed dependency", ANSWERED/CONSTRAINED/KEPT undefined in the how-to; checker vocabulary narrower | documented residual: add the overlay's three resolution words to the how-to list (overlay wording, next pass) |
+| P-A4 | PARTIAL | [reported] `Ticket.title` minLength and the non-prompt `section` const unreached (same two as LB); D1's non-default option names a status `unverified` the schema lacks | documented residual (first two); the third is a real defect of the generator-diligence class |
+| P-OBS | PRESENT for the stable core; ill-posed for the rest | [reported] D1 triggered-run composition, D2 instruction placement, D3 grader, RR1 all rows; model tiering a lever per O6; persistent store / event intake not rows (nor are they in agnostic A) | the property compared lab to agnostic, but agnostic varies on the same subjects; the lab-mode retirement effect (round 1's 4-vs-8) did not recur in LA, LB or LC |
+
+Overlay gaps regen-LC reported, fixed in `d4d799e` (untested by a regen): model-role
+confirmation lives in the resolved-decisions checklist, no new gate question; overlay hash may be
+supplied in clean-room runs; Python minor version checked, never assumed.
+
+**Verdict:** lab round 3 passes on every property this pass introduced, with the same two
+documented residuals as the agnostic mode. Confirmation N=2 for the lab mode: owner decision on
+cost (two regens plus scoring ≈ 0.9M tokens; the `d4d799e` overlay wording would be tested by it).
 - Adoption decision: deferred (D14).
