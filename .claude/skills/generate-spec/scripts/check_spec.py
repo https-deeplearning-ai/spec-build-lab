@@ -31,7 +31,7 @@ import sys
 from pathlib import Path
 
 RULE_HEAD = re.compile(r"^\s*(?:\d+\.\s*|[-*]\s*)?\*{0,2}(R\d+)\b")
-AC_ROW = re.compile(r"^\|\s*\**(AC[-A-Z]*\d+)\**\s*\|")
+AC_ROW = re.compile(r"^\|\s*\**(AC[-A-Z]*\d+)\**(?=[\s*|(`])")
 R_TOKEN = re.compile(r"(?<![A-Za-z])R(\d+)(?!\d)")
 AC_TOKEN = re.compile(r"(?<![A-Za-z-])AC(?:-([A-Z]+))?(\d+)(?!\d)")
 AC_RANGE = re.compile(r"AC(?:-([A-Z]+))?(\d+)\s*[–-]\s*(?:AC(?:-[A-Z]+)?)?(\d+)")
