@@ -287,9 +287,19 @@ def main(argv: list[str]) -> int:
         if words > 320:
             add(2, "BLOCKQUOTE", f"opening blockquote is {words} words (limit 320)")
         for needle, what in (("what you're building", "orientation lead"), ("self-contained", "self-contained sentence"),
-                             ("decision ledger", "Decision Ledger sentence"), ("generated from", "provenance line")):
-            if needle not in text.lower():
+                             ("decision ledger", "Decision Ledger sentence"), ("generated from|provenance", "provenance line")):
+            if not re.search(needle, text.lower()):
                 add(2, "BLOCKQUOTE", f"opening blockquote lacks its {what}")
+        lead = re.search(r"what you.re building[:.*\s]*(.*)", text, re.I | re.S)
+        if lead:
+            body = lead.group(1).strip().lstrip("*: ").strip()
+            first = re.split(r"[.;]", body, 1)[0].strip()
+            persona = re.match(r"^(A|An|The)\s+[a-z-]+\s+(opens|types|runs|clicks|creates|asks|uploads|starts|logs|sends|files|submits)\b", first)
+            no_artifact = not re.match(r"^(a|an|the)\b", first, re.I)
+            no_you = not re.search(r"\byou(r)?\b", " ".join(body.split()[:60]), re.I)
+            if persona or no_artifact or no_you:
+                why = "persona subject" if persona else ("no artifact noun phrase first" if no_artifact else "no second-person demo moment")
+                add(2, "BLOCKQUOTE", f"orientation lead: {why} (\"{first[:60]}…\")")
         he = re.search(r"hand-evolved since[^.]*\.(.*)$", text, re.I | re.S)
         if he and len(he.group(1).split()) > 5:
             add(2, "BLOCKQUOTE", "the hand-evolved note must be one sentence; the change record belongs in the repo, not the spec")
