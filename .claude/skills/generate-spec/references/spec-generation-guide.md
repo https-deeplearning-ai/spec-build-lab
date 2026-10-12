@@ -200,9 +200,14 @@ The spec MUST contain these core sections, in this order (this is the seven-sect
      the Course Context Pack replaces external course references; (c) (CTX-X) anchors
      mark course-derived knowledge; the Decision Ledger below holds every point where
      the build could diverge, each pinned to one course-derived default so the spec
-     builds as-is with no intake; (d) provenance line: generated from <course>
-     notebooks + transcripts on <date>. The blockquote is meta text, not a section:
-     §0 remains the first SECTION (§6.0). -->
+     builds as-is with no intake; (d) provenance line — ONE sentence: generated from
+     <course> notebooks + transcripts (+ slides) on <date>, guide @ <hash> (and the
+     overlay's hash in an environment mode); if the spec has been hand-edited since
+     generation, append only "Hand-evolved since <date>." — WHAT changed lives in
+     the repo's history and the pass matrix, never in the spec: this reader is the
+     builder, and a change log is noise to them. The whole blockquote stays under
+     320 words. The blockquote is meta text, not a section: §0 remains the first
+     SECTION (§6.0). -->
 
 ## 0. Before you build — REQUIRED (do this first)
 <!-- ALWAYS the very first section, ahead of the Decision Ledger. The pre-build gate (§6.0):
@@ -542,7 +547,7 @@ Fix, don't annotate.
 - [ ] Owner labels are present and used only as metadata — no row's default or surfacing depends on its owner.
 
 **Anatomy**
-- [ ] The opening blockquote leads with the orientation sentences per the anatomy spec (user-visible interaction, never a component inventory; fastest-path/completion), and §0 is still the first section (§6.0).
+- [ ] The opening blockquote leads with the orientation sentences per the anatomy spec (user-visible interaction, never a component inventory; fastest-path/completion), carries its four elements in order, stays under 320 words, and its provenance is one sentence with at most a "Hand-evolved since <date>." tail; §0 is still the first section (§6.0).
 - [ ] Fixture module filenames are importable identifiers (§5 anatomy note).
 - [ ] Single clear objective; "Not Included" present (learner exclusions + past-course-scope).
 - [ ] §3 contracts are schemas; schema invariants are internally consistent with the ACs.

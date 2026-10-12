@@ -270,6 +270,30 @@ def main(argv: list[str]) -> int:
                 if classes and not any(head.startswith(c) for c in classes):
                     add(i + 1, "NI-TAG", f'tag "{tag}" is not a class the scope-boundary row defines')
 
+    # ---- BLOCKQUOTE ----------------------------------------------------------------
+    quote: list[str] = []
+    for line in lines[1:]:
+        if line.startswith(">"):
+            quote.append(line.lstrip("> ").rstrip())
+        elif line.strip() == "" and not quote:
+            continue
+        elif line.strip() == "":
+            continue
+        else:
+            break
+    if quote:
+        text = " ".join(quote)
+        words = len(text.split())
+        if words > 320:
+            add(2, "BLOCKQUOTE", f"opening blockquote is {words} words (limit 320)")
+        for needle, what in (("what you're building", "orientation lead"), ("self-contained", "self-contained sentence"),
+                             ("decision ledger", "Decision Ledger sentence"), ("generated from", "provenance line")):
+            if needle not in text.lower():
+                add(2, "BLOCKQUOTE", f"opening blockquote lacks its {what}")
+        he = re.search(r"hand-evolved since[^.]*\.(.*)$", text, re.I | re.S)
+        if he and len(he.group(1).split()) > 5:
+            add(2, "BLOCKQUOTE", "the hand-evolved note must be one sentence; the change record belongs in the repo, not the spec")
+
     findings.sort()
     if not quiet:
         for ln, check, msg in findings:
