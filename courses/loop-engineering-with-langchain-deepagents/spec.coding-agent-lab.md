@@ -1,14 +1,15 @@
 # Spec: Requirements Review Loops — Coding-Agent-Lab Build
 
-> **What you're building.** A reviewer opens one web page, creates a ticket that links to a vague
-> requirement, and watches an agent fetch that requirement and fill in a five-section analysis
+> **What you're building.** A one-page web app, served on the lab's preview port, whose agent
+> grades its own reports and improves from a batch of them. You create a ticket that links to a
+> vague requirement and watch the agent fetch that requirement and fill in a five-section analysis
 > (confirmed facts, ambiguities, clarification questions, assumptions, summary). A grader reads the
 > finished file, fails two of its three criteria, sends the gaps back, and passes the revised file on
-> the second attempt. The reviewer edits the requirement and sees the analysis re-run on its own; a
-> human — never the agent — marks the ticket done. Then the reviewer runs the same agent over a batch
-> of requirements, sees the same two criteria fail first-attempt on most of them, reads an analyst
-> agent's one-paragraph proposal to the agent's instructions, approves it, re-runs the batch, and
-> watches first-attempt pass rates climb with no criterion regressing.
+> the second attempt. You edit the requirement and see the analysis re-run on its own; a
+> human — never the agent — marks the ticket done. Then you run the same agent over a batch
+> of requirements, see the same two criteria fail first-attempt on most of them, read an analyst
+> agent's one-paragraph proposal to the agent's instructions, approve it, re-run the batch, and
+> watch first-attempt pass rates climb with no criterion regressing.
 > **Fastest path:** answer the gate's first question with the recommended baseline build and this
 > builds end-to-end; the build is COMPLETE when the offline suite in §7 passes (the container's
 > ambient model credentials unlock only the `live` tests and live use of the finished app).
@@ -20,26 +21,7 @@
 >
 > Generated from the *Loop Engineering with LangChain DeepAgents* notebooks + transcripts + slide
 > descriptions on 2026-10-11, with the `coding-agent-lab` environment overlay. Base spec-generation
-> guide commit `f1ab452`; overlay commit `a63e0e5`. Hand-evolved since: 2026-10-11 — four rounds of
-> repairs from independent pre-handoff audits. What changed by hand: **Ledger** — D-S1 gained option
-> (d) (a person grades) so D-A3's option (c) has a target; D-A1 gained option (f) (agent +
-> event-driven, no verification) and its Invariant was weakened to admit it; the D-A2 Invariant, D-S1
-> Invariant and D-A3 Default were reworded so every option satisfies its own row; the Ledger lead
-> gained the gate-handling sentence for compositions that drop a loop; every option now lists the ACs
-> it retires or alters. **Rules** — R9 scoped to model graders (deterministic checks record the matched
-> line; a person records no evidence); R17's root fixed at the batch directory; the harness now
-> rejects a grader verdict that skipped the file or carries no evidence (`grader verdict rejected:`).
-> **Test hooks declared** — R6's explicit workspace directory with stale-file removal,
-> `REVIEW_TEST_MODE`, `api/test/load-batch`, `api/test/load-proposal`, the `REVIEW_SCRIPT` /
-> `GRADER_SCRIPT` / `ANALYST_SCRIPT` selectors, the `documents` filter on `api/batches`. **Fixtures,
-> scripts and ACs added** — `stale_analysis.md`, `workspace_no_instructions/`, `GRADER_NO_READ`,
-> `REVIEW_BAD_EDIT`, `REVIEW_OVERREACH`, `REVIEW_WRITES_INSTRUCTIONS`, `ANALYST_WRITES_EVIDENCE`,
-> AC31–AC36; `batch_v2_regress` made a true regression; `batch_v1_err` made schema-valid. **ACs
-> tightened or made tolerant** — AC9 (analyst permissions, rejected one-off), AC16 (graded
-> event-started run), AC-L1, AC10's live clause, AC-L3 and AC30 (inconclusive on a rejected verdict),
-> AC13 (server-side polling only). **Elsewhere** — B15 moved to Runtime (lab); Not Included retagged
-> and auto-application removed from it; the CTX-C glossary of provenance phrases. No Ledger row was
-> removed or re-defaulted.
+> guide commit `f1ab452`; overlay commit `a63e0e5`. Hand-evolved since 2026-10-11.
 
 ## 0. Before you build — REQUIRED (do this first)
 

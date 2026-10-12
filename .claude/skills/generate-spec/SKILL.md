@@ -73,13 +73,34 @@ another engineer (or coding agent) can implement end-to-end.
    shows the environment's effect. What the spec must contain and how it
    handles learner input are governed entirely by the guide — don't duplicate
    those rules here.
-   The spec should end with a section telling the builder to
+   The §7 test plan ends with a closing instruction telling the builder to
    conclude with an infra/structure diagram and the phrase
    "This is the infra/structure diagram of this app" — `/extract-build-log`
    uses that phrase as its default closing bookend when slicing the
    conversation. It's a UX hint, not a system requirement (the slice can
    also be controlled with `--until="<phrase>"`, and falls back to
-   end-of-transcript if no closing match is found).
+   end-of-transcript if no closing match is found). It sits at the end of
+   §7, not after the Course Context Pack, so the guide's section order holds.
+4a. **Mechanical check.** Run
+   `python3 "$CLAUDE_PROJECT_DIR/.claude/skills/generate-spec/scripts/check_spec.py" <the file you wrote>`
+   and fix every finding (citations and reciprocity, dangling references,
+   row-id collisions, guide-section leaks, undefined provenance vocabulary,
+   undeclared fixtures, unknown Not-Included tags), then re-run until it
+   reports 0 findings. The script is deterministic and costs no tokens; a
+   spec that fails it is not ready for the next step. Don't argue with a
+   finding you believe is a parser miss — fix the spec's form so the check
+   passes, since the form is part of the guide's §8 contract.
+4b. **Independent audit.** Spawn a fresh general-purpose subagent — never a
+   fork — on an Opus-class model, with the prompt in
+   `references/audit-prompt.md` (fill its two slots: the spec path and, with
+   `--env`, the overlay path). It returns defects only, each with a quoted
+   line. Repair every HARD item and every SOFT item that could make a test
+   fail or force a builder to guess; re-run 4a; then spawn a second fresh
+   auditor. Stop when an audit returns zero HARD items. Two rounds is
+   normal; if a third finds new HARD items, say so in the report rather
+   than looping silently. The generator's own §14 pass is necessary but
+   not sufficient — two generations reported it done and an independent
+   read found 8 and 14 hard defects.
 5. **Report.** Tell the user the path written and that they can review,
    then run /prepare-build when ready.
 

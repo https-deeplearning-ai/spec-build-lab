@@ -23,7 +23,8 @@ one, so **this is an input to that rule, not an override of it.** The mechanism 
 - A line `**Question N of M — <decision>**` before the fence renders a question box. Use it, so
   learner and agent can both see nothing was skipped.
 - A click sends the option line verbatim; a typed answer naming an option counts identically.
-  The generated spec must say so.
+  The generated spec must say so — in the `[environment]` paragraphs OVERRIDE 4 lets the spec
+  append under §0's steps, never by editing the template's own lines.
 - Only the **latest** assistant message's buttons stay live. A spec must never ask anyone to go
   back and change an earlier answer — re-ask as a new question.
 - Never put a `choices` fence inside the spec's own examples in a way that implies the learner
@@ -31,7 +32,10 @@ one, so **this is an input to that rule, not an override of it.** The mechanism 
 
 ### The container — feeds spec §2
 
-Debian, non-root user, Node 22, Python 3 with venv, sqlite3, git, build tooling.
+Debian, non-root user, Node 22, Python 3 with venv, sqlite3, git, build tooling. The Python
+minor version is not stated here (it tracks the image): the spec has the build agent run
+`python3 --version`, record it, and stop with a report if a course-pinned package refuses the
+interpreter — never assume the course's floor is met.
 **Preinstalled:** `fastapi`, `uvicorn`, `python-dotenv`, `openai`, `anthropic`; Node `express`,
 `cors`, `better-sqlite3`, `vite`, `nodemon`. **Nothing else** — no vector stores, no embedding
 models, no ML frameworks.
@@ -40,7 +44,9 @@ Outbound network works, so installs and one-time model downloads succeed, but ea
 learner wall-clock time inside the session. A spec whose stack needs anything beyond the
 preinstalled set must say so in §2 and tell the build agent to batch the install early and
 announce its cost. Create venvs with `--system-site-packages` so the preinstalled stack is
-reusable.
+reusable — for packages the course left unpinned. Where the course pinned a version and a
+preinstalled copy differs, **the course pin wins inside the venv** (base §5 step 5); §2 says so
+on that row.
 
 Memory is finite and shared with the agent's own process. A spec whose pipeline can hold several
 models resident at once must carry a business rule releasing one before loading the next.
@@ -52,9 +58,11 @@ picks it per conversation from the platform's set, so a spec must work across al
 in its own text which it assumes. **Never bake a "current best" model name into the spec** — base
 §6.0's gate-time "(Recommended)" flag already owns model currency.
 
-**What it supplies:** the container exports provider API keys and their base URLs. If the built
-app needs an LLM, the spec says: read keys and base URLs from the environment, use a platform
-model, **never ask the learner for a key**.
+**What it supplies:** the container exports provider API keys and their base URLs under these
+names — `OPENAI_API_KEY` with `OPENAI_BASE_URL`, and `ANTHROPIC_API_KEY` with
+`ANTHROPIC_BASE_URL` — each base URL pointing at the platform proxy. If the built app needs an
+LLM, the spec says: read exactly these variables, use a platform model, **never ask the learner
+for a key**, never hardcode one, and never guess at other variable names.
 
 **What it does NOT fix:** any model the course's own pipeline uses — embedding, speech, vision.
 Those remain a genuine decision with a real invariant and a real switching cost. If the course's
@@ -69,7 +77,8 @@ here. Do not read this section as licence to resolve that row CONSTRAINED by def
 - **Every URL inside the page must be relative** (`api/thing`, never `/api/thing`). The preview
   is reverse-proxied under a path prefix, so a root-absolute path resolves against the IDE.
   This is the single most common way a working app appears broken; it belongs in the spec as a
-  numbered business rule with an acceptance criterion, not as a note.
+  numbered business rule with an acceptance criterion, and as an environment failure mode in the
+  `## Runtime (lab)` section (rules file, ADD 5) — never in CTX-B, which is the course's.
 - HTTP only — WebSocket upgrades are not proxied. Streaming responses work.
 
 ### The workspace — feeds spec §6 permissions
@@ -78,8 +87,11 @@ here. Do not read this section as licence to resolve that row CONSTRAINED by def
   grader sees only what is on disk. Decisions, resolved values and results must be written to
   files, not left in chat. Base §6.0 already requires `resolved-decisions.md`; state *why* it is
   load-bearing here.
-- **Never author `AGENTS.md`** in the workspace — the IDE rewrites it at every boot, so guidance
-  placed there is silently lost. This belongs in the spec's **Never** tier.
+- **Never author the workspace-root `AGENTS.md`** — the IDE rewrites that one file at every boot,
+  so guidance placed there is silently lost. This belongs in the spec's **Never** tier. Files of
+  that name **inside app-owned subfolders** (an agent harness's own instructions convention) are
+  the app's business and are unaffected; a course whose pattern edits such a file keeps it in
+  the run's own folder, never at the workspace root.
 - Every tool call is visible to the learner, and long-running servers run in the background.
 
 ---
