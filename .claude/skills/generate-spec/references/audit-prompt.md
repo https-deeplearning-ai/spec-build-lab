@@ -38,6 +38,9 @@ Run every check on the whole file, not a sample:
 (m) contract fields vs what ACs assert;
 (n) pairwise AC consistency: each AC's Given is true after the AC it builds on;
 (o) the provenance header pins the guide commit (and the overlay commit, with an overlay).
+(r) the CTX-C trade-off table: every entry the course argues as a builder's choice is dispositioned
+    row / bake-in / lever, never `narrative`; every bake-in or lever entry names its tie-breaker; no
+    §1 item tagged `restorable` is a side of an entry in this table (§5.5 three dispositions).
 With an overlay also: (p) nothing labelled [environment] inside CTX-A or CTX-B; the
 Environment Resolutions table accounts for all six dimensions and each row points at a rule
 and AC that exercise its invariant, or says "Invariant empty"; the "Adapting this beyond the
