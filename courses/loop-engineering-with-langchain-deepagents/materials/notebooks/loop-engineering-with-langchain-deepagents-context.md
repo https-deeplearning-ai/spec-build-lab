@@ -6,22 +6,24 @@ The course code, organized by lesson in the same order and with the same lesson 
 transcripts in `../transcripts/`. Each notebook lesson gives a short overview, the lesson's
 dependencies (packages, helper functions, files read, files written), the small text files that
 live in that lesson's folder, and then every notebook cell in order. The Flask app that has no
-notebook and no transcript lesson sits between Lessons 5 and 6, where its subject (an event-driven
-loop) falls in the course. The shared helper modules, the data files the lessons read, the
+notebook sits under Lesson 6 (Event-Driven Loop), the transcript lesson that covers the
+event-driven loop. The shared helper modules, the data files the lessons read, the
 diagrams and the pinned environment follow once, after the lessons, so the whole course can be
 reconstructed from this one file.
 
 ## How to read this file
 
 - **Lesson numbering and titles come from the transcripts**, and the transcripts win whenever the
-  three numberings in these materials disagree. The transcripts have seven lessons: 1 Introduction,
+  three numberings in these materials disagree. The transcripts have eight lessons: 1 Introduction,
   2 Overview of Loop Engineering, 3 Deep Agent Primer, 4 Agent Loop, 5 Verification Loop,
-  6 Learning loop, 7 Conclusion. The repo folders use a second numbering, one lower for the
-  notebooks: `L2/L2.ipynb` is transcript Lesson 3, `L3/L3.ipynb` is Lesson 4, `L4/L4.ipynb` is
-  Lesson 5, `L6/L6.ipynb` is Lesson 6; `L0_no_notebook/` and `L1_no_notebook/` hold one empty
-  text file each. The repo's `L5_event_driven_no_notebook/` (a Flask app simulating Jira and
-  Confluence) has no transcript lesson of its own; the Lesson 2 overview describes an event-driven
-  loop, and the app is the only code for it. The README uses a third numbering: it calls the
+  6 Event-Driven Loop, 7 Learning loop, 8 Conclusion. The repo folders use a second numbering:
+  `L2/L2.ipynb` is transcript Lesson 3, `L3/L3.ipynb` is Lesson 4, `L4/L4.ipynb` is Lesson 5,
+  `L6/L6.ipynb` is Lesson 7; `L0_no_notebook/` and `L1_no_notebook/` hold one empty text file
+  each. The repo's `L5_event_driven_no_notebook/` (a Flask app simulating Jira and Confluence) is
+  the only code for transcript Lesson 6, which has no notebook; that lesson's transcript also
+  demonstrates the same agent connected to real Slack, Jira and Confluence and describes setup
+  steps for those integrations, and none of that code is in this repo snapshot. The README uses a
+  third numbering: it calls the
   notebook lessons 3, 4 and 6, names notebook files that do not exist in the repo
   (`lesson_3_execution_loop.ipynb`, `lesson_4_evaluation_loop.ipynb`,
   `lesson_6_hill_climbing_loop.ipynb`, `lesson_2/lesson_2_deepagent_primer.ipynb`, `L3_student.ipynb`
@@ -29,7 +31,8 @@ reconstructed from this one file.
   "Lessons 2 and 3 run entirely offline" while describing Lessons 3 and 4. The notebooks' own
   `#` titles ("L2: Deep Agents, A Primer", "L3: Agent Loop", "L4: Verification Loop",
   "L6: Hill-Climbing Loop") follow the folder numbering. The Lesson Map below gives all three.
-  Lessons 1, 2 and 7 are video only and have no notebook; each appears below as one short section.
+  Lessons 1, 2 and 8 are video only and have no notebook; Lesson 6 has no notebook but has the
+  Flask app; each appears below as one section.
 - **Cells are numbered by position in the .ipynb**, starting at 0, and reproduced verbatim, text
   unedited. Markdown cells sit inside a ```markdown fence so the notebook's own `#` and `##`
   headings do not disturb this file's outline; code cells sit inside a ```python fence. A cell or
@@ -45,7 +48,7 @@ reconstructed from this one file.
   image outputs are not in this file.
 - **Which lessons run offline.** The L3, L4 and L6 notebooks each have a `USE_LIVE_LLM` flag whose
   committed value is `True`. Set to `False`, Lesson 4 replays `L3/lesson_3_prebaked_trace.json`,
-  Lesson 5 replays `L4/lesson_4_prebaked_trace.json`, and Lesson 6 replays the committed batches
+  Lesson 5 replays `L4/lesson_4_prebaked_trace.json`, and Lesson 7 replays the committed batches
   `L6/run_history/v1/`, `L6/run_history/v2/` and the saved `proposal_v1.md` / `proposal_v1.json`,
   so those three lessons need no API key. Lesson 3 (the primer, `L2/L2.ipynb`) has no offline path
   and always calls the model; so does the Flask app. The prebaked traces and the ten run files are
@@ -77,9 +80,9 @@ reconstructed from this one file.
 | 3 | Deep Agent Primer | `L2/L2.ipynb` (+ `L2/primer_workspace/`) | L2: Deep Agents, A Primer | `lesson_2/lesson_2_deepagent_primer.ipynb` |
 | 4 | Agent Loop | `L3/L3.ipynb` (+ `L3/workspace/`, `L3/lesson_3_prebaked_trace.json`) | L3: Agent Loop | Lesson 3: Building the Execution Loop, `lesson_3_execution_loop.ipynb` |
 | 5 | Verification Loop | `L4/L4.ipynb` (+ `L4/workspace/`, `L4/lesson_4_prebaked_trace.json`) | L4: Verification Loop | Lesson 4: Controlling the Execution Loop, `lesson_4_evaluation_loop.ipynb` |
-| (none) | — (event-driven loop, described in Lesson 2) | `L5_event_driven_no_notebook/` (Flask app) | n/a | Lesson 5: the Automation Loop, `lesson_5_event_driven/` |
-| 6 | Learning loop | `L6/L6.ipynb` (+ `L6/workspace/`, `L6/requirement_docs/`, `L6/run_history/`) | L6: Hill-Climbing Loop | Lesson 6: Building the Hill Climbing Loop, `lesson_6_hill_climbing_loop.ipynb` |
-| 7 | Conclusion | none | n/a | not listed |
+| 6 | Event-Driven Loop | `L5_event_driven_no_notebook/` (Flask app; no notebook) | n/a | Lesson 5: the Automation Loop, `lesson_5_event_driven/` |
+| 7 | Learning loop | `L6/L6.ipynb` (+ `L6/workspace/`, `L6/requirement_docs/`, `L6/run_history/`) | L6: Hill-Climbing Loop | Lesson 6: Building the Hill Climbing Loop, `lesson_6_hill_climbing_loop.ipynb` |
+| 8 | Conclusion | none | n/a | not listed |
 
 ---
 
@@ -1171,12 +1174,15 @@ display(render_report_progression(requirement_doc,
 
 ---
 
-## Event-driven loop app (repo L5_event_driven_no_notebook; no transcript lesson)
+## Lesson 6: Event-Driven Loop (repo L5_event_driven_no_notebook; no notebook)
 
 A Flask app that simulates Jira and Confluence so the review agent can be triggered by events
 (a ticket created, or a linked requirement page edited while a ticket is open) instead of by a
-notebook cell. No transcript lesson covers it; the Lesson 2 overview is where the event-driven loop
-is described. The README's own numbering calls it Lesson 5 and its folder `lesson_5_event_driven/`.
+notebook cell. This is the only code in the repo for transcript Lesson 6. That lesson's transcript
+demonstrates the same agent connected to real Slack, Jira and Confluence and describes the setup
+for those integrations; no code for them is in this repo snapshot. The README's own numbering
+calls the app Lesson 5 and its folder `lesson_5_event_driven/`. Transcript: same file, section
+"Lesson 6".
 
 ### Overview
 
@@ -2041,7 +2047,7 @@ Jinja templates under `templates/` and CSS under `static/`, one line each:
 
 ---
 
-## Lesson 6: Learning loop
+## Lesson 7: Learning loop
 
 Notebook: `SC-Loop-Eng-C1-Platform-main/L6/L6.ipynb` (26 cells: 8 markdown, 18 code; 27 saved outputs).
 Notebook's own title: "L6: Hill-Climbing Loop". Kernel metadata records Python 3.12.10.
@@ -2676,10 +2682,10 @@ plt.show()
 
 ---
 
-## Lesson 7: Conclusion
+## Lesson 8: Conclusion
 
 Video only. No notebook, code, or data files belong to this lesson. Transcript: same file, section
-"Lesson 7".
+"Lesson 8".
 
 ---
 
@@ -5238,7 +5244,7 @@ Floors are set in `pyproject.toml`; `requirements.txt` is generated from it.
 
 ## Discrepancies noticed
 
-- Three lesson numberings: transcripts (1-7), repo folders (`L2`..`L6`, one lower than the transcript for each notebook), and the README ("Lesson 3", "Lesson 4", "Lesson 6" for the notebooks, "Lesson 5" for the Flask app, "Lesson 1 has no folder"). The README also says "By default, Lessons 2 and 3 run entirely offline" and titles a section "Cost & Safety (Lessons 2 and 3, live mode)" while the text under it describes Lessons 3, 4 and 6.
+- Three lesson numberings: transcripts (1-8), repo folders (`L2`..`L6`, one lower than the transcript for each notebook), and the README ("Lesson 3", "Lesson 4", "Lesson 6" for the notebooks, "Lesson 5" for the Flask app, "Lesson 1 has no folder"). The README also says "By default, Lessons 2 and 3 run entirely offline" and titles a section "Cost & Safety (Lessons 2 and 3, live mode)" while the text under it describes Lessons 3, 4 and 6.
 - The README names files and folders that are not in the repo: `lesson_2/lesson_2_deepagent_primer.ipynb`, `lesson_3/lesson_3_execution_loop.ipynb`, `lesson_4/lesson_4_evaluation_loop.ipynb`, `lesson_6/lesson_6_hill_climbing_loop.ipynb`, the "recorded" `L3_student.ipynb` / `L4_student.ipynb` / `L6_student.ipynb`, `lesson_5_event_driven/`, and `agent_for_slides.py` ("Generates the Lesson 1 slide assets"; also referenced in `.gitignore`). The repo has `L2/L2.ipynb`, `L3/L3.ipynb`, `L4/L4.ipynb`, `L6/L6.ipynb`, `L5_event_driven_no_notebook/`, and no `agent_for_slides.py`. The README's clone step says `cd SC-Loop-Eng-C1`; the folder is `SC-Loop-Eng-C1-Platform-main`.
 - The README says "no API key is required" by default and "leave `USE_LIVE_LLM = False` to use the pre-baked trace", but the committed L3, L4 and L6 notebooks all have `USE_LIVE_LLM = True`. The README also says "If `OPENAI_API_KEY` isn't set, `USE_LIVE_LLM` automatically falls back to the pre-baked trace with a printed warning"; no code in the notebooks or helper modules reads `OPENAI_API_KEY` or implements such a fallback (the troubleshooting entry quotes a warning string that appears nowhere in the code).
 - L3 cell 7 says `fetch_requirement` "Simulates two transient failures before succeeding", and `lesson_3_prebaked_trace.json` does contain two error results before the successful fetch, but `deepagent_helpers.SIMULATED_JIRA_FAILURES` is `0` ("a clean fetch") and L3 cell 6 does not pass `simulated_failures`, so a live run has no retries.
@@ -5250,6 +5256,6 @@ Floors are set in `pyproject.toml`; `requirements.txt` is generated from it.
 - `L5_event_driven_no_notebook/README.md` says the repo's `.env.example` "already has placeholders for `ATLASSIAN_EMAIL` / `ATLASSIAN_API_TOKEN` / `ATLASSIAN_SITE_URL`"; `.env.example` has only `OPENAI_API_KEY` and the three `LANGSMITH_*` lines. The same README says `cd lesson_5_event_driven`; the folder is `L5_event_driven_no_notebook`. `data_store.seed_if_missing` calls the file-upload requirement "the same ... used in Lessons 2-4"; the L2 primer notebook does not use it (L3 and L4 do, via `AUTH-142`).
 - The README's Project Structure says "Lesson 1 has no folder (slides only)"; the repo has both `L0_no_notebook/` and `L1_no_notebook/`, each with an empty `no_notebook_in_this_lesson.txt`.
 - Imports that no cell uses: `L3/L3.ipynb` imports `plot_agent_tools`, `render_report`, `WORKSPACE_DIR`, `matplotlib.pyplot as plt`, `Markdown` and `Image` without calling them; `L4/L4.ipynb` imports `GRADER_PROMPT`, `render_review_trace`, `render_revision_progression`, `render_report`, `render_agent_middleware` and `Image` without using them; `L6/L6.ipynb` imports `plot_hill_climbing_loop` and `render_harness_change` without calling them (cell 13 formats the change by hand instead of `render_harness_change`).
-- The transcripts title Lesson 6 "Learning loop"; the notebook calls it "L6: Hill-Climbing Loop", the README "Building the Hill Climbing Loop", the image `Loop4_HillClimbing.png`, and the module `hill_climbing.py`. The transcripts title Lesson 4 "Agent Loop" (matching `L3.ipynb`); the README calls the same notebook "Building the Execution Loop" and `deepagent_helpers` comments call it the "execution loop".
+- The transcripts title Lesson 7 "Learning loop"; the notebook calls it "L6: Hill-Climbing Loop", the README "Building the Hill Climbing Loop", the image `Loop4_HillClimbing.png`, and the module `hill_climbing.py`. The transcripts title Lesson 4 "Agent Loop" (matching `L3.ipynb`); the README calls the same notebook "Building the Execution Loop" and `deepagent_helpers` comments call it the "execution loop".
 - `requirements.txt` says it is generated from `pyproject.toml`; the two lists match. The README's Key Dependencies floors match `pyproject.toml` except that it omits `langchain-core`, `jupyter`, `ipykernel`, `numpy`, `flask`, `tiktoken` and `mistune`, which `pyproject.toml` lists.
 
