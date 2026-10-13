@@ -1,5 +1,5 @@
 # Slide descriptions: Loop Engineering with LangChain DeepAgents
-Source decks: ../repo/slides/Loop-Eng_Slides – Wide (Overview of Loop Engineering).pdf (13 slides), ../repo/slides/Loop-Eng_Slides – Tall (Lessons with Jupyternotbook).pdf (18 slides)
+Source decks: ../repo/slides/Loop-Eng_Slides – Wide (Overview of Loop Engineering).pdf (13 slides), ../repo/slides/Loop-Eng_Slides – Tall (Lessons with Jupyternotbook).pdf (18 slides), ../repo/slides/new_lesson.pdf (4 slides, wide format, the Event-Driven Loop lesson)
 Instructors: Sydney Runkle (LangChain) and Esmaeil Gargari (DeepLearning.AI)
 
 Rich text descriptions of the course slides, organized by lesson in the same order and with the
@@ -19,13 +19,14 @@ teaches.
   the best available proxy for "shown in the video", but it is a proxy: a narrated slide may have
   been on screen for a different span than the quote, or replaced by a notebook or the instructor.
 - **Lesson numbering comes from the transcripts:** 1 Introduction, 2 Overview of Loop Engineering,
-  3 Deep Agent Primer, 4 Agent Loop, 5 Verification Loop, 6 Learning loop, 7 Conclusion. The decks
-  carry no lesson numbers. Their title cards map onto the transcript lessons as follows: Wide deck
-  subtitle "Overview of Loop Engineering" = Lesson 2; Tall deck title cards "Deep Agent Primer" =
-  Lesson 3, "Agent Loop" = Lesson 4, "Verification Loop" = Lesson 5, "Learning loop" = Lesson 6.
-  The Tall deck also has a title card "Event driven loop" (slide 15) followed by one diagram
-  (slide 16); the transcripts have no event-driven lesson, so those two slides are in the appendix.
-  Transcripts win wherever the two disagree.
+  3 Deep Agent Primer, 4 Agent Loop, 5 Verification Loop, 6 Event-Driven Loop, 7 Learning loop,
+  8 Conclusion. The decks carry no lesson numbers. Their title cards map onto the transcript
+  lessons as follows: Wide deck subtitle "Overview of Loop Engineering" = Lesson 2; Tall deck title
+  cards "Deep Agent Primer" = Lesson 3, "Agent Loop" = Lesson 4, "Verification Loop" = Lesson 5,
+  "Event driven loop" = Lesson 6, "Learning loop" = Lesson 7; the third deck (`new_lesson.pdf`,
+  subtitle "Event-Driven Loop") = Lesson 6. Lesson 6 therefore has six slides: the third deck's
+  four and the Tall deck's title card (slide 15) and diagram (slide 16). Transcripts win wherever
+  the decks disagree.
 - **Slide numbering** is `Lesson.Order` in deck order within the lesson. The deck and original
   slide number follow in parentheses so each entry can be traced back to the PDF.
 - **Text on slide** is transcribed verbatim from the extracted text layer, with labels inside
@@ -33,9 +34,8 @@ teaches.
   are separated by " · ". Code blocks are reproduced as code.
 - **Animations cannot be known** from a PDF, so no entry claims a build order. Where a slide
   carries callout marks (block arrows, highlight rectangles) they are described as drawn.
-- **Lessons 1 and 7 have no slides** in either deck. They are listed with a note so the file still
-  has one section per lesson. **Appendix** holds the two Tall-deck slides that fit no transcript
-  lesson. All 31 slides are accounted for.
+- **Lessons 1 and 8 have no slides** in any deck. They are listed with a note so the file still
+  has one section per lesson. All 35 slides are accounted for.
 - Course-wide visual conventions: every content slide has the LangChain logo top left and the
   DeepLearning.AI logo top right, a centered black title in a light sans face, and a coral-red
   wave along the bottom edge. Title cards have the course title in coral red, the lesson title in
@@ -53,9 +53,9 @@ teaches.
 ## Lesson 1: Introduction
 Transcript: `## Lesson 1: Introduction` in transcripts/loop-engineering-with-langchain-deepagents-transcripts.md
 
-No slide in either deck belongs to this lesson. The narration previews the four loops and the
+No slide in any deck belongs to this lesson. The narration previews the four loops and the
 requirement review agent, but every slide covering those topics is narrated in detail in Lessons
-2 to 6 and is placed there.
+2 to 7 and is placed there.
 
 ---
 
@@ -450,21 +450,92 @@ and a consequence, so clarity and depth fail and the feedback names exactly what
 
 ---
 
-## Lesson 6: Learning loop
-Transcript: `## Lesson 6: Learning loop` in transcripts/loop-engineering-with-langchain-deepagents-transcripts.md
+## Lesson 6: Event-Driven Loop
+Transcript: `## Lesson 6: Event-Driven Loop` in transcripts/loop-engineering-with-langchain-deepagents-transcripts.md
+
+The third deck (`new_lesson.pdf`, four wide-format slides in the Wide deck's style): a title card,
+the event-driven loop diagram, why the loop matters, and the lesson's three-part plan. The Tall
+deck's "Event driven loop" title card (slide 15) and diagram (slide 16) also belong here. The rest
+of the lesson is screen recording, not slides: the Slack direct-message and team-channel demos,
+the Jira and Confluence automation demos, and the setup steps for running the integrations
+(cloning the repo, the environment file, creating a Slack app and its two tokens, Atlassian API
+credentials, an ngrok tunnel, Jira and Confluence Automation rules). No slide carries those
+steps.
+
+### Slide 6.1 — Title card: Event-Driven Loop (third deck, slide 1)
+**Evidence:** Deck-only (title card; its subtitle is this lesson's title)
+**Text on slide:** Loop Engineering with LangChain Deep Agents · Event-Driven Loop
+**Visual description:** Wide-format title card: the course title in coral red on two lines,
+"Event-Driven Loop" in slate grey below it, the LangChain wordmark and the DeepLearning.AI logo side
+by side near the bottom. No wave. "Deep Agents" is two words, as on the Tall-deck title cards.
+**What it teaches:** Names the lesson.
+
+### Slide 6.2 — Event driven loop (third deck, slide 2)
+**Evidence:** Narrated — "In this lesson, we are going to add the event-driven loop. In this loop, an external event like a Slack message will trigger the agent to review a requirements report and return the result as a Slack message to the user."
+**Text on slide:** Event driven loop · event trigger · verification loop · agent loop · model · action · observation · tools · result · retry with feedback · grader · rubric / eval · new events · system update · service improves
+**Visual description:** The Wide deck's Slide 2.8 diagram, centered, with no left-hand text. A tan
+"event trigger" pill in a pink dashed frame at the top; an arrow down into a green dashed frame
+"verification loop" holding the lavender dashed "agent loop" (model and tools joined by dashed
+"action" and "observation" arrows, "result" below the model) and the green "grader / rubric /
+eval" box, with the green "retry with feedback" arrow climbing the left side from the grader back
+to the model; below, a pink dashed frame holding a grey-lavender "system update / service
+improves" box; a thin curved arrow labelled "new events" climbs the right side from "system
+update" back to "event trigger".
+**What it teaches:** The event-driven loop is the outer trigger: an event starts the nested
+verification and agent loops, the system is updated, and the updated system produces new events.
+
+### Slide 6.3 — Why event driven loop? (third deck, slide 3)
+**Evidence:** Narrated — "Event-driven loop makes our agents easier to use by connecting them to the tools where the work is already happening, like Slack, GitHub, or Jira. This reduces friction. Say you want to review a requirement. If you have to open a separate agent, copy the requirement, paste it, and ask for a review, that's several extra steps. Even if the review is useful, you might not do it every time. But if the agent is available right where the conversation is happening, using it becomes a natural part of the workflow. Or, the agent can be automatically triggered when a requirement changes, so it responds when it's needed."
+**Text on slide:** Why event driven loop? · Less friction: No manual copying, pasting, or switching tools · In the flow of work: Agents available where work happens · Timely action: Events trigger agents when needed
+**Visual description:** Three stacked white cards with a thin grey border and a coral-red bar down
+the left edge, centered on the page. In each, a bold dark label ("Less friction:", "In the flow of
+work:", "Timely action:") is followed by one grey sentence.
+**What it teaches:** Three reasons for the loop: no copying between tools, the agent lives where
+the conversation already is, and a change in the source can trigger the agent by itself.
+
+### Slide 6.4 — In this lesson (third deck, slide 4)
+**Evidence:** Narrated — "In this lesson, first, we will see the event driven loop in action, using it in Slack, Jira, and Confluence, and we'll see how events in these tools trigger our agent. ... In the next step, you will learn how to run the agent loop yourself on your local machine by cloning the repo. and setting up the integrations on your end. Finally, we will look at how to build your own event-driven loop using the verification loop of Lesson 4 as the start point, and the specifications you can give to a coding agent, like Claude Code, to build the same event-driven loop built in this lesson."
+**Text on slide:** In this lesson · 1 · See the event loop in action · Event-driven agents in Slack, Jira, and Confluence · 2 · Run the evel loop yourself · Clone the repo and set up the integrations · 3 · Build your own · Extend the verification loop into an event-driven agent using specs and a coding agent
+**Visual description:** Three stacked cards joined by a coral-red bracket line on the left, each
+with a numbered circle (1 to 3) in a pale pink disc, a bold title and a grey one-line subtitle.
+**What it teaches:** The lesson's three parts: watch the loop work in Slack, Jira and Confluence;
+run it yourself by cloning the repo and setting up the integrations; and build your own by
+extending the verification loop with a spec handed to a coding agent. The deck writes "evel loop"
+where the narration says the event loop.
+
+### Slide 6.5 — Title card: Event driven loop (Tall deck, slide 15)
+**Evidence:** Deck-only (title card; its subtitle is this lesson's subject)
+**Text on slide:** Loop Engineering with LangChain Deep Agents · Event driven loop
+**Visual description:** Tall title card, course title on two lines, subtitle "Event driven loop".
+**What it teaches:** Names the lesson in the Tall deck.
+
+### Slide 6.6 — Event-driven loop diagram (Tall deck, slide 16)
+**Evidence:** Narrated by the same passage as Slide 6.2 (the diagram is the same); which of the two
+decks was on screen cannot be known from the materials.
+**Text on slide:** (no title; the extracted text layer is empty) · event trigger · verification loop · agent loop · model · action · observation · tools · result · retry with feedback · grader · rubric / eval · new events · system update · service improves
+**Visual description:** Near-duplicate of the diagram on Slide 2.8 (Wide deck, slide 8) and Slide
+6.2, with no title and no left-hand text: the upper half of the page is blank and the diagram sits
+in the lower half. Same elements and colors. All labels here are read from the image because the
+text layer is empty.
+**What it teaches:** The same as Slide 6.2.
+
+---
+
+## Lesson 7: Learning loop
+Transcript: `## Lesson 7: Learning loop` in transcripts/loop-engineering-with-langchain-deepagents-transcripts.md
 
 Tall-deck slides 17 and 18: a title card and one diagram showing many runs feeding one grader
 whose feedback is mined across runs. The rest of the lesson narrates the notebook (five
 requirements, an analyst agent, a proposal file, and a re-run).
 
-### Slide 6.1 — Title card: Learning loop (Tall deck, slide 17)
+### Slide 7.1 — Title card: Learning loop (Tall deck, slide 17)
 **Evidence:** Deck-only (title card; its subtitle is this lesson's title)
 **Text on slide:** Loop Engineering with LangChain Deep Agents · Learning loop
 **Visual description:** Tall title card, course title on two lines, subtitle "Learning loop".
 **What it teaches:** Names the lesson. The deck calls this loop "Learning loop"; the Wide deck
 calls it "Learning / hill climbing loop" and "Hill-climbing loop".
 
-### Slide 6.2 — Learning Loop (Tall deck, slide 18)
+### Slide 7.2 — Learning Loop (Tall deck, slide 18)
 **Evidence:** Narrated — "Instead of looking at just one run, we are going to look across the traces from many completed runs and ask what does this agent keep getting wrong? If we see the same correction coming up across completely different documents, we will use those findings to make the agent better for future runs."
 **Text on slide:** Learning Loop · REQUIREMENT 1: · REQUIREMENT 2: · Requirements analysis agent · Grader · Feedback · Look across many runs · Find recurring corrections · Improve the agent for future runs
 **Visual description:** Two pink dashed boxes side by side at the top, "REQUIREMENT 1:" and
@@ -478,37 +549,11 @@ the agent is improved for future runs.
 
 ---
 
-## Lesson 7: Conclusion
-Transcript: `## Lesson 7: Conclusion` in transcripts/loop-engineering-with-langchain-deepagents-transcripts.md
+## Lesson 8: Conclusion
+Transcript: `## Lesson 8: Conclusion` in transcripts/loop-engineering-with-langchain-deepagents-transcripts.md
 
-No slide in either deck belongs to this lesson. The transcript is three sentences recapping the
+No slide in any deck belongs to this lesson. The transcript is three sentences recapping the
 loops that were added.
-
----
-
-## Appendix: Deck-only slides not assigned to a lesson
-
-The Tall deck has a section for an event-driven loop between Verification Loop and Learning loop.
-The transcripts have no lesson on it (Lesson 5 ends by announcing one as next; Lesson 6 is the
-learning loop), so these two slides have no narration to attach to.
-
-### Slide A.1 — Title card: Event driven loop (Tall deck, slide 15)
-**Evidence:** Deck-only
-**Text on slide:** Loop Engineering with LangChain Deep Agents · Event driven loop
-**Visual description:** Tall title card, course title on two lines, subtitle "Event driven loop".
-**What it teaches:** Names a lesson that is not in the transcripts.
-
-### Slide A.2 — Event-driven loop diagram (Tall deck, slide 16)
-**Evidence:** Deck-only
-**Text on slide:** (no title; the extracted text layer is empty) · event trigger · verification loop · agent loop · model · action · observation · tools · result · retry with feedback · grader · rubric / eval · new events · system update · service improves
-**Visual description:** Near-duplicate of the diagram on Slide 2.8 (Wide deck, slide 8) with no
-title and no left-hand text: the upper half of the page is blank and the diagram sits in the
-lower half. Same elements and colors: "event trigger" in a pink dashed frame, green dashed
-"verification loop" containing the lavender dashed "agent loop" and the grader, "system update /
-service improves" in a pink dashed frame, "new events" curving back to the trigger. All labels
-here are read from the image because the text layer is empty.
-**What it teaches:** The same as Slide 2.8: an event triggers the nested loops and the updated
-system produces new events.
 
 ---
 
@@ -516,14 +561,14 @@ system produces new events.
 
 Facts only; each item names the slide(s) and the transcript passage that differ.
 
-1. **No event-driven lesson in the transcripts.** The Tall deck has a title card "Event driven
-   loop" (slide 15) and a diagram (slide 16). The transcript lessons run Verification Loop
-   (Lesson 5) then Learning loop (Lesson 6). Lesson 5 ends "The next lesson is even more exciting.
-   We are going to build an event-driven loop." and Lesson 4 says "From this agent loop in this
-   lesson to verification, then event-driven, and finally, the hill-climbing or learning loop in
-   the next lessons." Lesson 1 also promises "You will see how the same workflow can run
-   automatically when a new requirement is received." Tall slide 10 lists "Event-driven Loop" as a
-   loop to be added. No transcript lesson delivers it.
+1. **The event-driven lesson's slides are split across two decks, and most of the lesson has no
+   slide.** The third deck (`new_lesson.pdf`) carries four slides for Lesson 6; the Tall deck
+   carries a title card (slide 15) and a diagram (slide 16) for the same lesson, the diagram a copy
+   of the third deck's slide 2 and the Wide deck's slide 8. The Slack, Jira and Confluence demos
+   and every setup step the narration walks through ("create a Slack app by going through these
+   six steps", "get Atlassian API credentials by going here", the tunneling service, the Jira and
+   Confluence automation steps) are on screen as recordings, not slides. The third deck's slide 4
+   writes "Run the evel loop yourself" where the narration says the event loop.
 2. **"Loop" versus "Level" numbering in the Wide deck.** Slide 4 is titled "Loop 1: The Agent
    Loop"; slides 6, 8 and 10 are titled "Level 2", "Level 3", "Level 4". Slide 3 says "Four levels
    of loops"; slides 12 and 13 number them "1." to "4.". The Lesson 2 narration says "four levels of
@@ -536,7 +581,7 @@ Facts only; each item names the slide(s) and the transcript passage that differ.
    10 and 11: "Learning / hill climbing loop"; Wide slide 12: "HILL CLIMBING LOOP (System-level
    Optimization)"; Tall slide 10: "Hill-climbing / learning loop"; Tall slide 17: "Learning loop".
    Transcripts: Lesson 1 and Lesson 2 say "hill-climbing loop", Lesson 2 also "self-improvement
-   loop" and "learning loop", Lesson 6's heading is "Learning loop" and its narration says "the
+   loop" and "learning loop", Lesson 7's heading is "Learning loop" and its narration says "the
    hill climbing or learning loop".
 5. **Course title spelling.** Wide slide 1 and the transcript file heading write "LangChain
    DeepAgents" (one word); every Tall-deck title card writes "LangChain Deep Agents" (two words).
@@ -553,9 +598,9 @@ Facts only; each item names the slide(s) and the transcript passage that differ.
    "AGENTS.md").
 9. **Model in the code samples.** Tall slide 2 uses `model="openai:gpt-5.5"`; Tall slide 5 uses
    `"openai:gpt-5.4-mini"`. The Lesson 3 narration says "The model we'll be using is GPT-5.4-mini"
-   for the notebook; Lesson 6 uses gpt-5.5 only for the analyst agent.
+   for the notebook; Lesson 7 uses gpt-5.5 only for the analyst agent.
 10. **Count of runs in the learning loop.** Tall slide 18 shows two placeholders ("REQUIREMENT 1:",
-    "REQUIREMENT 2:"). The Lesson 6 narration first says "four different documents:
+    "REQUIREMENT 2:"). The Lesson 7 narration first says "four different documents:
     Authentication, Notifications, Payments, and Alerting" and then "these five different
     requirements"; the notebook runs five.
 11. **Lesson 5's notebook uses a different requirement than its slides.** Tall slides 12 to 14
