@@ -41,7 +41,13 @@ Run every check on the whole file, not a sample:
 With an overlay also: (p) nothing labelled [environment] inside CTX-A or CTX-B; the
 Environment Resolutions table accounts for all six dimensions and each row points at a rule
 and AC that exercise its invariant, or says "Invariant empty"; the "Adapting this beyond the
-lab" note is present; the co-label appears only where both sources require the constraint.
+lab" note is present; the co-label appears only where both sources require the constraint;
+(q) read every Ledger row as the learner who will answer the gate: every Options entry can
+    actually be taken in this build mode (no credential the spec forbids asking for; the
+    offline suite never waits on a person); no row has only one takeable entry; a course-owned
+    row the overlay resolved appears in the Environment Resolutions table with its §2 pin and
+    its Not Included entry; no Not Included item tagged owned-by-row points at a row that no
+    longer offers it.
 
 Report ONLY defects, each as: check id or checklist line → verbatim quote with line number →
 why it fails. Do not suggest rewrites. Classify each HARD (a MUST violated, a mechanical check
