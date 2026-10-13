@@ -96,14 +96,33 @@ the six against the Resolutions in ADD 1 and emit the resolution table into the 
 - **KEPT** — the lab has no opinion. The row stays in the Ledger exactly as the base guide
   derived it.
 
-**Course-owned rows are untouched by this mode.** A `design-argued`, `design-structural`,
-`realization` or `contradicted` row is never removed, merged or silently defaulted here. Where
-the environment makes one of its Options impractical, mark that Option in its own cell with the
-reason — never delete it, and never move the "(course default)" label.
+**Course-owned rows are never silently dropped by this mode.** A `design-argued`,
+`design-structural`, `realization` or `contradicted` row is never merged or silently defaulted
+here, and the "(course default)" label never moves. But an Option the learner **cannot take in
+this lab** is not presented as a choice. Untakeable means: it needs a credential or account the
+runtime file says the lab does not supply and the spec may never ask for; or it makes the offline
+suite — the completion gate — wait on a person. Two cases:
+
+- **Some alternatives remain takeable:** the untakeable Option leaves the Options cell; its
+  substance stays in the Trade-off cell as narrative, and §1 Not Included carries it as
+  `unavailable`, naming the seam a standalone build would use to restore it. Never tag that §1
+  item `owned-by-row`: the row no longer offers it.
+- **No alternative remains takeable:** the row is not asked. Its Default and Invariant are
+  pinned in §2 (or in the owning rule) with the course's provenance; the alternative goes to
+  §1 Not Included as `unavailable` with the seam stated; and the Environment Resolutions table
+  (ADD 1) gets one extra row for it, resolution **ANSWERED — every alternative unavailable
+  here**, so the removal is visible rather than implied.
+
+The standalone takeaway is unaffected: there the same Option stays in its cell, because the
+learner can obtain the credential. (Left unstated, this paragraph's first version — "mark the
+Option in its cell, never delete it" — produced a gate question whose only second answer needed
+an Atlassian token the lab does not have.)
 
 **Resolving a dimension fixes what is built, never which course-argued choices the learner is
-asked.** No course-owned row is retired by a resolution; a row that a resolution makes moot is
-still presented, answered, and recorded in the resolved-decisions checklist. A **lever attached to
+asked.** No course-owned row is retired by the resolution of a learner dimension; a row that
+such a resolution makes moot is still presented, answered, and recorded in the
+resolved-decisions checklist. (A row that leaves because every one of its *own* alternatives
+is untakeable here is the separate case above, and it leaves through the table, not silently.) A **lever attached to
 a CONSTRAINED dimension** — a trade-off the course argued about the resolved subject (a model
 tiering, a provider feature) — becomes a body lever with a §6 Ask-First entry; it does not vanish
 with the row. (Left unstated, one lab-mode generation surfaced half the course-owned rows its
@@ -218,8 +237,10 @@ Run the base §14 checklist in full, then these:
       criterion at its new home, or the table states why it cannot be, or the table says
       "Invariant empty" — a dimension whose derived Invariant is empty (base §3: typically
       project, data, goal, scope-boundary) owes no AC, and that entry discharges it.
-- [ ] No course-owned row was removed by this mode; an Option the environment makes impractical
-      is marked in its own cell, not deleted.
+- [ ] No course-owned row left the Ledger except through the Environment Resolutions table (every
+      alternative untakeable here, pin and `unavailable` entry in place); an untakeable Option
+      beside takeable ones has left its cell for the Trade-off narrative and §1; no §1 item tagged
+      `owned-by-row` points at a row that no longer offers it (OVERRIDE 2).
 - [ ] Every constraint traceable to this overlay carries `[environment]`, and none is labelled
       course-demonstrated.
 - [ ] CTX-E carries an environment row separate from the lesson rows.
