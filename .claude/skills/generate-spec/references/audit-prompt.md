@@ -41,6 +41,7 @@ Run every check on the whole file, not a sample:
 (r) the CTX-C trade-off table: every entry the course argues as a builder's choice is dispositioned
     row / bake-in / lever, never `narrative`; every bake-in or lever entry names its tie-breaker; no
     §1 item tagged `restorable` is a side of an entry in this table (§5.5 three dispositions).
+    No `lever` entry has a side that is the value at which a component ceases to exist (§5.5 limit-value rule).
 With an overlay also: (p) nothing labelled [environment] inside CTX-A or CTX-B; the
 Environment Resolutions table accounts for all six dimensions and each row points at a rule
 and AC that exercise its invariant, or says "Invariant empty"; the "Adapting this beyond the
