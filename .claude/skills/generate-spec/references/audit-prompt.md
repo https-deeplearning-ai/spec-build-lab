@@ -42,6 +42,7 @@ Run every check on the whole file, not a sample:
     row / bake-in / lever, never `narrative`; every bake-in or lever entry names its tie-breaker; no
     §1 item tagged `restorable` is a side of an entry in this table (§5.5 three dispositions).
     No `lever` entry has a side that is the value at which a component ceases to exist (§5.5 limit-value rule).
+    No keyed-tool row offers "omit" where omission would drop a taught stage rather than the keyed tool (§3 keyed-tool rule).
 With an overlay also: (p) nothing labelled [environment] inside CTX-A or CTX-B; the
 Environment Resolutions table accounts for all six dimensions and each row points at a rule
 and AC that exercise its invariant, or says "Invariant empty"; the "Adapting this beyond the
