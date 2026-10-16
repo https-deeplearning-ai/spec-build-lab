@@ -31,7 +31,9 @@ spec-build-lab/
 │       ├── generate-spec/             # materials → spec.md (uses the guide below)
 │       │   └── references/
 │       │       ├── spec-generation-guide.md              # the base guide
-│       │       └── spec-generation-guide.<slug>.md       # --env=<slug> overlay
+│       │       └── env-overlays/<slug>/                  # --env=<slug> overlay
+│       │           ├── spec-generation-guide.<slug>.md           # its rules
+│       │           └── spec-generation-guide.<slug>.runtime.md   # its environment facts
 │       ├── prepare-build/             # allocate builds/run-NN/ + drop .session breadcrumb (auto-fires on build intent)
 │       ├── extract-build-log/         # slice the conversation from the session transcript
 │       │   └── scripts/extract.py
@@ -155,6 +157,18 @@ cd ../..                                  # back up to courses/langchain-rag
 # 8 · iterate: tune the guide, then start another build
 /prepare-build                        # -> builds/run-02/, evals/run-02/spec.md, ...
 ```
+
+## How is a lab spec generated?
+
+Ask your coding agent:
+
+> Read `.claude/skills/generate-spec/SKILL.md` and every guide, overlay and
+> runtime file it points to for `--env=<slug>`. Explain how they combine: what
+> is read, in what order, which file wins in a conflict, when the runtime file
+> is opened, and what file is written. End with a flowchart.
+
+The prompt points only at the skill, which locates the other files, so the
+answer always reflects the files as they are now.
 
 ## Ingesting a course repo
 

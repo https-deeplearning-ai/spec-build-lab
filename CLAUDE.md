@@ -51,7 +51,8 @@ supported automatically — see "Building" below.
   the raw decks (and any raw course repo) under `materials/repo/`, which no
   skill reads. Pass `--env=<slug>` to generate for a known build
   environment instead of the agnostic learner takeaway: it additionally reads
-  the overlay `references/spec-generation-guide.<slug>.md` and writes
+  the overlay `references/env-overlays/<slug>/spec-generation-guide.<slug>.md`
+  (and its `.runtime.md` companion in the same folder) and writes
   `spec.<slug>.md`, leaving `spec.md` alone. The overlay declares what it
   overrides in the base guide; **the base guide is never edited for an
   environment.** Environment profiles live at `environments/<slug>.md` — one

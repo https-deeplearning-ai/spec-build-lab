@@ -31,11 +31,13 @@ another engineer (or coding agent) can implement end-to-end.
 
 0. **Parse `--env=<slug>`, if given.** Pass it only if the user supplied one —
    never synthesize a slug. With a slug, resolve **both** halves of the overlay
-   relative to `$CLAUDE_PROJECT_DIR`:
-   `.claude/skills/generate-spec/references/spec-generation-guide.<slug>.md`
-   (the rules) and its `.runtime.md` companion (the environment's facts). If
-   either is missing, refuse with "No environment overlay named `<slug>`." plus
-   the list of overlays that do exist. Stop. Without a flag, every step below
+   relative to `$CLAUDE_PROJECT_DIR`, both in the folder
+   `.claude/skills/generate-spec/references/env-overlays/<slug>/`:
+   `spec-generation-guide.<slug>.md` (the rules) and its
+   `spec-generation-guide.<slug>.runtime.md` companion (the environment's
+   facts). If either is missing, refuse with "No environment overlay named
+   `<slug>`." plus the list of overlays that do exist (the folder names under
+   `references/env-overlays/`). Stop. Without a flag, every step below
    runs exactly as written and the output is `spec.md`.
 
 1. **Verify cwd is a course folder.** Confirm all of these exist relative to
