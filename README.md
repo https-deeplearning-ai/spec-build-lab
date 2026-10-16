@@ -31,7 +31,9 @@ spec-build-lab/
 │       ├── generate-spec/             # materials → spec.md (uses the guide below)
 │       │   └── references/
 │       │       ├── spec-generation-guide.md              # the base guide
-│       │       └── spec-generation-guide.<slug>.md       # --env=<slug> overlay
+│       │       └── env-overlays/<slug>/                  # --env=<slug> overlay
+│       │           ├── spec-generation-guide.<slug>.md           # its rules
+│       │           └── spec-generation-guide.<slug>.runtime.md   # its environment facts
 │       ├── prepare-build/             # allocate builds/run-NN/ + drop .session breadcrumb (auto-fires on build intent)
 │       ├── extract-build-log/         # slice the conversation from the session transcript
 │       │   └── scripts/extract.py
