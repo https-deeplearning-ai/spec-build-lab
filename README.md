@@ -158,6 +158,18 @@ cd ../..                                  # back up to courses/langchain-rag
 /prepare-build                        # -> builds/run-02/, evals/run-02/spec.md, ...
 ```
 
+## How is a lab spec generated?
+
+Ask your coding agent:
+
+> Read `.claude/skills/generate-spec/SKILL.md` and every guide, overlay and
+> runtime file it points to for `--env=<slug>`. Explain how they combine: what
+> is read, in what order, which file wins in a conflict, when the runtime file
+> is opened, and what file is written. End with a flowchart.
+
+The prompt points only at the skill, which locates the other files, so the
+answer always reflects the files as they are now.
+
 ## Ingesting a course repo
 
 `/ingest-course-repo` is an **optional extra**, not a shortcut. Materials still
