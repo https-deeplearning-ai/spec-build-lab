@@ -40,7 +40,7 @@ Run every check on the whole file, not a sample:
 (o) the provenance header pins the guide commit (and the overlay commit, with an overlay).
 (r) the CTX-C trade-off table: every entry the course argues as a builder's choice is dispositioned
     row / bake-in / lever; `narrative` only where the entry states the alternative was never shown working and either the subject
-    is not structural or it is a never-built stage of the course's progression; a never-built Option on a structural row says so in its cell text (§5.5 litmus step (iii)); every bake-in or lever entry names its tie-breaker; no
+    is not structural or it is a never-shown stage of the course's progression the course does not argue stopping at; a never-built Option on a structural row says so in its cell text (§5.5 litmus step (iii)); every bake-in or lever entry names its tie-breaker; no
     §1 item tagged `restorable` is a side of an entry in this table (§5.5 three dispositions).
     No `lever` entry has a side that is the value at which a component ceases to exist (§5.5 limit-value rule).
     No keyed-tool row offers "omit" where omission would drop a taught stage rather than the keyed tool (§3 keyed-tool rule).
