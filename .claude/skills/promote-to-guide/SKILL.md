@@ -1,7 +1,14 @@
 ---
 name: promote-to-guide
-description: Runs a promotion pass in the spec-build-lab — triages a course spec's hand edits and filed observations, promotes the universal ones into the spec-generation guide, validates the amended guide with clean-room regenerations, and optionally re-baselines the course spec. Use this skill ANY time the user wants spec improvements carried into the guide or future courses — including phrasings like "promote these spec edits", "make the guide learn this", "run a guide pass", "evolve the guide", "the next guide pass", "implement the residuals from issue #NN", "carry this principle to future specs", "co-evolve the spec and the guide", or "/promote-to-guide". Do NOT use it to generate a spec (/generate-spec), to hand-edit a course spec (just edit it — that's Loop A, no skill), or for lab tooling/skill changes (those are ordinary code work).
+description: NOT MAINTAINED (see notice) — Runs a promotion pass in the spec-build-lab — triages a course spec's hand edits and filed observations, promotes the universal ones into the spec-generation guide, validates the amended guide with clean-room regenerations, and optionally re-baselines the course spec. Use this skill ANY time the user wants spec improvements carried into the guide or future courses — including phrasings like "promote these spec edits", "make the guide learn this", "run a guide pass", "evolve the guide", "the next guide pass", "implement the residuals from issue #NN", "carry this principle to future specs", "co-evolve the spec and the guide", or "/promote-to-guide". Do NOT use it to generate a spec (/generate-spec), to hand-edit a course spec (just edit it — that's Loop A, no skill), or for lab tooling/skill changes (those are ordinary code work).
+disable-model-invocation: true
 ---
+
+> **Not maintained.** This skill was last updated on 2026-09-08, and the way
+> guide changes are made has moved on since, so parts of it are out of date
+> (known gaps: #53). Don't run it or recommend it unless the repo owner asks.
+> Other work still reads `references/regen-prompt.md` by path and line number,
+> so leave the files in `references/` unchanged.
 
 # promote-to-guide
 

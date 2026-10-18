@@ -38,7 +38,8 @@ spec-build-lab/
 │       ├── extract-build-log/         # slice the conversation from the session transcript
 │       │   └── scripts/extract.py
 │       ├── eval-spec-vs-build/        # did the build follow spec.md?
-│       └── eval-materials-vs-build/   # how does the build align with / diverge from the course?
+│       ├── eval-materials-vs-build/   # how does the build align with / diverge from the course?
+│       └── promote-to-guide/          # not maintained; don't use unless the repo owner asks
 ├── environments/                      # one profile per build target, shared across courses
 │   └── coding-agent-lab.md            # source doc the matching overlay was distilled from
 ├── templates/
