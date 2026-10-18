@@ -16,8 +16,9 @@ Checks (all over the whole file, by regex over Markdown — tolerant, not a pars
                exists
   ROWID        no Ledger row id is a bare R<n> (rows and rules must not share a prefix)
   GUIDE-SECT   no §<n> reference that is not a section of this spec (guide sections leak)
-  GUIDE-VOCAB  provenance vocabulary (litmus, lever, stakes, tier, substitution row, heavy
-               bar, Never tier) is defined in a "How to read the provenance notes" paragraph
+  GUIDE-VOCAB  provenance vocabulary (litmus, bake-in, narrative, lever, stakes, tier,
+               substitution row, heavy bar, Never tier) is defined in a "How to read the
+               provenance notes" paragraph
   FIXTURE      every fixtures/<path> an AC relies on is declared in §5 before the AC table
   NI-TAG       every "Not Included" handling tag is a class the scope-boundary row defines
 
@@ -43,7 +44,7 @@ FIXTURE_TOKEN = re.compile(r"`?(fixtures/[\w./-]+?)`?(?=[\s,;:)`|]|$)")
 ROW_ID_CELL = re.compile(r"^\|\s*\**([A-Z][A-Z-]*\d+)\**\s*\|\s*\**([a-z-]+)\**\s*\|")
 NI_TAG = re.compile(r"(?<!\*)\*([A-Z][^*\n]{2,80}?)\*(?!\*)")
 TAG_WORDS = ("restorable", "buildable", "deferred", "defer", "unavailable", "keep")
-VOCAB = ["litmus", "lever", "stakes", "tier", "substitution row", "heavy bar", "never tier"]
+VOCAB = ["litmus", "bake-in", "narrative", "lever", "stakes", "tier", "substitution row", "heavy bar", "never tier"]
 
 
 def expand_ac(text: str) -> set[str]:
