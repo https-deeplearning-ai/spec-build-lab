@@ -198,10 +198,10 @@ the lab supplies the key, so choosing it costs no setup here.
 **The platform's model set is not enumerated** in the runtime file, because it changes. The spec
 declares one environment variable per model role (names of its choosing, listed in §2) and says
 the build agent sets them **when it writes the resolved-decisions checklist** (base §6.0's last
-step): the checklist carries one "model roles" line with the agent's "(Recommended)" platform
-model per role, and the learner's confirmation of the checklist confirms them — no new gate
-question is added (OVERRIDE 4 governs §0), and the "(Recommended)" flag owns model currency as
-in base §6.0. The spec never
+step): the base template's step-5 model line names one current platform model per role,
+chosen by the agent when it writes the checklist, and the learner's confirmation of the checklist
+confirms them — no new gate question is added (OVERRIDE 4 governs §0), and model currency is the
+agent's checklist-time choice, as in base §6.0. The spec never
 instructs probing a listing endpoint, never asks the learner for a key, carries the course's
 own model ids as provenance only, and never asserts that a course model id is served by the
 proxy. **Key variables:** §2 names all four the runtime file lists and says which pair the app

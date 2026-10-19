@@ -56,7 +56,8 @@ models resident at once must carry a business rule releasing one before loading 
 **What this environment actually fixes:** the model *the coding agent itself* runs on. The learner
 picks it per conversation from the platform's set, so a spec must work across all of them, or say
 in its own text which it assumes. **Never bake a "current best" model name into the spec** — base
-§6.0's gate-time "(Recommended)" flag already owns model currency.
+§6.0's step-5 checklist owns model currency: the build agent picks current models when it
+writes the checklist.
 
 **What it supplies:** the container exports provider API keys and their base URLs under these
 names — `OPENAI_API_KEY` with `OPENAI_BASE_URL`, and `ANTHROPIC_API_KEY` with
