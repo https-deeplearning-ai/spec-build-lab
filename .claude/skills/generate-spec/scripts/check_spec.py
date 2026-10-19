@@ -21,6 +21,12 @@ Checks (all over the whole file, by regex over Markdown — tolerant, not a pars
                provenance notes" paragraph
   FIXTURE      every fixtures/<path> an AC relies on is declared in §5 before the AC table
   NI-TAG       every "Not Included" handling tag is a class the scope-boundary row defines
+  OPTID        every Ledger Options cell lists its options by id (<row id>a, <row id>b, … in order),
+               and carries no R<n> / AC<n> ids
+  COND         every "Applies only when <row> is <id>" names a row above it and that row's option ids
+  TESTOPT      §7's "Tests by option" table has one line per non-Default option id, and no other ids
+  MOOT         a row conditioned on an earlier row is listed as moot by that row's excluded options,
+               and every moot row below its option carries the matching condition
 
 Stdlib only. Written for the spec-build-lab guide's section template; it degrades to fewer
 checks (never false confidence) when a section is missing.
@@ -194,6 +200,88 @@ def main(argv: list[str]) -> int:
                     scope_row_text = lines[i]
                 if re.fullmatch(r"R\d+", m.group(1)):
                     add(i + 1, "ROWID", f"Ledger row id {m.group(1)} collides with the rule namespace")
+
+    # ---- OPTID / COND --------------------------------------------------------------
+    # Ledger columns: | # | Category | Decision | Invariant | Default | Options | Trade-off | Owner |
+    row_order = sorted(row_ids, key=row_ids.get)
+    opt_ids: dict[str, list[str]] = {}
+    default_opt: dict[str, str] = {}
+    conds: dict[str, tuple[str, set[str]]] = {}
+    for rid in row_order:
+        ln = row_ids[rid]
+        cells = [c.strip() for c in lines[ln - 1].strip().strip("|").split("|")]
+        if len(cells) < 6:
+            continue
+        decision, options = cells[2], cells[5]
+        ids = re.findall(rf"(?<![A-Za-z0-9-])({re.escape(rid)}[a-z])\b", options)
+        seen = list(dict.fromkeys(ids))
+        opt_ids[rid] = seen
+        expected = [f"{rid}{chr(97 + k)}" for k in range(len(seen))]
+        if len(seen) < 2:
+            add(ln, "OPTID", f"{rid}: Options cell does not list its options by id ({rid}a, {rid}b, …)")
+        elif seen != expected:
+            add(ln, "OPTID", f"{rid}: option ids {', '.join(seen)} are not {', '.join(expected)} in order")
+        if R_TOKEN.search(options) or AC_TOKEN.search(options):
+            add(ln, "OPTID", f"{rid}: Options cell carries rule or criterion ids")
+        for part in re.split(rf"(?=(?<![A-Za-z0-9-]){re.escape(rid)}[a-z]\b)", options):
+            m = re.match(rf"({re.escape(rid)}[a-z])\b", part)
+            if m and "(Recommended" in part:
+                default_opt[rid] = m.group(1)
+        cm = re.search(r"applies only when\s+\**`?([A-Z][A-Z-]*\d+)`?\**\s+is\s+(.*)", decision, re.I)
+        if cm:
+            target = cm.group(1)
+            wanted = set(re.findall(rf"{re.escape(target)}[a-z]\b", cm.group(2)))
+            conds[rid] = (target, wanted)
+            if target not in row_ids:
+                add(ln, "COND", f"{rid}: condition names row {target}, which does not exist")
+            elif row_ids[target] >= ln:
+                add(ln, "COND", f"{rid}: condition names {target}, which is not above it")
+            elif not wanted or not wanted <= set(opt_ids.get(target, [])):
+                add(ln, "COND", f"{rid}: condition names option ids {sorted(wanted)} that {target} does not have")
+
+    # ---- TESTOPT / MOOT ------------------------------------------------------------
+    all_opts = {o: rid for rid, os in opt_ids.items() for o in os}
+    table: dict[str, tuple[int, str]] = {}
+    t_start = next((i for i, l in enumerate(lines) if re.search(r"tests by option", l, re.I)
+                    and not l.lstrip().startswith(">")), -1)
+    if row_ids and opt_ids:
+        if t_start < 0:
+            add(0, "TESTOPT", 'no "Tests by option" table')
+        else:
+            i, started = t_start + 1, False
+            while i < len(lines) and (not started or lines[i].lstrip().startswith("|")):
+                l = lines[i]
+                if l.lstrip().startswith("|"):
+                    started = True
+                    cells = [c.strip() for c in l.strip().strip("|").split("|")]
+                    m = re.search(r"\b([A-Z][A-Z-]*\d+[a-z])\b", cells[0])
+                    if m:
+                        table[m.group(1)] = (i + 1, cells[3] if len(cells) > 3 else "")
+                elif l.strip() and started:
+                    break
+                i += 1
+            for o, (ln, _) in table.items():
+                if o not in all_opts:
+                    add(ln, "TESTOPT", f"{o} is not an option id in the Ledger")
+                elif default_opt.get(all_opts[o]) == o:
+                    add(ln, "TESTOPT", f"{o} is its row's Default; the table lists non-Default options only")
+            for rid, os in opt_ids.items():
+                for o in os:
+                    if o != default_opt.get(rid) and o not in table:
+                        add(row_ids[rid], "TESTOPT", f"{o} has no line in the Tests by option table")
+            for rid, (target, wanted) in conds.items():
+                for o in opt_ids.get(target, []):
+                    if o not in wanted and o in table and not re.search(rf"\b{re.escape(rid)}\b", table[o][1]):
+                        add(table[o][0], "MOOT", f"{rid} applies only when {target} is {'/'.join(sorted(wanted))}, but {o}'s line does not list {rid}")
+            for o, (ln, moot) in table.items():
+                src = all_opts.get(o)
+                if not src:
+                    continue
+                for z in re.findall(r"\b([A-Z][A-Z-]*\d+)\b", moot):
+                    if z in row_ids and row_ids[z] > row_ids[src]:
+                        c = conds.get(z)
+                        if not c or c[0] != src or o in c[1]:
+                            add(ln, "MOOT", f"{o} makes {z} moot, but {z} has no matching \"Applies only when {src} is …\"")
 
     # ---- XREF over the whole file --------------------------------------------------
     ctx_entries: set[str] = set()

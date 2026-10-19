@@ -46,6 +46,10 @@ Compare a recorded run's app against the spec snapshot it was built from.
      `spec.md` — that may have been regenerated since this run).
    - Build: walk `builds/$ARGUMENTS/` (skip node_modules, .venv, dist,
      build, .git, and anything matching its own .gitignore).
+   - Resolved decisions: `builds/$ARGUMENTS/resolved-decisions.md`, if
+     present. Judge the build against the values it records, not the
+     Ledger Defaults. If it is missing, say so in the Summary and judge
+     against the Defaults.
 5. **Produce the report at `evals/$ARGUMENTS/spec-vs-build.md`** with
    sections:
    - **Summary** — one-paragraph verdict.
@@ -53,6 +57,10 @@ Compare a recorded run's app against the spec snapshot it was built from.
      with file references into `builds/$ARGUMENTS/`.
    - **Divergences** — things the build did that the spec did not specify.
    - **Missing** — things the spec specified that the build did not do.
+   - **Not applicable** — rules and criteria retired by the chosen options,
+     per the snapshot's "Tests by option" table; never listed under
+     Missing. Criteria that table says change are judged in their changed
+     form.
    - **Score** — your judgment on a 0–10 scale, with reasoning.
 6. **Report the path written, then hand off.** After echoing the report
    path, tell the user: "Spec-fidelity report written. The companion
