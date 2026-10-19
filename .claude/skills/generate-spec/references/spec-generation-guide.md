@@ -147,7 +147,7 @@ The **Decision Ledger** is the spec's second section (§6, right after the §0 p
 - **Trade-off** — what switching costs (carries the course's *spoken* trade-offs: re-embedding, re-tuning, lateral-or-worse results).
 - **Owner** — a label only: `learner`, `course`, or `course+learner` (§9). Metadata; never gates behavior.
 
-**No cross-row restating.** A row's Decision, Invariant, Default and Options never restate another row's decided value (a `k`, a distance strategy) and never list or count the parts an earlier row's options keep or remove (which stores exist, which model roles or pipeline stages run); they name them through the owning row ("k: pinned in row N"; "each store row D1's answer keeps"). The §0 gate asks a row after the rows above it, and the checklist prints them side by side. A row above the removing row is asked first and cannot point ahead: it lists the parts as the Defaults build them, and the removing option's §7 "Tests by option" line names each of its cells that list a part the option removes. Only the Trade-off cell and the Default's branch note may name the course's parts, as a record of what the course did. A row whose whole subject an earlier option removes is skipped by its condition instead (next paragraph). A restated value also makes two rows read as the same question. (Left unstated, one generation's store row offered "holding all seven stores" to a learner who had chosen conversation-only memory, and another's test-suite row listed the stages its "no grader" option removes.)
+**No cross-row restating.** A row's Decision, Invariant, Default and Options never restate another row's decided value (a `k`, a distance strategy) and never list or count the parts an earlier row's options keep or remove (which stores exist, which model roles or pipeline stages run) — unless that option skips the row by its condition, so the row is never asked under it; they name them through the owning row ("k: pinned in row N"; "each store row D1's answer keeps"). The §0 gate asks a row after the rows above it, and the checklist prints them side by side. A row above the removing row is asked first and cannot point ahead: it lists the parts as the Defaults build them, and the removing option's §7 "Tests by option" line names each of its cells that list a part the option removes. Only the Trade-off cell and the Default's branch note may name the course's parts, as a record of what the course did. A row whose whole subject an earlier option removes is skipped by its condition instead (next paragraph). A restated value also makes two rows read as the same question. (Left unstated, one generation's store row offered "holding all seven stores" to a learner who had chosen conversation-only memory, and another's test-suite row listed the stages its "no grader" option removes.)
 
 **One subject, one row.** When several operations or parts share one argued trade-off (e.g. the deterministic-vs-agent-triggered operation split, argued once for every operation it covers), they are one row with an option per operation or part — not a row each. Parts that each carry their own separate argument stay separate rows. A row that matters only under one option of another row (a grader's kind, under "a grader is present") merges into that row as further options, when the merged row stays a short list; never multiply combinations to force a merge.
 
@@ -414,7 +414,12 @@ not because they are the right choice for this person's project.
    default substitutes it (the row's Trade-off/branch note says why) — before building. Begin
    implementation ONLY after this checklist is shown, written, and confirmed by the person; if
    any row is unresolved you are not done — return to step 3. A `not applicable` line whose
-   quoted condition is not false is unresolved. Build on the checklist's values.
+   quoted condition is not false is unresolved. Build on the checklist's values. Leave out
+   every part of this spec that exists only for a rule a chosen option retires — its commands,
+   flags, settings, schema fields, fixtures and permission items. Where a chosen option changes
+   a criterion and its §7 line does not fully state the new form, adapt the criterion to the
+   chosen options and list it, with what you changed, under *Adapted* in the checklist and in
+   your final report.
 ```
 
 ---
