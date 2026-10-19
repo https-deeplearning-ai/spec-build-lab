@@ -388,7 +388,8 @@ not because they are the right choice for this person's project.
    made no choice (the scope boundary). If the build calls a language model, add one line per
    model role the chosen options use, naming the current model you will use from the Default
    provider — one you know that provider serves; if you cannot tell, say so and ask the person
-   to name one. The file records what this build was built from;
+   to name one, and if they do not, use the course's own model id from this spec for that role
+   and say it may need changing. A missing model name never blocks confirming the checklist. The file records what this build was built from;
    nothing reads it back — a later build re-runs this gate. If the baseline path was chosen,
    walk the person through every `≠` row — the course's actual choice, and why this build's
    default substitutes it (the row's Trade-off/branch note says why) — before building. Begin
