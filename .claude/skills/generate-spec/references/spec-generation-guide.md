@@ -151,7 +151,7 @@ The **Decision Ledger** is the spec's second section (§6, right after the §0 p
 
 **One subject, one row.** When several operations or parts share one argued trade-off (e.g. the deterministic-vs-agent-triggered operation split, argued once for every operation it covers), they are one row with an option per operation or part — not a row each. Parts that each carry their own separate argument stay separate rows. A row that matters only under one option of another row (a grader's kind, under "a grader is present") merges into that row as further options, when the merged row stays a short list; never multiply combinations to force a merge.
 
-**A row that stops mattering under an earlier option says so.** When an option of an earlier row removes what a later row decides about (an option with no grader makes the grader's kind moot), the later row's Decision cell ends with "Applies only when `<row>` is `<id>`" (or "is `<id>` or `<id>`") — naming only a row above it in table order and only option ids that exist. A row that stops mattering under a later row's option carries no condition; that dependency appears only in §7's "Tests by option" table. The condition declares the dependency; §6.0 still asks every row. (Left unstated, the build agent could not tell which later questions an answer had made moot: one option retired about twenty criteria and four rows, and nothing in those rows said so.)
+**A row that stops mattering under an earlier option says so.** When an option of an earlier row removes what a later row decides about (an option with no grader makes the grader's kind moot), the later row's Decision cell ends with "Applies only when `<row>` is `<id>`" (or "is `<id>` or `<id>`") — naming only a row above it in table order and only option ids that exist. A row that would depend on a later row's option carries no condition and is always asked. The condition is the only thing that lets the §6.0 gate skip a row. (Left unstated, the build agent could not tell which later questions an answer had made moot: one option retired about twenty criteria and four rows, and nothing in those rows said so.)
 
 **Procedure:** (a) walk each stage of the pattern (step 1); (b) list its decision points; (c) sweep Pass B's mined trade-offs for course-argued decisions that are not tied to a single stage — but only what the course argues as a *choice the builder makes* (a taxonomy, or the course's storyline of stages told as framing, is teaching structure, not a decision; it feeds CTX, not a row — but a stage of that storyline the course argues as an alternative is judged by the litmus below); (d) for each surfaced decision (see the bar below) write the seven fields; (e) apply the §3 dependency precedence for any heavy-dependency row; (f) add the six §3 learner-context rows, each Invariant holding only the pattern's capability requirements on that dimension (empty when none) — learner rows still get a course-derived default (e.g. project defaults to the §3 example-shape target); (g) assign each row's Category and sort the table into the fixed row order (see the bar below).
 
@@ -180,7 +180,7 @@ Everything else — a single-valued parameter the course sets once, never varies
 
 A genuine additional exclusion still reaches the agent through free-text, and must name the acceptance criteria it retires.
 
-**Row order (fixed).** The table is grouped by Category — **`learner` → design → `realization` → `contradicted`** — with pattern-pipeline order within each group. *Design* is **one** group: `design-argued` and `design-structural` rows interleave by pipeline position, never as two sub-blocks. This is presentation order only (the derivation procedure may construct rows in any sequence). The ordering principle is **context first, dependents after**: the §0 gate presents rows in table order, so the learner's project/data/goal answers exist in the conversation before the design and realization rows whose right answer for *this* learner depends on them (a store choice depends on the environment; a toolset on the project; seed data on the learner's data), and the build agent can frame those later questions in the learner's own terms (§6.0). Contradicted rows come last because they depend on realization choices (an index type depends on the chosen store). Ordering by importance instead ("highest-judgment first") buys nothing here — the gate hard-requires every row answered and checklist-echoed, so coverage never depends on position; position should buy context.
+**Row order (fixed).** The table is grouped by Category — **`learner` → design → `realization` → `contradicted`** — with pattern-pipeline order within each group. *Design* is **one** group: `design-argued` and `design-structural` rows interleave by pipeline position, never as two sub-blocks. This is presentation order only (the derivation procedure may construct rows in any sequence). The ordering principle is **context first, dependents after**: the §0 gate presents rows in table order, so the learner's project/data/goal answers exist in the conversation before the design and realization rows whose right answer for *this* learner depends on them (a store choice depends on the environment; a toolset on the project; seed data on the learner's data), and the build agent can frame those later questions in the learner's own terms (§6.0). Contradicted rows come last because they depend on realization choices (an index type depends on the chosen store). Ordering by importance instead ("highest-judgment first") buys nothing here — the gate hard-requires every row resolved and checklist-echoed, so coverage never depends on position; position should buy context.
 
 ---
 
@@ -227,10 +227,10 @@ The spec MUST contain these core sections, in this order (this is the seven-sect
 
 ## 0. Before you build — REQUIRED (do this first)
 <!-- ALWAYS the very first section, ahead of the Decision Ledger. The pre-build gate (§6.0):
-     an imperative, build-agent-addressed instruction that presents every Ledger row ONE
-     QUESTION PER ROW via a structured question tool (required if the environment has one, e.g.
+     an imperative, build-agent-addressed instruction that presents every Ledger row its
+     written conditions leave in play, ONE QUESTION PER ROW via a structured question tool (required if the environment has one, e.g.
      AskUserQuestion; else plain-text list) — never depending on a per-call item cap — then
-     HARD STOPS: write no code until every row is answered AND a resolved-decision checklist is
+     HARD STOPS: write no code until every row is resolved AND a resolved-decision checklist is
      printed and written as `resolved-decisions.md`. No "proceed if no response" escape
      (§12.10); no partial-present build (§12.11).
      Portable across Claude Code / claude.ai / OpenAI Codex / Cursor / a custom harness. Emit
@@ -309,10 +309,11 @@ The spec MUST contain these core sections, in this order (this is the seven-sect
  per acceptance criterion with cited evidence (test output, file paths).
  "Should pass" / "looks correct" are treated as failures — they mean it wasn't run.
  Then a "Tests by option" table, one line per Options entry that is not its row's Default:
- | Option id | Rules and criteria that no longer apply | Rules and criteria that change (and how) | Rows that stop mattering | Offline-suite criteria switched off |
+ | Option id | Rules and criteria that no longer apply | Rules and criteria that change (and how) | Offline-suite criteria switched off |
  Name every id exactly — never a summary ("its rules", "the related ACs"); "—" when none.
- "Rows that stop mattering" matches the rows' "Applies only when" conditions (§5.5), plus
- any row that depends on a later row's option. A build that chose an option reports the
+ List every rule and criterion the option retires, including those of rows it makes moot —
+ a skipped row has no line of its own; the rows themselves are named by their "Applies only
+ when" conditions (§5.5). A build that chose an option reports the
  criteria it retires as not applicable, not as failures, and builds the changed ones as
  changed.>
 
@@ -340,7 +341,7 @@ A Decision Ledger that no one is shown is worthless. A build agent's default beh
 - **Imperative and build-agent-addressed.** "You are the build agent. Before writing ANY code, you MUST…" — not a passive "review before build" header (which reads as a note to a human skimming and gets skipped).
 - **First.** It is spec section `## 0`, ahead of everything including the Decision Ledger, visually isolated.
 - **An express lane for the baseline builder, asked first — and named honestly.** The gate's FIRST question offers exactly two paths: the **recommended baseline build** (every Ledger row resolves to its Default), or **customize** the decisions row by row. The express path is named "recommended baseline build" — never "build as-is with the course's setup" or any phrasing presenting it as the course's own configuration — because on substitution rows (§3 branch 1) the Default deliberately departs from what the course ran, so a course-default framing misattributes those rows: the same provenance error the labeling rule below prevents at option level, recurring at path level. The baseline option's text must carry a one-line explanation stating both halves: most rows resolve to the course's own choices, and wherever the course's choice needs setup the learner may not have (a paid key, an admin-provisioned service), a lighter equivalent stands in — with the step-5 checklist marking exactly where. Choosing the baseline skips the per-row questions entirely — the agent prints and writes the full resolved-decision checklist and begins building; choosing customize enters the one-question-per-row loop. This is NOT an escape clause (§12.10): the user gave an explicit answer that covers every row — the same "defaults are fine" reply the determinism argument already sanctions — and the printed checklist still makes completeness visible. What stays forbidden is proceeding on *silence*.
-- **Presents EVERY Ledger row.** Do not have the gate re-filter or tier rows — the §5.5 surfacing bar already decided what became a row, so every row is by construction worth showing. (Never key the gate on row numbers; row identities are course-specific.)
+- **Presents EVERY Ledger row — except one its own written condition skips.** Do not have the gate re-filter or tier rows — the §5.5 surfacing bar already decided what became a row, so every row is by construction worth showing. (Never key the gate on row numbers; row identities are course-specific.) The one exception is a row whose Decision says "Applies only when `<row>` is `<id>`" (§5.5) after the person chose another option on that row: the gate skips it, says so in one line, and marks it `not applicable` in the checklist with the condition and the answer quoted. This is safe where judgment is not: the condition was fixed when the spec was written, and the checklist shows it was false. A build agent never skips a row on its own judgment that an earlier answer made it irrelevant, and a skip resolves only its own row — skipping one row is never a reason to stop asking the rest (§12.11). (Until this exception, the gate asked every row; a gate probe asked a row its earlier answer had made moot, then had no checklist mark for it and invented one.)
 - **One question per row — do not depend on a channel's item cap.** Interactive question tools cap how many questions fit in one call (Claude Code's `AskUserQuestion` allows at most a few), and a Ledger can have many rows. If the gate says "present every row" without saying *how*, the agent improvises — batching inconsistently, or (worse) presenting a first batch, getting a reply, and treating the build as unblocked while the rest are never asked (§12.11). Fix the mechanism deterministically: **one row = one question**, looped until every row is asked. One-per-row has no batch boundary to mis-track and its completeness is a plain count (N rows ⇒ N questions). **Never hardcode a numeric cap** ("4") into the gate — that is one environment's limit; state the capacity-relative rule instead so it holds for an uncapped or plain-text channel too.
 - **Checklist-echo gates the build, not "a reply happened".** Keying resumption on "the user replied" fails the moment many rows exist: a reply to *some* rows satisfies it, and the rest are buried. Require a **visible artifact** instead — before any code, the agent prints a checklist of every row with its resolved value. A completion-driven agent cannot produce that checklist without having resolved every row, and the user/reviewer can *see* completeness. A printed artifact beats an internal "did I ask N times?" count precisely because the same agent that skips rows is the one that would judge the count. The checklist is also **written** to a fixed name in the build folder (`resolved-decisions.md`): printed for the person present, written so the values the build was built from stay recoverable in a place a reader knows to look, rather than in whatever file the agent invents. It is a record, not an input — a later build re-runs the gate instead of reading a previous run's file. The checklist also carries **deviation marks**: each row's line states whether its resolved value is the course's actual choice or departs from it — a substitution row resolved to its Default departs by construction; a customize answer may too — naming the course's choice on every departing row. And on the baseline path, the agent walks the learner through the departing rows alongside the checklist (each row's course choice, and the reason its Default substitutes — the row's own branch note carries it), so the express lane never hides where the baseline differs from the course.
 - **Labels the course's actual choice "(course default)" and the row's Default "(Recommended)".** "(course default)" is factual provenance — what the course actually did — and must always mark the option the course actually used. On a **substitution row** (§3 dependency-precedence branch 1) that is the course-faithful **Options** entry, NOT the substituted Ledger Default: labeling the substitute "(course default)" misattributes it (observed in real learner feedback — a SQLite+Chroma default presented as the course's choice when the course ran Oracle). Separately, **"(Recommended)" marks the row's Default** — the generator's choice, fixed at generation time, of the most efficient way to build the course's pattern on zero-setup grounds (buildable as-is with nothing the learner must provision — the same grounds §3's precedence uses). It is the option the recommended baseline build takes, so the baseline is exactly "every row's (Recommended) option". It is not advice about *this* learner's project, and the build agent does not move it on gate-time context; the gate says so, and the learner, who sees every option with its setup weight, chooses. (A question tool's own "Recommended" convention — Claude Code's `AskUserQuestion` suggests one — is satisfied by this same label.) The two labels compose: on a substitution row they sit on different options; when the Default IS the course's choice, use the single combined label **"(Recommended - course default)"**. "(Recommended)" never removes or moves the "(course default)" label. **Model currency**: the spec names providers, protocols, and the course's own models (provenance facts, which never stop being true), but never bakes in "current best" model names — those rot between generation and the learner's build; the build agent picks a current model per model role when it writes the step-5 checklist, from the Default provider, and states it there. (Until this rule, "(Recommended)" was each build agent's own gate-time judgment, so one spec could recommend different options in different builds, and a recommended option could differ from what the recommended baseline built.) These two labels, plus their merged form, are the **only sanctioned option labels** anywhere the spec presents choices — gate questions and Ledger Options cells alike. Never label an option with a bare "(default)" or "(Default)": default-ness is carried by the Ledger's Default column, not by a label, and a third label re-opens the provenance-vs-advice confusion the two-label design exists to close (observed as direct owner confusion in review).
@@ -380,21 +381,27 @@ not because they are the right choice for this person's project.
    removes or moves the "(course default)" label, and no option is ever
    labeled with a bare "(default)" — these two labels and their merged form are the only
    option labels. Use the answers already given (project, data, goal, …) to frame
-   later questions and describe options in the person's own terms — but never skip a row, drop
-   or alter an Option, or move the "(course default)" label because of an earlier answer. Put
+   later questions and describe options in the person's own terms — but never drop or alter an
+   Option or move the "(course default)" label because of an earlier answer, and never skip a row
+   because an earlier answer seems to make it irrelevant. The only skip: a row whose Decision
+   says "Applies only when `<row>` is `<id>`" is skipped when the answer on that row is none of
+   those ids, or that row was itself skipped. Say so in one line (e.g. "D4 is skipped: it applies
+   only when D2 is D2a or D2b; D2 = D2c") and go on to the next row — a skip resolves that row
+   only. If the person changes an earlier answer, re-check every condition that names it. Put
    any realizations beyond the tool's option slots (or the free-form case) under the tool's
-   "Other"/free-text. Ask about **every** row. A per-call item limit is NEVER a reason to drop,
+   "Other"/free-text. Ask about every row that is not skipped this way. A per-call item limit is NEVER a reason to drop,
    skip, merge, or silently default a row — make as many separate calls as there are rows.
 4. **Presenting any of these questions ENDS YOUR TURN — stop here; write no code, create or edit
-   no file, take no other build action.** Keep asking, one row at a time, until **every** row has
-   an answer (a chosen option, an explicit "use the course default", or the step-2 baseline answer,
-   which resolves every row at once). Answers to *some* rows do NOT release the build; "no reply
+   no file, take no other build action.** Keep asking, one row at a time, until **every** row is
+   resolved — answered (a chosen option, an explicit "use the course default", or the step-2
+   baseline answer, which answers every row at once) or skipped by its own condition (step 3). Answers to *some* rows do NOT release the build; "no reply
    yet" is not an answer — wait for the user.
 5. **Before the first line of code, print a resolved-decision checklist and write it to
    `resolved-decisions.md`** — every Ledger row with its final value (the chosen option's id and
    text — the user's choice, or its Ledger default), each line carrying a deviation mark: `= course choice`, or
    `≠ course choice (course used: <option>)`, or `no course choice` on a row where the course
-   made no choice (the scope boundary). If the build calls a language model, add one line per
+   made no choice (the scope boundary), or — on a row skipped by its condition, with no value —
+   `not applicable (applies only when <row> is <id>; <row> = <answer>)`. If the build calls a language model, add one line per
    model role the chosen options use, naming the current model you will use from the Default
    provider — one you know that provider serves; if you cannot tell, say so and ask the person
    to name one, and if they do not, use the course's own model id from this spec for that role
@@ -406,7 +413,8 @@ not because they are the right choice for this person's project.
    walk the person through every `≠` row — the course's actual choice, and why this build's
    default substitutes it (the row's Trade-off/branch note says why) — before building. Begin
    implementation ONLY after this checklist is shown, written, and confirmed by the person; if
-   any row is unresolved you are not done — return to step 3. Build on the checklist's values.
+   any row is unresolved you are not done — return to step 3. A `not applicable` line whose
+   quoted condition is not false is unresolved. Build on the checklist's values.
 ```
 
 ---
@@ -514,7 +522,8 @@ Each occurred in a real run; check for them explicitly.
     remaining rows are never surfaced (observed on a 14-row Ledger). Two compounding causes: the
     gate didn't say *how* to present more rows than fit one call, and it keyed resumption on "a
     reply happened." Fix (both required): present **one question per row**, looped until every
-    row is asked — never hardcode the cap — and gate the build on a **printed checklist of every
+    row is resolved (a row skipped by its own written condition is resolved; a skip resolves no
+    other row) — never hardcode the cap — and gate the build on a **printed checklist of every
     row's resolved value**, not on the first reply (§6.0). "Asked some, then built" is a defect.
 
 ---
@@ -550,7 +559,7 @@ Fix, don't annotate.
 
 **Decision Ledger**
 - [ ] The spec opens with the `## 0. Before you build — REQUIRED` gate (§6.0), positioned **before** the Decision Ledger.
-- [ ] The gate is imperative and addressed to the build agent, and instructs it to present **every** Ledger row, labeling the option the course actually used **"(course default)"** — on a substitution row the course-faithful Options entry, never the substituted Default — and marking the row's Default "(Recommended)", merged into "(Recommended - course default)" when they are the same option, with the gate saying once that "(Recommended)" was fixed when the spec was written and does not reflect the person's setup (§6.0).
+- [ ] The gate is imperative and addressed to the build agent, and instructs it to present **every** Ledger row except one skipped by its own "Applies only when" condition (no other skip), labeling the option the course actually used **"(course default)"** — on a substitution row the course-faithful Options entry, never the substituted Default — and marking the row's Default "(Recommended)", merged into "(Recommended - course default)" when they are the same option, with the gate saying once that "(Recommended)" was fixed when the spec was written and does not reflect the person's setup (§6.0).
 - [ ] No option anywhere in the spec — gate steps or Ledger Options cells — carries a bare "(default)" label (§6.0, §5.5 Options).
 - [ ] The gate opens with the **recommended-baseline / customize express-lane question**, the baseline path named and explained per §6.0 — never presented as the course's own configuration; the baseline path skips the per-row questions but still prints and writes the full resolved-decision checklist.
 - [ ] The gate is a **hard stop**: it tells the build agent that presenting the decisions ends its turn — write no code and touch no file — with **no "proceed if there's no response" (or "proceed if non-interactive") escape clause** (§12.10).
@@ -571,7 +580,7 @@ Fix, don't annotate.
 - [ ] Each heavy-dependency row records which §3 dependency-precedence branch was taken and why; the course's own technology appears in that row's Options; a branch-1 substitution's default note shows how "lightest" was determined (§3).
 - [ ] Heavy options carry their setup weight inline in their own Options entries (§5.5 Options).
 - [ ] Every Options entry starts with its id (`<row id><letter>`), is one concrete build, and carries no rule or criterion ids; every "Applies only when" names a row above it and option ids that exist (§5.5).
-- [ ] §7's "Tests by option" table has one line per non-Default option, names every id exactly, and its "Rows that stop mattering" match the rows' conditions (§5.5, §6 template).
+- [ ] §7's "Tests by option" table has one line per non-Default option, and names every id exactly (§6 template).
 - [ ] On every row the Default's cell carries "(Recommended)" (merged "(Recommended - course default)" when it is the course's choice), and on every row where the course made a choice, the option it used carries "(course default)" in its own cell; when the course used a shipped-code and a shown-only realization, the shipped-code one carries it and the shown-only one says so (§5.5 Options).
 - [ ] No "current model" names are baked into defaults or Options — providers/protocols and the course's own models only; model currency is left to the build agent's step-5 checklist line (§6.0), and CTX-D carries the request-parameter-compatibility perishables where the era implies them (§7).
 - [ ] Every row whose Default is the course's example realization (demo data, example tools) says so in its Decision/Default cell and marks it as expected to be swapped when the learner's project differs.

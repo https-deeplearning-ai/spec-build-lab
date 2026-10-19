@@ -25,8 +25,6 @@ Checks (all over the whole file, by regex over Markdown — tolerant, not a pars
                and carries no R<n> / AC<n> ids
   COND         every "Applies only when <row> is <id>" names a row above it and that row's option ids
   TESTOPT      §7's "Tests by option" table has one line per non-Default option id, and no other ids
-  MOOT         a row conditioned on an earlier row is listed as moot by that row's excluded options,
-               and every moot row below its option carries the matching condition
 
 Stdlib only. Written for the spec-build-lab guide's section template; it degrades to fewer
 checks (never false confidence) when a section is missing.
@@ -239,7 +237,7 @@ def main(argv: list[str]) -> int:
             elif not wanted or not wanted <= set(opt_ids.get(target, [])):
                 add(ln, "COND", f"{rid}: condition names option ids {sorted(wanted)} that {target} does not have")
 
-    # ---- TESTOPT / MOOT ------------------------------------------------------------
+    # ---- TESTOPT ------------------------------------------------------------------
     all_opts = {o: rid for rid, os in opt_ids.items() for o in os}
     table: dict[str, tuple[int, str]] = {}
     t_start = next((i for i, l in enumerate(lines) if re.search(r"tests by option", l, re.I)
@@ -256,7 +254,7 @@ def main(argv: list[str]) -> int:
                     cells = [c.strip() for c in l.strip().strip("|").split("|")]
                     m = re.search(r"\b([A-Z][A-Z-]*\d+[a-z])\b", cells[0])
                     if m:
-                        table[m.group(1)] = (i + 1, cells[3] if len(cells) > 3 else "")
+                        table[m.group(1)] = (i + 1, "")
                 elif l.strip() and started:
                     break
                 i += 1
@@ -269,19 +267,6 @@ def main(argv: list[str]) -> int:
                 for o in os:
                     if o != default_opt.get(rid) and o not in table:
                         add(row_ids[rid], "TESTOPT", f"{o} has no line in the Tests by option table")
-            for rid, (target, wanted) in conds.items():
-                for o in opt_ids.get(target, []):
-                    if o not in wanted and o in table and not re.search(rf"\b{re.escape(rid)}\b", table[o][1]):
-                        add(table[o][0], "MOOT", f"{rid} applies only when {target} is {'/'.join(sorted(wanted))}, but {o}'s line does not list {rid}")
-            for o, (ln, moot) in table.items():
-                src = all_opts.get(o)
-                if not src:
-                    continue
-                for z in re.findall(r"\b([A-Z][A-Z-]*\d+)\b", moot):
-                    if z in row_ids and row_ids[z] > row_ids[src]:
-                        c = conds.get(z)
-                        if not c or c[0] != src or o in c[1]:
-                            add(ln, "MOOT", f"{o} makes {z} moot, but {z} has no matching \"Applies only when {src} is …\"")
 
     # ---- XREF over the whole file --------------------------------------------------
     ctx_entries: set[str] = set()
