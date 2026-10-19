@@ -21,7 +21,8 @@ one, so **this is an input to that rule, not an override of it.** The mechanism 
 - Explanation in prose *above* the fence; the fence is **last** in the message; one option per
   line; the turn ends there.
 - A line `**Question N of M — <decision>**` before the fence renders a question box. Use it, so
-  learner and agent can both see nothing was skipped.
+  learner and agent can both see every row is accounted for: M counts every question the gate
+  could ask, and a row skipped by its own condition keeps its number in its one-line skip note.
 - A click sends the option line verbatim; a typed answer naming an option counts identically.
   The generated spec must say so — in the `[environment]` paragraphs OVERRIDE 4 lets the spec
   append under §0's steps, never by editing the template's own lines.
