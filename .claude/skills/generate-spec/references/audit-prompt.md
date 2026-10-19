@@ -33,8 +33,8 @@ Run every check on the whole file, not a sample:
     the row defines AND matches the guide's definition of that class;
 (j) the four-way encoding for every CTX-B entry (rule, AC, fixture, CTX);
 (k) every Options entry satisfies its own row's Invariant, and no option on one row makes
-    another row's Invariant false; every non-default Options entry is a short name plus a plain-language
-    description of its effect (no rule or criterion ids), and §7's "Tests by option" table gives its retired and altered
+    another row's Invariant false; every non-default Options entry says in plain words what it gives up and which later
+    questions stop mattering (no rule or criterion ids), and §7's "Tests by option" table gives its retired and altered
     rules and ACs and the rows it makes moot, every id existing;
 (l) no Options entry is a side the row's own Trade-off says the course warned against;
 (m) contract fields vs what ACs assert;
