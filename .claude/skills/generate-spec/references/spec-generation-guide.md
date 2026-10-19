@@ -144,12 +144,11 @@ The **Decision Ledger** is the spec's second section (§6, right after the §0 p
 - **Invariant** — what MUST hold to preserve the taught pattern. For learner-context rows it carries only the pattern's capability requirements on that dimension (§3) — typically empty for project/data/goal/scope-boundary, never invented. Write it precisely: this field doubles as the contract a future integration must satisfy.
 - **Options** — realizations that satisfy the invariant, from course-faithful to tech-agnostic. The course's own technology always appears here even when it is not the default — and when it is not the default (a §3 branch-1 substitution), tag that entry **"(course default)"** in the cell text, so the §6.0 gate's labeling duty is deterministic: the build agent must never have to infer which option the course actually used. Never tag an Options entry with a bare "(default)": the Default column carries default-ness, and §6.0's two labels (provenance and recommendation) are the only sanctioned option labels. An option whose realization requires provisioning the learner may not have — a paid key, an admin-installed service, a large download — states that setup weight **inline in its own Options entry** (as prose inside or after its label, e.g. "(course default — heavy setup: …)"), not only in the Trade-off cell: the gate presents Options at choice time, and a weight buried in a cell the learner is not shown is a surprise deferred, not disclosed.
 
-  **Every non-default option says what choosing it changes.** In its own Options entry, an option other than the Default lists:
-  - the business rules and acceptance criteria that **no longer apply** if it is chosen;
-  - those that **still apply but change**, and how;
-  - the other Ledger rows that **stop mattering**.
+  **Every non-default option says what choosing it changes — briefly in the option, exactly in §7.**
+  - **In its Options entry**, which the gate shows the learner: a short name (at most five words, not counting its labels — a question tool shows it as the choice), then one plain sentence of at most 25 words saying what the learner gains or loses, plus any setup-weight note the rule above requires. Example: "Conversation memory only — keeps chat history; no knowledge base, summaries or tool search; about 20 tests no longer apply."
+  - **In §7's "Tests by option" table**, one line per non-default option: the business rules and acceptance criteria that no longer apply, those that still apply but change (and how), the Ledger rows that stop mattering, and whether it switches off criteria the offline suite needs. The build agent and the evals read this table; the gate does not show it.
 
-  If it switches off criteria the offline suite needs in order to pass, it says so. Example: "Manual only — retires the automatic halves of AC20 and AC21." (Left unstated, options that remove a component listed these consequences in some generations and not others — one said only "dropping a type removes its context segment, its persistence rules, and its ACs" — so a learner who customized got a spec whose completion gate moved silently.)
+  (Left unstated, options that remove a component listed these consequences in some generations and not others — one said only "dropping a type removes its context segment, its persistence rules, and its ACs" — so a learner who customized got a spec whose completion gate moved silently. A first version of this rule put the full id lists in the Options cell, which the gate shows the learner word for word.)
 - **Default (course-derived)** — **exactly one** buildable target (§3). For heavy-dependency rows, resolved by the §3 dependency precedence, with the branch stated. When the default is the course's *example realization* — a domain-specific instantiation (its demo data, its example tools) rather than the pattern itself — the Decision or Default cell must say so and mark it as expected to be swapped when the learner's project (the project row) differs: the invariant, not the example, is what must survive.
 - **Trade-off** — what switching costs (carries the course's *spoken* trade-offs: re-embedding, re-tuning, lateral-or-worse results).
 - **Owner** — a label only: `learner`, `course`, or `course+learner` (§9). Metadata; never gates behavior.
@@ -310,7 +309,10 @@ The spec MUST contain these core sections, in this order (this is the seven-sect
  abstain; mutating fixtures to pass a test; committing secrets.>
 
 ## 7. Test Plan & Self-Verification
-<Real, runnable commands. Then an instruction: the building agent MUST report results
+<Real, runnable commands. A "Tests by option" table (§5.5 Options): for each non-default
+ Ledger option, the rules and criteria it retires or alters and the rows it makes moot; a build
+ that took that option reports the retired criteria as not applicable, not as failures. Then an
+ instruction: the building agent MUST report results
  per acceptance criterion with cited evidence (test output, file paths).
  "Should pass" / "looks correct" are treated as failures — they mean it wasn't run.>
 
@@ -559,7 +561,7 @@ Fix, don't annotate.
 - [ ] Row order follows the fixed grouping (learner → design as one group, argued and structural interleaved → realization → contradicted; pipeline order within groups).
 - [ ] Each heavy-dependency row records which §3 dependency-precedence branch was taken and why; the course's own technology appears in that row's Options, tagged "(course default)" when it is not the Default; a branch-1 substitution's default note shows how "lightest" was determined (§3).
 - [ ] Heavy options carry their setup weight inline in their own Options entries (§5.5 Options).
-- [ ] Every non-default Options entry names the business rules and acceptance criteria it retires or alters (and how) and the Ledger rows it makes moot; one that switches off criteria the offline suite needs says so (§5.5 Options).
+- [ ] Every non-default Options entry is a name of at most five words plus one effect sentence of at most 25 words (plus any setup-weight note), with no id lists; §7's "Tests by option" table gives each non-default option's retired and altered rules and criteria, the rows it makes moot, and whether it switches off offline-suite criteria (§5.5 Options).
 - [ ] No "current model" names are baked into defaults or Options — providers/protocols and the course's own models only; model currency is left to the gate-time "(Recommended)" flag (§6.0), and CTX-D carries the request-parameter-compatibility perishables where the era implies them (§7).
 - [ ] Every row whose Default is the course's example realization (demo data, example tools) says so in its Decision/Default cell and marks it as expected to be swapped when the learner's project differs.
 - [ ] No row's Default or Invariant restates another row's decided value; cross-references only (§5.5).
