@@ -32,9 +32,11 @@ Run every check on the whole file, not a sample:
 (i) the scope-boundary row's four requirements; every Not Included tag is one of the classes
     the row defines AND matches the guide's definition of that class;
 (j) the four-way encoding for every CTX-B entry (rule, AC, fixture, CTX);
-(k) every Options entry satisfies its own row's Invariant, and no option on one row makes
-    another row's Invariant false; every row an option makes moot carries the matching
-    "Applies only when";
+(k) every Options entry satisfies its own row's Invariant; no row lists or counts a part that an
+    option on a row above it removes, outside its Trade-off cell and its Default's branch note;
+    every cell of a row above an option's row that lists a part the option removes is named in
+    that option's §7 line; every row below an option's row that the option makes moot carries
+    the matching "Applies only when";
 (l) no Options entry is a side the row's own Trade-off says the course warned against;
 (m) contract fields vs what ACs assert;
 (n) pairwise AC consistency: each AC's Given is true after the AC it builds on;
