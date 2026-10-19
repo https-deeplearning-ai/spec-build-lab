@@ -311,8 +311,9 @@ The spec MUST contain these core sections, in this order (this is the seven-sect
  Then a "Tests by option" table, one line per Options entry that is not its row's Default:
  | Option id | Rules and criteria that no longer apply | Rules and criteria that change (and how) | Offline-suite criteria switched off |
  Name every id exactly — never a summary ("its rules", "the related ACs"); "—" when none.
- Rows an option makes moot are not listed here: their "Applies only when" conditions (§5.5)
- carry that. A build that chose an option reports the
+ List every rule and criterion the option retires, including those of rows it makes moot —
+ a skipped row has no line of its own; the rows themselves are named by their "Applies only
+ when" conditions (§5.5). A build that chose an option reports the
  criteria it retires as not applicable, not as failures, and builds the changed ones as
  changed.>
 
