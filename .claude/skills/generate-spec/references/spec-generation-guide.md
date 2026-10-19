@@ -365,8 +365,8 @@ not because they are the right choice for this person's project.
    "(course default)" to the option the course actually used — on a substitution row that is
    the course-faithful Options entry, not the Ledger Default. Append "(Recommended)" to the
    row's Default — the option the recommended baseline build takes, chosen when this spec was
-   written as the most efficient way to build the course's pattern; say once, before the first
-   question, that it does not reflect this person's setup. When the Default IS the course's
+   written as the most efficient way to build the course's pattern; say once, before presenting
+   the first Ledger row, that it does not reflect this person's setup. When the Default IS the course's
    actual choice, merge the labels into "(Recommended - course default)". "(Recommended)" never
    removes or moves the "(course default)" label, and no option is ever
    labeled with a bare "(default)" — these two labels and their merged form are the only
@@ -384,14 +384,16 @@ not because they are the right choice for this person's project.
 5. **Before the first line of code, print a resolved-decision checklist and write it to
    `resolved-decisions.md`** — every Ledger row with its final value (the user's choice, or its
    Ledger default), each line carrying a deviation mark: `= course choice`, or
-   `≠ course choice (course used: <option>)`. If the build calls a language model, add one line
-   naming the current model you will use for each model role, from the Default provider; the
-   person's confirmation of the checklist confirms it. The file records what this build was built from;
+   `≠ course choice (course used: <option>)`, or `no course choice` on a row where the course
+   made no choice (the scope boundary). If the build calls a language model, add one line per
+   model role the chosen options use, naming the current model you will use from the Default
+   provider — one you know that provider serves; if you cannot tell, say so and ask the person
+   to name one. The file records what this build was built from;
    nothing reads it back — a later build re-runs this gate. If the baseline path was chosen,
    walk the person through every `≠` row — the course's actual choice, and why this build's
    default substitutes it (the row's Trade-off/branch note says why) — before building. Begin
-   implementation ONLY after this checklist is shown and written; if any row is unresolved you
-   are not done — return to step 3. Build on the checklist's values.
+   implementation ONLY after this checklist is shown, written, and confirmed by the person; if
+   any row is unresolved you are not done — return to step 3. Build on the checklist's values.
 ```
 
 ---
