@@ -385,8 +385,8 @@ not because they are the right choice for this person's project.
    Option or move the "(course default)" label because of an earlier answer, and never skip a row
    because an earlier answer seems to make it irrelevant. The only skip: a row whose Decision
    says "Applies only when `<row>` is `<id>`" is skipped when the answer on that row is none of
-   those ids, or that row was itself skipped. Say so in one line (e.g. "D4 is skipped: it applies
-   only when D2 is D2a or D2b; D2 = D2c") and go on to the next row — a skip resolves that row
+   those ids, or that row was itself skipped. Say so in one line (e.g. "<row> is skipped: it applies
+   only when <row> is <id>; <row> = <answer>") and go on to the next row — a skip resolves that row
    only. If the person changes an earlier answer, re-check every condition that names it. Put
    any realizations beyond the tool's option slots (or the free-form case) under the tool's
    "Other"/free-text. Ask about every row that is not skipped this way. A per-call item limit is NEVER a reason to drop,
