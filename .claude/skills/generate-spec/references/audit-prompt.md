@@ -34,7 +34,7 @@ Run every check on the whole file, not a sample:
 (j) the four-way encoding for every CTX-B entry (rule, AC, fixture, CTX);
 (k) every Options entry satisfies its own row's Invariant, and no option on one row makes
     another row's Invariant false; every row an option makes moot carries the matching
-    "Applies only when" (or depends on a later row), and §7's "Tests by option" table agrees;
+    "Applies only when";
 (l) no Options entry is a side the row's own Trade-off says the course warned against;
 (m) contract fields vs what ACs assert;
 (n) pairwise AC consistency: each AC's Given is true after the AC it builds on;
