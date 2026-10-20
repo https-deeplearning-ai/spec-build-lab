@@ -101,7 +101,7 @@ the six against the Resolutions in ADD 1 and emit the resolution table into the 
 here, and the "(course default)" label never moves. But an Option the learner **cannot take in
 this lab** is not presented as a choice. Untakeable means: it needs a credential or account the
 runtime file says the lab does not supply and the spec may never ask for; or it makes the offline
-suite — the completion gate — wait on a person. Two cases:
+suite — the completion gate — wait on a person or depend on a live model's output. Two cases:
 
 - **Some alternatives remain takeable:** the untakeable Option leaves the Options cell; its
   substance stays in the Trade-off cell as narrative, and §1 Not Included carries it as
@@ -189,11 +189,13 @@ Getting this wrong deletes a legitimate learner decision: a course whose models 
 encoders has a real choice here, with a real invariant and a real switching cost (changing one
 means re-embedding every stored item).
 
-**The acceptance-suite model row is course-owned and stays.** Base §3's "when the model itself
-is the keyed dependency" row (which model the *offline acceptance suite* runs against) is a
-`realization` row, not the learner's model/provider dimension; CONSTRAINED resolves the latter
-only. The row stays in the Ledger with its scripted stand-in Default; its live Option notes that
-the lab supplies the key, so choosing it costs no setup here.
+**The acceptance-suite model row resolves through OVERRIDE 2's untakeable rule.** Base §3's
+"when the model itself is the keyed dependency" row (which model the *offline acceptance suite*
+runs against) is a `realization` row, not the learner's model/provider dimension; CONSTRAINED
+resolves the latter only. Its live Option would make completion depend on a live model's output,
+so no alternative remains takeable and the row leaves through the Environment Resolutions table.
+Because the lab supplies the key, the `live` criteria still run after the offline suite, as a pass
+that never gates completion.
 
 **The platform's model set is not enumerated** in the runtime file, because it changes. The spec
 declares one environment variable per model role (names of its choosing, listed in §2) and says
