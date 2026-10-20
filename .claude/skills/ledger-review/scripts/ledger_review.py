@@ -11,8 +11,17 @@
       slot filled, no internal term in any slot. --allow-unmarked skips the hidden <!-- --> markers
       (only for comparing against a comment written before the markers existed).
   previous <repo-relative spec path> [--exclude-pr N]
-      Prints the most recent earlier review comment for this spec file, found through the merged
-      PRs that touched it; prints nothing if there is none.
+      Prints the most recent earlier review for this spec file (one PR comment, or the review
+      comments of one review joined in order), found through the merged PRs that touched it;
+      prints nothing if there is none.
+  split <draft.md> <spec.md> --path P --commit SHA --diff PR.diff --out DIR
+      Turns a checked draft into what gets posted. When the Ledger table's header lines and every
+      row line are in the PR's diff: DIR/review.json, one review with the header comment on the
+      table's header lines and one comment per decision on its row (a second spec file appends to
+      the same review.json). Otherwise: DIR/file-comment-<file>.json, the whole draft as one comment
+      on the file.
+  verify <PR> <review id> <review.json>
+      Fails unless every comment of the review sits as a thread on the lines review.json asked for.
 
 Stdlib only. Parsing follows the spec-generation guide's Decision Ledger and §7 "Tests by option"
 formats; it degrades loudly (exit 2) when a spec does not have them.
@@ -54,7 +63,8 @@ FOOTER = """---
 ### Known open points (⟦OPEN-NOTE: e.g. already flagged; tracked on #N⟧)
 ⟦OPEN: numbered list, one point per line⟧
 
-*Reviewers: comment with the Ref (for example "{example}: …").*"""
+*Reviewers: reply in the thread on each decision's row (for example under {example}); use this thread for the review as a whole.*"""
+FILE_FOOTER = '*Reviewers: reply in this thread, starting with the Ref (for example "{example}: …").*'
 
 
 def cells(line: str) -> list[str]:
@@ -274,12 +284,96 @@ def previous(args) -> None:
     for pr in re.findall(r"Merge pull request #(\d+)", log):
         if args.exclude_pr and pr == str(args.exclude_pr):
             continue
+        res = subprocess.run(["gh", "api", f"repos/{{owner}}/{{repo}}/pulls/{pr}/comments", "--paginate",
+                              "-q", f'.[] | select(.path == "{args.path}" and .in_reply_to_id == null) | [.pull_request_review_id, .id, .body]'],
+                             capture_output=True, text=True)
+        found = [json.loads(l) for l in res.stdout.splitlines() if l.strip()]
+        found = [c for c in found if "<!-- ledger-review " in c[2]]
+        if found:
+            last = max(c[0] for c in found)
+            # "---" between comments ends each row's section, as in a single PR comment
+            print("\n\n---\n\n".join(c[2].rstrip() for c in sorted(c for c in found if c[0] == last)))
+            return
         res = subprocess.run(["gh", "api", f"repos/{{owner}}/{{repo}}/issues/{pr}/comments", "--paginate",
                               "-q", ".[].body"], capture_output=True, text=True)
         for body in res.stdout.split("<!-- ledger-review v1 file=")[1:]:
             if body.startswith(args.path + " "):
                 print("<!-- ledger-review v1 file=" + body.rstrip())
                 return
+
+
+def diff_lines(diff: str, path: str) -> set[int]:
+    """New-side line numbers of `path` that the PR diff shows (added or context): the lines a review comment can sit on."""
+    out, cur, n = set(), None, 0
+    for l in diff.splitlines():
+        if l.startswith("diff --git "):
+            cur = l.split(" b/", 1)[1] if " b/" in l else None
+        elif cur == path and l.startswith("@@"):
+            n = int(re.match(r"@@ -\S+ \+(\d+)", l).group(1))
+        elif cur == path and n and l[:1] in (" ", "+") and not l.startswith("+++"):
+            out.add(n)
+            n += 1
+    return out
+
+
+def split(args) -> None:
+    draft = Path(args.draft).read_text().rstrip("\n").split("\n")
+    spec = Path(args.spec).read_text(encoding="utf-8").splitlines()
+    rows = parse(Path(args.spec))["rows"]
+    head = rows[0]["line"] - 1
+    while head > 1 and spec[head - 2].lstrip().startswith("|"):
+        head -= 1
+    anchors = [head, head + 1] + [r["line"] for r in rows]
+    shown = diff_lines(Path(args.diff).read_text(), args.path)
+    o = Path(args.out)
+    o.mkdir(parents=True, exist_ok=True)
+    missing = [a for a in anchors if a not in shown]
+    if missing:
+        body = "\n".join(re.sub(r"^\*Reviewers: .*\(for example under (\S+)\);.*$",
+                                lambda m: FILE_FOOTER.format(example=m.group(1)), l) for l in draft)
+        out = o / f"file-comment-{Path(args.path).name}.json"
+        out.write_text(json.dumps({"body": body, "commit_id": args.commit, "path": args.path, "subject_type": "file"}))
+        print(f"split: file comment ({len(missing)} of {len(anchors)} Ledger lines not in the diff, e.g. line {missing[0]}) -> {out}")
+        return
+    marks = [i for i, l in enumerate(draft) if l.startswith("<!-- ledger-review row=")]
+    sep = max(i for i, l in enumerate(draft) if l == "---")
+    header = "\n".join(draft[:marks[0]]).rstrip("-\n ") + "\n\n" + "\n".join(draft[sep + 1:]).strip()
+    comments = [{"path": args.path, "start_line": head, "start_side": "RIGHT", "line": head + 1, "side": "RIGHT", "body": header}]
+    for k, m in enumerate(marks):
+        body = "\n".join(draft[m:marks[k + 1] if k + 1 < len(marks) else sep]).strip()
+        rid, line = re.search(r"^### \[(\S+?)\]\([^)]*#L(\d+)\)", body, re.M).groups()
+        if not spec[int(line) - 1].startswith(f"| {rid} |") and not spec[int(line) - 1].startswith(f"| **{rid}** |"):
+            sys.exit(f"split: {rid}'s link points at line {line}, which is not its row")
+        comments.append({"path": args.path, "line": int(line), "side": "RIGHT", "body": body})
+    out = o / "review.json"
+    review = json.loads(out.read_text()) if out.exists() else {"commit_id": args.commit, "comments": []}
+    if review["commit_id"] != args.commit:
+        sys.exit(f"split: {out} is for commit {review['commit_id']}, not {args.commit}")
+    review["comments"] += comments
+    out.write_text(json.dumps(review))
+    print(f"split: threads, {len(comments)} comments for {args.path} (lines {head}-{rows[-1]['line']}) -> {out}")
+
+
+def verify(args) -> int:
+    q = ('query($n:Int!){repository(owner:"%s",name:"%s"){pullRequest(number:$n){reviewThreads(first:100){nodes'
+         '{path startLine line comments(first:1){nodes{pullRequestReview{databaseId}}}}}}}}')
+    repo = subprocess.run(["gh", "repo", "view", "--json", "owner,name", "-q", '.owner.login + " " + .name'],
+                          capture_output=True, text=True).stdout.split()
+    res = subprocess.run(["gh", "api", "graphql", "-F", f"n={args.pr}", "-f", "query=" + q % tuple(repo)],
+                         capture_output=True, text=True)
+    nodes = json.loads(res.stdout)["data"]["repository"]["pullRequest"]["reviewThreads"]["nodes"]
+    got = sorted((t["path"], t["startLine"] or t["line"], t["line"]) for t in nodes
+                 if t["comments"]["nodes"] and (t["comments"]["nodes"][0]["pullRequestReview"] or {}).get("databaseId") == args.review)
+    want = sorted((c["path"], c.get("start_line", c["line"]), c["line"]) for c in json.loads(Path(args.plan).read_text())["comments"])
+    for w in want:
+        if w not in got:
+            print(f"FAIL no thread at {w[0]} lines {w[1]}-{w[2]}")
+    for g in got:
+        if g not in want:
+            print(f"FAIL unexpected thread at {g[0]} lines {g[1]}-{g[2]}")
+    ok = got == want
+    print(f"verify: {'PASS' if ok else 'FAIL'} ({sum(w in got for w in want)} of {len(want)} threads in place)")
+    return 0 if ok else 1
 
 
 def main() -> int:
@@ -289,12 +383,20 @@ def main() -> int:
     a.add_argument("--name"); a.add_argument("--link-base"); a.add_argument("--previous")
     b = sub.add_parser("check"); b.add_argument("skeleton"); b.add_argument("draft"); b.add_argument("--allow-unmarked", action="store_true")
     c = sub.add_parser("previous"); c.add_argument("path"); c.add_argument("--exclude-pr", type=int)
+    d = sub.add_parser("split"); d.add_argument("draft"); d.add_argument("spec"); d.add_argument("--path", required=True)
+    d.add_argument("--commit", required=True); d.add_argument("--diff", required=True); d.add_argument("--out", required=True)
+    e = sub.add_parser("verify"); e.add_argument("pr", type=int); e.add_argument("review", type=int); e.add_argument("plan")
     args = ap.parse_args()
     if args.cmd == "skeleton":
         skeleton(args)
         return 0
     if args.cmd == "check":
         return check(args)
+    if args.cmd == "split":
+        split(args)
+        return 0
+    if args.cmd == "verify":
+        return verify(args)
     previous(args)
     return 0
 
