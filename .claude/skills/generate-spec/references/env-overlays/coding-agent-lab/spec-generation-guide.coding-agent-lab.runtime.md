@@ -64,7 +64,8 @@ writes the checklist.
 names — `OPENAI_API_KEY` with `OPENAI_BASE_URL`, and `ANTHROPIC_API_KEY` with
 `ANTHROPIC_BASE_URL` — each base URL pointing at the platform proxy. If the built app needs an
 LLM, the spec says: read exactly these variables, use a platform model, **never ask the learner
-for a key**, never hardcode one, and never guess at other variable names.
+for a key**, never hardcode one, and never guess at other variable names. **Nothing else is
+supplied:** no other service key or account. An option that needs one is untakeable here.
 
 **What it does NOT fix:** any model the course's own pipeline uses — embedding, speech, vision.
 Those remain a genuine decision with a real invariant and a real switching cost. If the course's
