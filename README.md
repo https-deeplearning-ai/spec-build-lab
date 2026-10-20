@@ -39,6 +39,7 @@ spec-build-lab/
 │       │   └── scripts/extract.py
 │       ├── eval-spec-vs-build/        # did the build follow spec.md?
 │       ├── eval-materials-vs-build/   # how does the build align with / diverge from the course?
+│       ├── ledger-review/             # plain-language Decision Ledger comment on a spec PR (owner runs /ledger-review <PR>)
 │       └── promote-to-guide/          # not maintained; don't use unless the repo owner asks
 ├── environments/                      # one profile per build target, shared across courses
 │   └── coding-agent-lab.md            # source doc the matching overlay was distilled from
