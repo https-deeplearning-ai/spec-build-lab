@@ -1,4 +1,4 @@
-<!-- Reference example for /ledger-review: the review comment posted on PR #63 (agent-memory spec, guide 5caba53), with two cells standardized (the D1b separator and the D4b label). It restates only that spec's Ledger. -->
+<!-- Reference example for /ledger-review: the review comment posted on PR #63 (agent-memory spec, guide 5caba53), with two cells standardized (the D1b separator and the D4b label) and the closing line updated for per-decision threads. It restates only that spec's Ledger. -->
 ## Decision Ledger for review: agent-memory
 
 A plain-language version of the spec's Decision Ledger, for review. Each heading links to its row in this PR's `spec.md`.
@@ -137,5 +137,5 @@ Some questions are asked only after a certain earlier answer; they say so.
 2. **RR2's rule** says every search tool saves its results, but the paper *search* tool only lists candidates and saves nothing (the *fetch* tool does).
 3. **D2a** doesn't list which tools get rewritten; it points to the spec's test section for that.
 
-*Reviewers: comment with the Ref (for example "D1b: …").*
+*Reviewers: reply in the thread on each decision's row (for example under D1b); use this thread for the review as a whole.*
 

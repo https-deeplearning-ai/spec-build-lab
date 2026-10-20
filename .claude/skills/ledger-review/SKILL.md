@@ -1,6 +1,6 @@
 ---
 name: ledger-review
-description: Posts a plain-language review comment on a spec pull request, listing every Decision Ledger decision and option so a curriculum product manager can review them. Run only when the user types /ledger-review <PR number>.
+description: Posts a plain-language review on a spec pull request, one thread per Decision Ledger decision on its row, listing every option so a curriculum product manager can review them. Run only when the user types /ledger-review <PR number>.
 disable-model-invocation: true
 argument-hint: <PR number>
 allowed-tools: [Read, Write, Edit, Bash]
@@ -8,8 +8,12 @@ allowed-tools: [Read, Write, Edit, Bash]
 
 # ledger-review
 
-Writes one review comment per spec file a pull request changes: every Decision Ledger row as a short
+Writes a review for each spec file a pull request changes: every Decision Ledger row as a short
 section, every option as a table row, in plain language a non-engineer can review and comment on.
+Each section is posted as a review comment on its row of the Ledger table, so each decision gets its
+own thread; a header comment on the table's header lines carries the legend and the open points.
+When part of the Ledger is not in the PR's diff, GitHub cannot take a comment there, and the whole
+review goes up as one comment on the file instead.
 
 The comment has two kinds of content, and they are produced differently:
 - **Fixed and factual parts** — the header, legend, headings and their links, the table columns,
@@ -24,15 +28,17 @@ The comment has two kinds of content, and they are produced differently:
 `$S` below is `"$CLAUDE_PROJECT_DIR/.claude/skills/ledger-review/scripts/ledger_review.py"`. Work in a
 fresh scratch folder (`W=$(mktemp -d)`); write nothing into the repo.
 
-1. **Find the specs.** `gh pr view <N> --json headRefOid,title,body,url` and
-   `gh pr diff <N> --name-only`. Keep the changed files matching `courses/<course>/spec.md` or
-   `courses/<course>/spec.<variant>.md`. If there are none, say so and stop. Do steps 2–7 once per file.
+1. **Find the specs.** `gh pr view <N> --json headRefOid,title,body,url`,
+   `gh pr diff <N> --name-only` and `gh pr diff <N> > "$W/pr.diff"`. Keep the changed files matching
+   `courses/<course>/spec.md` or `courses/<course>/spec.<variant>.md`. If there are none, say so and
+   stop. Do steps 2–7 once per file, then step 8 once.
 2. **Get the spec at the PR's head commit.** `git fetch origin pull/<N>/head` then
    `git show <headRefOid>:<path> > "$W/<path's file name>"` (keep the file name: the header shows it).
-3. **Previous review.** `python3 $S previous <path> --exclude-pr <N> > "$W/prev.md"`. If the file is
-   non-empty, sections whose spec text is unchanged are copied from it word for word.
+3. **Previous review.** `python3 $S previous <path> --exclude-pr <N> > "$W/prev.md"` (it finds either
+   kind: a review's comments or a single PR comment). If the file is non-empty, sections whose spec
+   text is unchanged are copied from it word for word.
 4. **Skeleton.**
-   `python3 $S skeleton "$W/<file>" --out "$W/out" --name "<name>" --link-base "https://github.com/<owner>/<repo>/blob/<headRefOid>/<path>"`
+   `python3 $S skeleton "$W/<file>" --out "$W/out" --path <path> --name "<name>" --link-base "https://github.com/<owner>/<repo>/blob/<headRefOid>/<path>"`
    plus `--previous "$W/prev.md"` when step 3 found one. `<name>` is the PR title's text before its
    first ":" (e.g. `support-bot` for "support-bot: adopt …"); without a ":", the course folder name. Read `out/skeleton.md` and
    `out/sources.md`.
@@ -41,8 +47,23 @@ fresh scratch folder (`W=$(mktemp -d)`); write nothing into the repo.
    outside the slots, and keep the `<!-- ledger-review … -->` lines.
 6. **Check.** `python3 $S check "$W/out/skeleton.md" "$W/draft.md"` until it prints PASS. Then reread
    every slot against its source: each claim must be in the spec; nothing is added.
-7. **Show, then post.** Show the user the draft. Post only after they say so:
-   `gh pr comment <N> --body-file "$W/draft.md"`. Report the comment's URL.
+7. **Split.** `python3 $S split "$W/draft.md" "$W/<file>" --path <path> --commit <headRefOid> --diff "$W/pr.diff" --out "$W/post"`.
+   It prints `threads` (the comments go into `post/review.json`; a second spec file appends to it,
+   because GitHub allows one pending review per person per PR) or `file comment` (the whole draft
+   goes into `post/file-comment-<file>.json`, because part of the Ledger is not in the diff).
+8. **Show, then post.**
+   - **Threads:** create the review as pending, which only the user can see:
+     `gh api -X POST repos/{owner}/{repo}/pulls/<N>/reviews --input "$W/post/review.json" --jq .id`.
+     Then `python3 $S verify <N> <review id> "$W/post/review.json"` must print PASS; if it fails,
+     delete the pending review (`gh api -X DELETE repos/{owner}/{repo}/pulls/<N>/reviews/<review id>`)
+     and stop to report. Tell the user where to look: the PR's Files changed tab, "Load diff" on a
+     large spec, the Ledger table's lines; the review button shows the comment count. Submit only
+     after they say so: `gh api -X POST repos/{owner}/{repo}/pulls/<N>/reviews/<review id>/events -f event=COMMENT`.
+     If they don't want it, delete the pending review. Report the review's URL.
+   - **File comment:** GitHub cannot hold one as pending; it is public the moment it is posted.
+     Show the user the draft in the terminal and post only after they say so:
+     `gh api -X POST repos/{owner}/{repo}/pulls/<N>/comments --input "$W/post/file-comment-<file>.json"`.
+     Report the comment's URL.
 
 ## Writing rules for the slots
 
@@ -101,4 +122,5 @@ Per slot:
 
 - Don't type, reorder or reword any part outside a slot — a mismatch fails the check.
 - Don't read course materials; the spec is the only source.
-- Don't post before the user says so.
+- Don't submit the review or post a file comment before the user says so. Creating the pending
+  review is fine: only the user sees it, and it is how they see the review before it is public.
