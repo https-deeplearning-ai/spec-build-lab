@@ -61,6 +61,9 @@ Compare a recorded run's app against the spec snapshot it was built from.
      per the snapshot's "Tests by option" table; never listed under
      Missing. Criteria that table says change are judged in their changed
      form.
+   - **Adapted** — criteria the build reports as adapted. Judge whether
+     each adaptation follows the chosen options; never score it against
+     its Default form.
    - **Score** — your judgment on a 0–10 scale, with reasoning.
 6. **Report the path written, then hand off.** After echoing the report
    path, tell the user: "Spec-fidelity report written. The companion

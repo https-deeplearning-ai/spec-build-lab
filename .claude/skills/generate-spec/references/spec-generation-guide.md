@@ -147,7 +147,7 @@ The **Decision Ledger** is the spec's second section (§6, right after the §0 p
 - **Trade-off** — what switching costs (carries the course's *spoken* trade-offs: re-embedding, re-tuning, lateral-or-worse results).
 - **Owner** — a label only: `learner`, `course`, or `course+learner` (§9). Metadata; never gates behavior.
 
-**No cross-row restating.** A row's Default or Invariant must never restate another row's decided value (a `k`, a distance strategy) — cross-reference the owning row instead ("k: pinned in row N"). A restated value makes two rows read as the same question when the §0 gate presents them one at a time, and the copies drift when one row changes.
+**No cross-row restating.** A row's Decision, Invariant, Default and Options never restate another row's decided value (a `k`, a distance strategy) and never list or count the parts an earlier row's options keep or remove (which stores exist, which model roles or pipeline stages run) — unless that option skips the row by its condition, so the row is never asked under it; they name them through the owning row ("k: pinned in row N"; "each store row D1's answer keeps"). The §0 gate asks a row after the rows above it, and the checklist prints them side by side. A row above the removing row is asked first and cannot point ahead: it lists the parts as the Defaults build them, and the removing option's §7 "Tests by option" line names each of its cells that list a part the option removes. Only the Trade-off cell and the Default's branch note may name the course's parts, as a record of what the course did. A row whose whole subject an earlier option removes is skipped by its condition instead (next paragraph). A restated value also makes two rows read as the same question. (Left unstated, one generation's store row offered "holding all seven stores" to a learner who had chosen conversation-only memory, and another's test-suite row listed the stages its "no grader" option removes.)
 
 **One subject, one row.** When several operations or parts share one argued trade-off (e.g. the deterministic-vs-agent-triggered operation split, argued once for every operation it covers), they are one row with an option per operation or part — not a row each. Parts that each carry their own separate argument stay separate rows. A row that matters only under one option of another row (a grader's kind, under "a grader is present") merges into that row as further options, when the merged row stays a short list; never multiply combinations to force a merge.
 
@@ -309,7 +309,7 @@ The spec MUST contain these core sections, in this order (this is the seven-sect
  per acceptance criterion with cited evidence (test output, file paths).
  "Should pass" / "looks correct" are treated as failures — they mean it wasn't run.
  Then a "Tests by option" table, one line per Options entry that is not its row's Default:
- | Option id | Rules and criteria that no longer apply | Rules and criteria that change (and how) | Offline-suite criteria switched off |
+ | Option id | Rules and criteria that no longer apply | Rules, criteria and Ledger cells that change (and how) | Offline-suite criteria switched off |
  Name every id exactly — never a summary ("its rules", "the related ACs"); "—" when none.
  List every rule and criterion the option retires, including those of rows it makes moot —
  a skipped row has no line of its own; the rows themselves are named by their "Applies only
@@ -407,14 +407,19 @@ not because they are the right choice for this person's project.
    to name one, and if they do not, use the course's own model id from this spec for that role
    and say it may need changing. A missing model name never blocks confirming the checklist.
    For every chosen option that is not its row's Default, copy its line from §7's "Tests by
-   option" table into the checklist, so the criteria this build retires and changes are
-   recorded before the first line of code. The file records what this build was built from;
+   option" table into the checklist, so the criteria and Ledger cells this build retires or
+   changes are recorded before the first line of code. The file records what this build was built from;
    nothing reads it back — a later build re-runs this gate. If the baseline path was chosen,
    walk the person through every `≠` row — the course's actual choice, and why this build's
    default substitutes it (the row's Trade-off/branch note says why) — before building. Begin
    implementation ONLY after this checklist is shown, written, and confirmed by the person; if
    any row is unresolved you are not done — return to step 3. A `not applicable` line whose
-   quoted condition is not false is unresolved. Build on the checklist's values.
+   quoted condition is not false is unresolved. Build on the checklist's values. Leave out
+   every part of this spec that exists only for a rule a chosen option retires — its commands,
+   flags, settings, schema fields, fixtures and permission items. Where a chosen option changes
+   a criterion and its §7 line does not fully state the new form, adapt the criterion to the
+   chosen options and list it, with what you changed, under *Adapted* in the checklist and in
+   your final report.
 ```
 
 ---
@@ -584,7 +589,7 @@ Fix, don't annotate.
 - [ ] On every row the Default's cell carries "(Recommended)" (merged "(Recommended - course default)" when it is the course's choice), and on every row where the course made a choice, the option it used carries "(course default)" in its own cell; when the course used a shipped-code and a shown-only realization, the shipped-code one carries it and the shown-only one says so (§5.5 Options).
 - [ ] No "current model" names are baked into defaults or Options — providers/protocols and the course's own models only; model currency is left to the build agent's step-5 checklist line (§6.0), and CTX-D carries the request-parameter-compatibility perishables where the era implies them (§7).
 - [ ] Every row whose Default is the course's example realization (demo data, example tools) says so in its Decision/Default cell and marks it as expected to be swapped when the learner's project differs.
-- [ ] No row's Default or Invariant restates another row's decided value; cross-references only (§5.5).
+- [ ] No row's Decision, Invariant, Default or Options restates another row's value or lists or counts the parts an earlier row's options remove; a cell of a row above that does is named in that option's §7 line (§5.5).
 - [ ] Each row's Invariant is written precisely enough to serve as an integration contract (§ Integration note); learner-context rows carry only the pattern's §3 capability requirements (empty when the pattern demands nothing, never invented).
 - [ ] Every non-empty row Invariant is exercised by ≥1 AC, or the row states why it cannot be (§8).
 - [ ] Where several §5.5 routes applied to one row, the lower-precedence evidence (e.g. a contradiction behind a design-argued row) is still carried in that row's Default note or Trade-off — never dropped (§5.5).
