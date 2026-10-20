@@ -38,7 +38,7 @@ fresh scratch folder (`W=$(mktemp -d)`); write nothing into the repo.
    kind: a review's comments or a single PR comment). If the file is non-empty, sections whose spec
    text is unchanged are copied from it word for word.
 4. **Skeleton.**
-   `python3 $S skeleton "$W/<file>" --out "$W/out" --name "<name>" --link-base "https://github.com/<owner>/<repo>/blob/<headRefOid>/<path>"`
+   `python3 $S skeleton "$W/<file>" --out "$W/out" --path <path> --name "<name>" --link-base "https://github.com/<owner>/<repo>/blob/<headRefOid>/<path>"`
    plus `--previous "$W/prev.md"` when step 3 found one. `<name>` is the PR title's text before its
    first ":" (e.g. `support-bot` for "support-bot: adopt …"); without a ":", the course folder name. Read `out/skeleton.md` and
    `out/sources.md`.

@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """ledger_review.py — the deterministic half of /ledger-review.
 
-  skeleton <spec.md> --out DIR [--name NAME] [--link-base URL] [--previous FILE]
+  skeleton <spec.md> --out DIR [--path P] [--name NAME] [--link-base URL] [--previous FILE]
+      (--path: the spec's repo-relative path, recorded in the hidden marker so `previous` finds it)
       Writes DIR/skeleton.md (every fixed and factual part of the review comment, with ⟦…⟧ slots
       for the plain-language wording) and DIR/sources.md (the spec text each slot is written from).
       Sections whose source is unchanged since --previous (an earlier review comment) are copied
@@ -184,7 +185,7 @@ def skeleton(args) -> None:
     rows, tests = d["rows"], d["tests"]
     prev = previous_sections(Path(args.previous).read_text()) if args.previous else {}
     name = args.name or spec.parent.name
-    out = [f"<!-- ledger-review v1 file={args.spec} -->", HEADER.format(name=name, file=d["file"]).rstrip("\n"), ""]
+    out = [f"<!-- ledger-review v1 file={args.path or args.spec} -->", HEADER.format(name=name, file=d["file"]).rstrip("\n"), ""]
     src = [f"# Sources for the slots — {args.spec}\n"]
     example = None
     for r in rows:
@@ -279,6 +280,12 @@ def check(args) -> int:
     return 1 if errors else 0
 
 
+def reviews_path(body: str, path: str) -> bool:
+    """Whether a review comment (its text after the v1 marker's "file=") is about the spec at `path`.
+    Older comments recorded the scratch copy's path in the marker, so their row links decide."""
+    return body.startswith(path + " ") or f"/{path}#L" in body
+
+
 def previous(args) -> None:
     log = subprocess.run(["git", "log", "--first-parent", "--merges", "--format=%s", "--", args.path], capture_output=True, text=True).stdout
     for pr in re.findall(r"Merge pull request #(\d+)", log):
@@ -297,7 +304,7 @@ def previous(args) -> None:
         res = subprocess.run(["gh", "api", f"repos/{{owner}}/{{repo}}/issues/{pr}/comments", "--paginate",
                               "-q", ".[].body"], capture_output=True, text=True)
         for body in res.stdout.split("<!-- ledger-review v1 file=")[1:]:
-            if body.startswith(args.path + " "):
+            if reviews_path(body, args.path):
                 print("<!-- ledger-review v1 file=" + body.rstrip())
                 return
 
@@ -380,7 +387,7 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     sub = ap.add_subparsers(dest="cmd", required=True)
     a = sub.add_parser("skeleton"); a.add_argument("spec"); a.add_argument("--out", required=True)
-    a.add_argument("--name"); a.add_argument("--link-base"); a.add_argument("--previous")
+    a.add_argument("--name"); a.add_argument("--link-base"); a.add_argument("--previous"); a.add_argument("--path")
     b = sub.add_parser("check"); b.add_argument("skeleton"); b.add_argument("draft"); b.add_argument("--allow-unmarked", action="store_true")
     c = sub.add_parser("previous"); c.add_argument("path"); c.add_argument("--exclude-pr", type=int)
     d = sub.add_parser("split"); d.add_argument("draft"); d.add_argument("spec"); d.add_argument("--path", required=True)
