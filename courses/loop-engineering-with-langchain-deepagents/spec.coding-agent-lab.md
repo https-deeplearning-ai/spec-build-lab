@@ -1,12 +1,12 @@
-# Spec: Requirements Review Loops app — Coding-Agent-Lab Build
+# Spec: Requirements-Review Loop App — Coding-Agent-Lab Build
 
-> **What you're building:** a web app with a simulated issue tracker and a simulated wiki in which a requirements-review agent runs, gets graded, is triggered by events, and learns from its own run history. You open the tracker in the preview pane, create a ticket that links to a vague requirement page, and watch the agent fetch the page, write a five-section analysis, get sent back by a grader until the rubric passes, and post the report as a new page version; you then edit the requirement and see the open ticket re-analyzed automatically. On the Learning page you run a batch of five documents, read the analyst's proposal, approve it, and see the re-run pass every criterion on the first attempt. Answering the gate's first question with the recommended baseline builds all of this end-to-end; the build is COMPLETE when the offline suite passes — the ambient platform keys unlock only the `live` tests and live use of the finished app.
+> **What you're building:** a requirements-review web app whose agent checks its own work and learns across runs. You create a ticket linked to a vague requirement page and watch the agent write a report of facts, ambiguities, questions and assumptions; a grader sends the first draft back once, and the second draft passes. Then you run a five-document batch, read the analyst's one proposed instruction change, approve it, re-run the batch, and see every first attempt pass. Answering the gate's first question with the recommended baseline builds all of it end to end, and the build is COMPLETE when the offline acceptance suite passes; the platform's model key only powers the live criteria (a non-gating pass) and live use of the finished app.
 >
-> This file is self-contained: the Course Context Pack at the end replaces every external course reference.
+> This file is self-contained: the Course Context Pack at the end replaces every external course reference, and nothing here requires access to the course platform.
 >
-> `(CTX-X)` anchors mark course-derived knowledge; the Decision Ledger below holds every point where the build could diverge, each pinned to one course-derived default, so the spec builds as-is with no intake.
+> `(CTX-X)` anchors mark course-derived knowledge. The Decision Ledger below holds every point where this build could still diverge, each pinned to one course-derived default, so the spec builds as-is with no intake; the Environment Resolutions table under it shows which decisions this lab has already answered.
 >
-> Generated from the *Loop Engineering with LangChain DeepAgents* notebooks + transcripts + slides on 2026-10-13, guide @ `b03ddc9`, coding-agent-lab overlay @ `184a0ed`.
+> Generated from the *Loop Engineering with LangChain DeepAgents* notebooks + transcripts + slides on 2026-10-20, guide @ `5caba53`, coding-agent-lab overlay @ `efeb69f`.
 
 ## 0. Before you build — REQUIRED (do this first)
 
@@ -27,668 +27,646 @@ not because they are the right choice for this person's project.
    marks exactly where the baseline differs from the course — or **customize** the decisions row
    by row. If the user chooses the baseline, skip step 3 — go straight to the step-5 checklist
    and build. If the user chooses customize, continue with step 3.
-
-   *`[environment]` In this lab the structured question tool is a fenced `choices` block: explain in prose above the fence, put the fence last in the message with one option per line, and precede it with a line `**Question 1 of M — <decision>**` so nothing skipped goes unseen. A click sends the option line verbatim; a typed answer naming an option counts identically. Only the latest message's buttons stay live, so a changed answer is re-asked as a new question — never ask anyone to go back and change an earlier one.*
-
+   *[environment] In this lab the structured question tool is a `choices` fence: the explanation goes in prose above it, the fence is the last thing in the message with one option per line, and the turn ends there. Put a line `**Question N of M — <decision>**` before each fence; M counts every question this gate could ask, and a row skipped by its own condition keeps its number in its one-line skip note. A clicked option sends its line verbatim; a typed answer naming an option counts exactly the same.*
 3. **Present the Ledger ONE ROW AT A TIME — one question per row.** For each row ask a single
    question: the **Decision** as the prompt, its **Options** as the choices. Append
    "(course default)" to the option the course actually used — on a substitution row that is
-   the course-faithful Options entry, not the Ledger Default. You may also mark an option
-   "(Recommended)" — your judgment for THIS person's context, made now, at gate time; with no
-   contextual reason to depart, recommend the row's Default. When your recommended option IS
-   the course's actual choice, merge the labels into "(Recommended - course default)". A
-   recommendation never removes or moves the "(course default)" label, and no option is ever
+   the course-faithful Options entry, not the Ledger Default. Append "(Recommended)" to the
+   row's Default — the option the recommended baseline build takes, chosen when this spec was
+   written as the most efficient way to build the course's pattern; say once, before presenting
+   the first Ledger row, that it does not reflect this person's setup. When the Default IS the course's
+   actual choice, merge the labels into "(Recommended - course default)". "(Recommended)" never
+   removes or moves the "(course default)" label, and no option is ever
    labeled with a bare "(default)" — these two labels and their merged form are the only
    option labels. Use the answers already given (project, data, goal, …) to frame
-   later questions and describe options in the person's own terms — but never skip a row, drop
-   or alter an Option, or move the "(course default)" label because of an earlier answer. Put
+   later questions and describe options in the person's own terms — but never drop or alter an
+   Option or move the "(course default)" label because of an earlier answer, and never skip a row
+   because an earlier answer seems to make it irrelevant. The only skip: a row whose Decision
+   says "Applies only when `<row>` is `<id>`" is skipped when the answer on that row is none of
+   those ids, or that row was itself skipped. Say so in one line (e.g. "<row> is skipped: it applies
+   only when <row> is <id>; <row> = <answer>") and go on to the next row — a skip resolves that row
+   only. If the person changes an earlier answer, re-check every condition that names it. Put
    any realizations beyond the tool's option slots (or the free-form case) under the tool's
-   "Other"/free-text. Ask about **every** row. A per-call item limit is NEVER a reason to drop,
+   "Other"/free-text. Ask about every row that is not skipped this way. A per-call item limit is NEVER a reason to drop,
    skip, merge, or silently default a row — make as many separate calls as there are rows.
-
-   *`[environment]` Each row is one message ending in its own `choices` fence, headed `**Question N of M — <decision>**` with M the number of Ledger rows plus one. A click and a typed answer naming an option are equivalent. Because only the latest message's buttons stay live, an answer the person wants to change is re-asked as a new question, never edited in place.*
-
+   *[environment] Only the latest message's buttons stay live. If the person wants to change an earlier answer, ask that row again as a new question; never ask them to go back to an earlier message.*
 4. **Presenting any of these questions ENDS YOUR TURN — stop here; write no code, create or edit
-   no file, take no other build action.** Keep asking, one row at a time, until **every** row has
-   an answer (a chosen option, an explicit "use the course default", or the step-2 baseline answer,
-   which resolves every row at once). Answers to *some* rows do NOT release the build; "no reply
+   no file, take no other build action.** Keep asking, one row at a time, until **every** row is
+   resolved — answered (a chosen option, an explicit "use the course default", or the step-2
+   baseline answer, which answers every row at once) or skipped by its own condition (step 3). Answers to *some* rows do NOT release the build; "no reply
    yet" is not an answer — wait for the user.
 5. **Before the first line of code, print a resolved-decision checklist and write it to
-   `resolved-decisions.md`** — every Ledger row with its final value (the user's choice, or its
-   Ledger default), each line carrying a deviation mark: `= course choice`, or
-   `≠ course choice (course used: <option>)`. The file records what this build was built from;
+   `resolved-decisions.md`** — every Ledger row with its final value (the chosen option's id and
+   text — the user's choice, or its Ledger default), each line carrying a deviation mark: `= course choice`, or
+   `≠ course choice (course used: <option>)`, or `no course choice` on a row where the course
+   made no choice (the scope boundary), or — on a row skipped by its condition, with no value —
+   `not applicable (applies only when <row> is <id>; <row> = <answer>)`. If the build calls a language model, add one line per
+   model role the chosen options use, naming the current model you will use from the Default
+   provider — one you know that provider serves; if you cannot tell, say so and ask the person
+   to name one, and if they do not, use the course's own model id from this spec for that role
+   and say it may need changing. A missing model name never blocks confirming the checklist.
+   For every chosen option that is not its row's Default, copy its line from §7's "Tests by
+   option" table into the checklist, so the criteria and Ledger cells this build retires or
+   changes are recorded before the first line of code. The file records what this build was built from;
    nothing reads it back — a later build re-runs this gate. If the baseline path was chosen,
    walk the person through every `≠` row — the course's actual choice, and why this build's
    default substitutes it (the row's Trade-off/branch note says why) — before building. Begin
-   implementation ONLY after this checklist is shown and written; if any row is unresolved you
-   are not done — return to step 3. Build on the checklist's values.
+   implementation ONLY after this checklist is shown, written, and confirmed by the person; if
+   any row is unresolved you are not done — return to step 3. A `not applicable` line whose
+   quoted condition is not false is unresolved. Build on the checklist's values. Leave out
+   every part of this spec that exists only for a rule a chosen option retires — its commands,
+   flags, settings, schema fields, fixtures and permission items. Where a chosen option changes
+   a criterion and its §7 line does not fully state the new form, adapt the criterion to the
+   chosen options and list it, with what you changed, under *Adapted* in the checklist and in
+   your final report.
 
 ## Decision Ledger (§0 above requires the build agent to present these before building)
 
-These are the points where this build could diverge. Every row has a course-derived default, so the spec is buildable and evaluatable as-is; change a row only when applying to a real project or when you have reason to prefer another option. Row ids: `L<n>` learner, `D<n>` design, `RR<n>` realization — never a bare `R<n>`, which names a business rule. Rows are in gate order: learner → design (argued and structural interleaved by pipeline position) → realization. The learner-context rows the lab resolved are listed in the Environment Resolutions table that follows, not here.
+These are the points where this build could diverge. Every row has a course-derived default, so the spec is buildable and evaluatable as-is; change a row only when applying to a real project or when you have reason to prefer another option.
 
 | # | Category | Decision | Invariant (must hold; blank unless the pattern imposes a capability requirement) | Default (course-derived) | Options | Trade-off | Owner |
 |---|---|---|---|---|---|---|---|
-| L6 | learner | **Scope boundary** — present the §1 "Not Included" list, item by item with its handling tag, *inside this question*, and ask whether every item stays out. | — | Keep as-is: every §1 exclusion stands; the full acceptance set is built. | (a) keep every exclusion; (b) bring something back — name the item in free text; items tagged `restorable` are added to the build, `buildable, unparameterized` are added with no spec parameters or criteria, `owned-by-row` defer to that row, `unavailable` cannot be taken here (the seam is stated). A genuine new exclusion is also free text and must name the acceptance criteria it retires. | Bringing an item back adds work the acceptance suite does not cover; retiring criteria removes verification. | learner |
-| D1 | design-argued | **Instruction placement** — how the review agent's standing instructions reach it. | The agent's instructions exist as a file loaded into context at the start of every run, readable and editable from outside the agent (the learning loop edits it), and the agent itself is denied writes to it (R6, R7). | Always-on instruction file only: a memory file loaded every run, with a one-line system prompt that points at it (what the course's review agent uses in Lessons 4–7). Example-realization note: the file's *content* is the course's example procedure and is expected to be swapped when the project differs; the invariant is what survives. | (a) memory file + pointer system prompt (course default); (b) memory file **plus a skills directory** read by progressive disclosure — one description line per skill always in context, the full procedure read only when the agent decides it applies (built and shown working in the course's poet primer, Lesson 3). Under (b) the memory file keeps `Procedure` and the four `Review guidance` level-3 sections become one skill file each with a one-line description, at `/skills/<section>/SKILL.md` inside the run workspace (`confirmed_facts`, `ambiguities`, `clarification_questions`, `assumptions`), write-denied to the agent exactly as `/memories/**` is (R7); this alters R6 (the level-3 headings are required in the skill files, not the memory file), R17–R19 (a proposal's `section` names a skill file and apply inserts at the end of that file) and the scripted analyst's target (its change's `section` becomes `/skills/ambiguities/SKILL.md`), and retires AC9's byte-identity to `instructions_v1.md`, AC35's equality with `instructions_v2.md` and AC37 — each replaced by the same assertion against the skill files. This spec authors no skill content. Replayability under (b) — chosen over restricting AC46 to (a), so the learning loop stays end-to-end testable offline: the §5.1 scripted review role reads the skill body it needs, one extra `read_file /skills/ambiguities/SKILL.md` turn immediately before its first Ambiguities edit, and keys its labelled lines on `Resolved by:` appearing in that body instead of the memory file; AC46 then holds under (b) exactly as under (a), the extra Model/Tool pair raises AC18's `turns` by one and AC19's row count by two, and nothing else in the suite changes. | Lesson 3 argues both sides: the always-on file "costs context on every call, so it should stay short"; skills cost "twenty lines of context, not twenty documents" and the agent pulls detail only for the one it needs. Litmus branch: a **row** — both sides built and shown working (primer with skills, review agent without); the sides differ in a component (a skills directory), not a value. Switching to (b) moves the per-section review guidance into skill files and changes what the learning loop's proposal targets (CTX-C1). | course+learner |
-| D2 | design-argued | **Verification stage present** — does a grader wrap the agent loop and send work back? | When present, a grader stage separate from the agent judges the finished file against the rubric after the agent declares completion, and can return it with per-criterion feedback (R10, R11). The learning loop's signal (first-attempt verdicts) exists only when the grader exists. | Grader on, with a revision budget — the course's Lesson 5–7 configuration. The budget *value* is a post-build lever pinned in R11, not part of this row. | (a) grader wraps the agent loop with a revision budget (course default); (b) agent loop alone — revision budget 0, exactly the Lesson 4 build (the course: "if you set this to 0, you will have the same basic agent loop you built in the last lesson"). Criteria that apply only under (a): AC13–AC17, AC19, AC20, AC28, AC31–AC35, AC39, AC46–AC48 and AC50 (every assertion of a grading pass, a `satisfied` status or a first-attempt pass rate, and AC50's Given, which presupposes AC46's `success`); AC3, AC10, AC11, AC22 and AC51 keep their trace and workspace assertions but their run status is `ungraded` and AC51's grading clause is dropped; AC12's and AC41's batch `v1` runs ungraded; AC18 exercises (b). | Lesson 5: "just because the agent says it is done, is the analysis actually good enough? In the agent loop, nothing is checking for this"; Lesson 2: verification "adds reliability" and "you don't need the verification loop per se" when composing loops. Litmus branch: a **row** — the course built the bare loop first (Lesson 4), showed it working at reduced scope, then wrapped it; a budget of 0 removes a component (the grader box), so this is a component choice, not a knob. A first draft the grader later rejects is the reason the grader is added, not the bare loop failing. Choosing (b) retires every grader AC and leaves the learning loop with no first-attempt pass-rate signal (CTX-C2). | course+learner |
-| D3 | design-structural | **Grader kind** — what judges the file against the rubric. | Under D2 (a), the grader stage judges the *file the agent wrote*, never the conversation, criterion by criterion as pass/fail, returns a gap per failed criterion, and never edits the file (R10). | A model-driven judge that reads the file with a read tool and must quote line-numbered evidence for every pass (the course's review-agent grader, Lessons 5–7). | (a) model-as-judge with mandatory file read and verbatim quotes (course default); (b) a deterministic code grader that checks each criterion mechanically — the course's docs-writer example grader ("links resolve, CI passes", Lesson 2) and the narrated Lesson 2 slide: "graders can either be deterministic or agentic". Does not apply under (b): AC13 (a code grader makes no tool call and quotes no `L<n>:` evidence) and AC20's injected grader exception (the `grader_error_doc02` variant belongs to the scripted model's grader role; a code grader needs its own fault injection to reach `grader_error`); every other grader criterion asserts only the verdict shape, which (b) must produce identically. | Lesson 2 names both kinds; the course argues no trade-off between them, so this row enters on structure alone: the grader box's owner moves from the model to harness code. (a) can judge "every clause addressed" semantically but is prone to passing by resemblance — the failure the course's quote-with-line-number rule exists to stop (CTX-B4); (b) is reproducible and free but can only check what a label or regex can see. Redraw the diagram: the grader box changes owner. | course+learner |
-| RR1 | realization | **Acceptance-suite model** — which model the offline acceptance suite runs the pipeline against. | The offline suite drives the real pipeline end to end — tool calls, grader (when D2 = (a)), event trigger, batch, analyst, apply, compare — against a stand-in whose per-role responses are declared in §5; criteria needing a real model are tagged `live`. | The **scripted model** stand-in declared in §5 (`scripted_model.py`) — an honestly-labelled fake standing in for the live model, so the suite runs with zero setup. Branch: substitution (the model is the keyed dependency); tier 1 — a module in the build itself, no package, no process. | (a) scripted stand-in (fake; see §5); (b) the course's live models through the platform proxy (course default — the lab exports the keys, so choosing it costs no setup here; it makes the suite non-deterministic and slow, and R22 governs which variables are read). Exact-value criteria that exercise only the scripted Default — under (b) each becomes a shape assertion like AC39's: AC1, AC3, AC4, AC7, AC8, AC10–AC20, AC22, AC28, AC30–AC35, AC45–AC47, AC50, AC51 (AC8's call count, AC15's and AC16's scripted grader verdicts, AC30's diff line, AC31's `satisfied` comment, AC34's graded count and AC50's Given all follow from scripted responses). | Lesson 4's notebook note: "LLMs do not always produce the same results … the agent behavior you experience may differ from the video." The scripted model is deterministic by construction; the live path is what the finished app uses. | course+learner |
+| L1 | learner | **Scope boundary.** Present the §1 "Not Included" list inside this question — every item with its handling tag — and ask whether to keep every exclusion or bring one back. | | **L1a** — keep every exclusion; the full acceptance set is built. | L1a — Keep every exclusion and build the full acceptance set (Recommended) · L1b — Bring one excluded item back (name it; it is handled by its tag: `restorable` items are built, `buildable, no criteria` items are built with no parameters or criteria from this spec, `unavailable` items cannot be brought back in this lab) | Restoring an item adds scope that the acceptance suite does not cover. The course made no choice on this row. | learner |
+| D1 | design-argued | **Trigger surface** — what starts a review run. | A run starts without anyone copying the requirement into the agent: the agent is told only the document's id and fetches the text itself, and a run started by a change analyzes the requirement's latest version. | **D1a** — the course's example realization of the trigger surface (a simulated tracker standing in for a real one); outside the lab, expect to swap it for your real tracker through the §1 seam. Branch: the course's own shipped realization, already keyless — kept as is. | D1a — A simulated ticket tracker inside the app: creating a ticket linked to a requirement page, or saving a new version of a page that an open ticket links to, starts a run; an open ticket also has a "re-run now" control (Recommended - course default) · D1b — Manual runs only: a page control starts a review of a chosen document, and nothing starts a run on its own (shown working in the course's Agent Loop, Verification Loop and Learning loop notebooks) | Lesson 6 argues for events: "If you have to open a separate agent, copy the requirement, paste it, and ask for a review, that's several extra steps. Even if the review is useful, you might not do it every time." Manual runs are shown producing correct reports (Lessons 4, 5, 7) and the course attributes no failure to them, only friction. Litmus: working (the alternative is shown working) → row. The course also showed the agent in real Slack, Jira and Confluence (screen recordings, no code shipped); those need service credentials this lab does not supply, so they are not offered here — see §1 Not Included. | course+learner |
+| D2 | design-argued | **Instruction placement** — where the review agent's procedure and review guidance live, and when they load. | The instructions reach the agent's context at the start of every run, every version is kept outside the agent, and the agent cannot change them during a run. | **D2a**. Branch: the course's own realization, keyless. | D2a — One instruction file in the agent's own filesystem, loaded whole into its context at the start of every run (Recommended - course default) · D2b — The procedure stays in the instruction file; each section's review guidance becomes a skill whose one-line description loads up front and whose body the agent reads only when it reaches that section (shown working in the course's Deep Agent Primer on a poet agent; never built for the review agent) · D2c — The instructions are written into the system prompt fixed when the agent is created, with no instruction file in the agent's filesystem (shown in the course's base-agent example) | Lesson 3 argues the three placements: the system prompt "you specify when the agent is created, and you use that every time"; the always-loaded file "is loaded each time the agent's called, and you can modify it over time", and "costs context on every call, so it should stay short"; skills "work with progressive disclosure", so "twenty skills cost twenty lines of context, not twenty documents". Litmus: working — all three are shown working in Lesson 3 → row. The choice moves what an approved learning-loop change edits. | course+learner |
+| D3 | design-argued | **Verification stage** — whether and how a finished report is graded before the run ends. | When a grader is present it judges the written report file (never the conversation) against the run's rubric, each criterion pass or fail; the run is done only when every criterion passes in one grading pass; a failing pass sends specific feedback back for another attempt within a bounded budget. | **D3a**. Branch: the course's own realization. | D3a — A model grader reads the report file, grades each rubric criterion pass or fail with quoted evidence, and sends the failing criteria back with their gaps, up to the revision budget (Recommended - course default) · D3b — A deterministic grader: code checks each criterion against the report file (shown in the course only as a narrated example on a different agent — links resolve, CI passes; never built for this agent, and the spec supplies no parameters and no acceptance criteria for it) · D3c — No grader: the run ends when the agent says it is done (the course's Agent Loop lesson, shown working) | Lesson 5: "just because the agent says it is done, is the analysis actually good enough? In the agent loop, nothing is checking for this", and "If you set this to 0, you will have the same basic agent loop you built in the last lesson." Lesson 2: "You don't need the verification loop per se", and verification "can make cheaper models viable for harder tasks". Litmus: a budget of 0 removes the grader — a component choice, not a knob — and the course shows the system working without it (Lesson 4) → row; the budget number itself stays a lever. Grader kind (model or code) is merged here as one subject: it moves the verdict's owner. The course also named a human acting as the grader (Lesson 2); here the offline suite would wait on a person, so it is not offered — see §1. | course+learner |
+| D4 | design-argued | **Learning loop** — whether runs over many documents improve the agent's instructions. Applies only when `D3` is `D3a` or `D3b` | An improvement is drawn only from a failure that recurs across most runs of one batch, is proposed by an analyst that cannot alter the evidence it reads, is applied in plain code only after a human approves it, and is judged by re-running the same batch and comparing. | **D4a**. Branch: the course's own realization. | D4a — A batch learning loop: review a batch of documents under one instruction version, let an analyst propose one instruction change from the recurring first-attempt failures, apply it on human approval, re-run the batch and compare the two (Recommended - course default) · D4b — No learning loop: each run is corrected only by its own grading passes (shown working in the course's Event-Driven Loop lesson, whose app has no learning loop) | Lesson 7: "if we give that same agent a brand new document tomorrow, the agent will start from the same place, and if it makes the same mistake, it will correct it all over again." Lesson 2: "You don't necessarily have to do that for all four loops." Litmus: working — the event-driven app is shown working without it, and the course names a repeated correction cost, not a failure → row. | course+learner |
 
-## Environment Resolutions
+## Environment Resolutions (coding-agent-lab)
 
-This spec was generated for the **coding-agent-lab** environment. The six learner-context dimensions below were derived from the course first and then resolved against the lab, not skipped; two course-owned rows also left the Ledger through this table because every alternative to their default is untakeable here.
+This spec targets the coding-agent-lab environment; the six learner-context dimensions below were derived from the course first and then resolved against the lab's facts — none was skipped. Two course-owned decisions also left the Ledger because every alternative to their default is unavailable here; they are listed last.
 
 | Dimension | Resolution | Where the Invariant lives now |
 |---|---|---|
-| project | **ANSWERED** — the lab fixes the assignment: the served requirements-review loops app described in §1 (the course's example scenario shape on the synthetic fixture corpus). | spec §1 Objective. Invariant empty — owes no AC. |
-| data/inputs | **ANSWERED** — inputs are seeded into the workspace as the §5 fixture corpus. Derived Invariant: a requirement is text addressed by an identifier the agent is handed; the agent fetches it through a tool at run time and is never handed the text in its opening message. | spec §5 fixture corpus + business rule R1 (AC1, AC2). |
-| goal | **ANSWERED** — the lab fixes what "working" means: §1's objective and the acceptance criteria. | spec §1 + §5. Invariant empty — owes no AC. |
-| model/provider | **CONSTRAINED** — the built app needs an LLM (the review agent, the grader when D3 = (a), the analyst). Platform models only; keys and base URLs read from the environment; the learner is never asked for a key. Derived Invariant: the models must support native tool calling, and the analyst's model must support a structured (typed) final response; models are addressed through a `provider:model` string. | spec §2 (model-role variables) + business rule R22 (AC38, AC39, AC48) + CTX-D. The course's model-tiering argument becomes a body lever (R22) with an Ask-First entry. |
-| environment | **ANSWERED** — the container. Derived Invariants: the agent's file tools are confined to a per-run workspace root; the instruction file is loaded every run and editable from outside the agent; pages, tickets, runs and batches survive a process restart. | spec §2 + `## Runtime (lab)`; capability invariants moved to R6–R9 (AC8–AC12) and R25 (AC41). |
-| scope-boundary | **KEPT** | Ledger row L6. |
-| event-source surfaces (course-owned realization row) | **ANSWERED — every alternative unavailable here.** The course demonstrated the same agent inside real Slack and real Jira/Confluence; those need a Slack workspace with app tokens or an Atlassian site with an API token and a public tunnel — credentials the lab does not supply and this spec may never ask for. The only takeable realization is the course's own shipped keyless one: the simulated tracker and wiki. | Pinned in §2 ("event surfaces") with the course's provenance; §1 Not Included carries the real integrations as `unavailable` with the seam named. Invariant (an event in the surface where work happens triggers the loop and the result is written back there) lives in R14–R16 (AC24–AC32). |
-| hosted tracing (course-owned realization row) | **ANSWERED — every alternative unavailable here.** The course's optional hosted tracing needs an account and an API key the lab does not supply. The keyless local trace capture the course uses from Lesson 4 on carries the whole taught behavior. | Pinned in §2 ("trace capture"); §1 carries hosted tracing as `unavailable` with the seam named. Invariant (every model turn and tool result of a run is recorded and viewable) lives in R12 (AC19). |
+| project | **ANSWERED** — the lab fixes the assignment: the course's requirements-review app. Invariant empty. | §1 Objective |
+| data/inputs | **ANSWERED** — inputs are seeded into the workspace as the §5 fixture corpus. Invariant: documents are plain text fetched by id at run time (the agent is never handed the text), and a learning batch holds several distinct documents (course: five). | §5 fixture corpus; R1 (AC2), R20 (AC23) |
+| goal | **ANSWERED** — the lab fixes what "working" means: the course's three-criterion rubric. Invariant: every criterion is pass/fail and decidable from the report file alone; done means all pass in one grading pass. | §1 + R10, R11 (AC12, AC14) |
+| model/provider | **CONSTRAINED** — the built app needs an LLM: platform models only, through the ambient OpenAI-compatible key and base URL; never asked of the learner. Invariant: each model role supports native tool calling and structured output. The course's model-tiering argument stays as a body lever with an Ask-First entry. | §2 + R27 (AC35, AC36, AC44) + CTX-D |
+| environment | **ANSWERED** — the lab container. Invariant (capability): tickets, pages, runs, instruction versions and batches survive a process restart. | §2 + `## Runtime (lab)`; R32 (AC41) |
+| scope-boundary | **KEPT** | Ledger row L1 |
+| acceptance-suite model (which model the offline suite runs against) | **ANSWERED — every alternative unavailable here.** The live model as the suite's model would make completion depend on a live model's output. Pinned: a scripted stand-in model drives the real pipeline end to end. Because the lab supplies the key, the `live` criteria still run after the offline suite, as a pass that never gates completion. Invariant: the offline suite exercises every stage the pattern wires around the model. | §2 pin + §5 scripted model + §7; R28 (AC37) |
+| hosted trace viewer | **ANSWERED — every alternative unavailable here.** The course's optional hosted tracing needs its own account and key, which this lab does not supply. Pinned: local trace records only (the course's own default). Invariant: every run leaves a local record of every model turn and tool result. | §2 pin; R34 (AC43) |
 
 ## 1. Objective
 
-A single web app, served by one process, in which an engineering team's requirement documents are reviewed by an agent that fetches a requirement by ticket id, writes a structured analysis file (confirmed facts, ambiguities, clarification questions, assumptions, summary), is graded against a three-criterion rubric and sent back with feedback until it passes, is triggered automatically by events in a simulated issue tracker and wiki, and is improved across runs by an analyst that reads a batch's run history and proposes one instruction change for a human to approve — with the guarantee that every grader verdict is about the file on disk, every record of a run survives a restart, and nothing in the harness is changed without a human approving it (pattern: CTX-A).
+Build a requirements-review web app — one server on port 4000 serving one page and its JSON API — in which creating or updating a requirement ticket starts a review agent that fetches the requirement and writes a structured analysis file, a grader sends the analysis back with specific feedback until a three-criterion rubric passes, and a learning loop turns failures that recur across a batch of documents into one human-approved instruction change, guaranteeing that every report, verdict and instruction change is stored with the evidence that produced it. (pattern: CTX-A)
 
-**Deliverable shape** `[environment]`: one server on port 4000 serving both the pages and their API, because the preview pane is the learner's only view of the running app. The course's own artifacts — notebooks and a local Flask demo on port 5050 — are not the deliverable; this served app embodies the same pattern. The app has three surfaces: **Tracker** (tickets), **Wiki** (requirement pages and agent-authored report pages, with version history and diffs), and **Learning** (run a batch, view the summary and recurring gaps, read the proposal, approve and apply, re-run and compare).
+The deliverable's shape is `[environment]`: the lab's preview pane shows only one server on port 4000, so the course's own artifacts — notebooks, and a separate tracker app on another port — are never the deliverable; this app embodies their pattern.
 
-**Adapting this beyond the lab.** The project, data and goal dimensions are fixed in this section and in §5's fixture corpus — replace the fixture documents with your own tracker's and change the objective. The model/provider dimension is constrained to the platform proxy in R22 and §2 — outside the lab, R22's variables become your own provider's, and the course's models (CTX-D) are a starting point. The environment dimension lives in §2 and `## Runtime (lab)` — port, URL form and the venv rule are the lab's; the capability invariants (R6–R9, R25) are the course's and travel with you. The two realization rows the lab retired (event surfaces, hosted tracing) are pinned in §2 and listed below as `unavailable` with their seams; outside the lab they become gate questions again.
+**Adapting this beyond the lab.** Each lab-resolved dimension now lives in a named place: the project in this Objective; the data in the §5 fixture corpus (swap in your own documents behind the same fetch-by-id contract); the goal in R10's rubric; the model/provider in §2 and R27 (outside the lab, read your own provider's key and base URL — the scripted model and offline suite stay); the environment in §2 and `## Runtime (lab)` (port 4000, relative URLs and the venv rule are lab facts, not course facts). The two pinned decisions reopen outside the lab: the live model as an acceptance-suite option, and hosted tracing as a keyed option.
 
-### Not Included
+### Not Included ★
 
-Each item carries its handling tag so the L6 gate question is determinate.
+Each item carries its handling tag for the L1 question.
 
-1. **Real Slack bot** (the course demonstrated the agent answering direct messages and channel mentions) — `unavailable`: needs a Slack workspace, an app-level token and a bot token the lab does not supply. Seam: the function the Tracker's "create ticket" and the Wiki's "save page" call to run one analysis (R14) is what a Slack event handler would call; the report body is what it would post back.
-2. **Real Jira and Confluence** (the course demonstrated tracker automation rules calling the agent through a tunnel) — `unavailable`: needs an Atlassian site, an API token and a public tunnel. Seam: the simulated tracker's ticket lookup and the simulated wiki's page lookup/version-append are the calls a REST client would replace; the trigger function stays the same.
-3. **Hosted trace viewer** (the course's optional LangSmith tracing) — `unavailable`: needs an account and an API key. Seam: tracing in the course's framework is switched on by environment variables alone; the local trace table (R12) remains the record.
-4. **Scheduled triggers** (the course names "a schedule triggers" as an event kind and a morning-calendar agent as an example) — `buildable, unparameterized`: the course built only event and manual triggers; the spec supplies no schedule parameters and no acceptance criteria for one.
-5. **Human approval at sensitive tool calls inside the agent loop** (named in Lesson 2's oversight list) — `buildable, unparameterized`: the review agent has no sensitive tools; the course built no interrupt. Human approval of the harness change (R17) and of ticket closure (R16) *are* built.
-6. **A code interpreter or sandbox, subagents, summarization or context offloading** (deep-agent pillars the course lists but never uses in this agent) — `buildable, unparameterized`.
-7. **Token and cost accounting per batch** (the course prints an estimated cost next to the comparison) — `restorable`: additive, owned by no row; if restored, it is informational only and never changes a verdict.
-8. **Multiple analyses per ticket in parallel, a real database** — `buildable, unparameterized`: named by the course (concurrent runs; database-backed filesystems, CTX-C10) but never built; the spec supplies no parameters and no acceptance criteria for either.
-9. **A hand-built skills directory for the review agent** — `owned-by-row` D1(b).
-10. **Running the course's notebooks or the Flask demo as shipped** — `unavailable` in this build mode: the deliverable is the served app.
-11. **Authentication and user accounts** — `restorable`: additive, owned by no row and not named by the course; if restored, no spec parameter or criterion covers them and no existing criterion may change.
+1. **Real Jira and Confluence integration** (webhooks into the app, REST lookups of tickets and pages) — `unavailable` `[environment]`: needs an Atlassian Cloud site, an API token and automation rules, which this lab does not supply. Seam: the single "run review for ticket" function — swap the store's ticket and page lookups for the services' APIs and call it from a webhook; nothing about the agent or the loops changes.
+2. **A Slack bot that runs a review from a message** — `unavailable` `[environment]`: needs a Slack workspace app and its two tokens. Seam: the same "run review" function, called from a chat event handler that replies with the formatted report and its raw Markdown.
+3. **A human acting as the grader** — `unavailable` `[environment]`: the offline suite would wait on a person. Seam: the grader slot of the verification loop — anything returning the same per-criterion verdict shape can fill it.
+4. **The live model as the acceptance suite's model** — `unavailable` `[environment]`: completion would depend on a live model's output. Seam: the `LLM_BACKEND` switch; the `live` criteria already run as a non-gating pass.
+5. **Hosted trace viewer (sending traces to a tracing service)** — `unavailable` `[environment]`: needs an account and key this lab does not supply. Seam: the tracing service's environment variables; local trace records are unaffected.
+6. **Scheduled triggers** (a review that runs on a timer) — `buildable, no criteria`: named by the course (Lesson 2), never built; the spec supplies no parameters and no acceptance criteria.
+7. **Memory consolidation in the learning loop** (persisting per-user preferences across runs) — `buildable, no criteria`: named by the course (Lesson 2), never built; the spec supplies no parameters and no acceptance criteria.
+8. **Subagents, a code-execution sandbox, and other harness features the framework offers but this agent does not use** — `buildable, no criteria`: named in Lesson 3, never used by the review agent; the spec supplies no parameters and no acceptance criteria.
+9. **Automatic application of a proposed change that targets tools, the grader or configuration** — `buildable, no criteria`: the course's change format names these targets but applies only instruction changes in code; others are read and decided by a person.
+10. **Dollar-cost estimates in the batch comparison** — `restorable`: the course priced its two models; prices are perishable (CTX-D).
+11. **A before/after chart of pass rates** — `restorable`: the course drew one; this spec shows the same numbers as a table.
+12. **User accounts and sign-in** — `restorable`: past the course's scope; authors and assignees come from a fixed cast.
+13. **Grafting this pattern into an existing codebase** — `unavailable`: outside the delivered build mode.
 
 ## 2. Tech Stack & Versions
 
-Secrets are read from the environment only — never hardcoded, never written to any file, never asked for.
-
 | Component | Pinned choice | Note |
 |---|---|---|
-| Language / runtime | Python 3 — the container's interpreter | `[environment]` Run `python3 --version` first, record it in `resolved-decisions.md`, and stop with a report if a course-pinned package refuses the interpreter. The course requires Python ≥3.12 (its project file; its notebooks ran 3.12.10). Never assume the floor is met. |
-| Virtual environment | `venv` created with `--system-site-packages` | `[environment]` The preinstalled stack (`fastapi`, `uvicorn`, `python-dotenv`, `openai`, `anthropic`) stays reusable for packages the course left unpinned. Where a course pin and a preinstalled copy differ, **the course pin wins inside the venv** (this applies to `openai` and `python-dotenv` below). Batch every install into one early step and announce its wall-clock cost before running it. |
-| Agent harness | `deepagents` **0.7.11** | **Course install situation, stated honestly:** the course's project file sets floors (`deepagents>=0.7.11`, `langchain>=1.3.14`, `langchain-core>=1.5.0`, `langchain-openai>=1.4.0`, `langgraph>=1.2.9`, `openai>=2.47.0`, `pydantic>=2.13.4`, `python-dotenv>=1.2.2`) and its lock file resolves exact versions; §2 pins the lock's exact versions as provenance. The course's grader prompt was copied from this exact version's default and the course warns to compare before upgrading. Era-specific class and parameter names are perishable: see CTX-D. |
-| LangChain core | `langchain` **1.3.18**, `langchain-core` **1.6.1**, `langgraph` **1.2.11** | Course lock pins. |
-| Provider client | `langchain-openai` **1.6.0**, `openai` **3.6.0** | Course lock pins; `openai` pin wins over the preinstalled copy inside the venv. The provider is addressed by the `provider:model` string form; which models, see R22. |
-| Structured output | `pydantic` **2.13.5** | Course lock pin; the analyst's typed change object (§3). |
-| Env loading | `python-dotenv` **1.2.3** | Course lock pin; reads only the variables R22 names. |
-| Web framework | Flask, newest release ≥ 3.1.3 | The course's demo used Flask with floor `>=3.1.3` and **no lock entry** — unpinned, so a modern version is chosen (that is the one unpinned course dependency). Serves pages and API on one port (R23). |
-| Persistent store | JSON files on local disk — three record lists (pages, tickets, runs) plus one directory per batch holding one JSON per run, a summary and an instructions snapshot | The course's own realization (flat JSON lists "so a learner can open any of these files directly"). Not a Ledger row: it is keyless, never argued, and structurally identical across alternatives. Tier reasoning: among realizations satisfying R25 (records survive restart; a page's versions, a ticket's status and a run's grading passes are recoverable) at the fixture scale (six documents, tens of runs), tier 1 — the language's standard library (`json` + the filesystem) — meets the contract exactly, so no embedded database (tier 2, e.g. the container's sqlite3) is stepped up to. Scaling realizations are a later concern, not a row. |
-| Event surfaces | Simulated tracker + wiki inside the app | Pinned by the Environment Resolutions table (course default — the course's shipped code; the real integrations are §1 `unavailable`). |
-| Trace capture | Local, in-app: one trace row per model turn and tool result, stored on the run record | Pinned by the Environment Resolutions table (course default from Lesson 4 on; hosted tracing is §1 `unavailable`). |
-| Model-role variables | `REVIEW_MODEL`, `GRADER_MODEL`, `ANALYST_MODEL` | `[environment]` One variable per model role, each holding a `provider:model` string for a platform model. The build agent sets them when it writes `resolved-decisions.md` — that file carries one "model roles" line with the agent's "(Recommended)" platform model per role, and the person's confirmation of the checklist confirms them; no extra gate question. The course's own ids are provenance only (CTX-D) and are never asserted to be served by the proxy. |
-| Key variables | `OPENAI_API_KEY` + `OPENAI_BASE_URL` (read); `ANTHROPIC_API_KEY` + `ANTHROPIC_BASE_URL` (present, unread) | `[environment]` The app reads exactly the first pair (the course's provider); the second pair is present in the container and must not be read (R22). Never hardcoded, never guessed, never asked for. |
-| Token counting | `tiktoken` 0.14.0 (course lock pin) | Only if §1 item 7 is restored; otherwise not installed. |
-| Test runner | `pytest`, newest release | Project hardening: the course had no test suite; the offline suite in §5/§7 is this spec's addition. |
+| Language | Python 3 in a venv created with `--system-site-packages` | `[environment]` The container's Python minor version is not fixed. Run `python3 --version` first, record it in `resolved-decisions.md`, and stop with a report if a course-pinned package below refuses the interpreter. The course itself required Python ≥3.12 (its README: older versions fail building its numerical packages). |
+| Agent harness | `deepagents==0.7.11` | **Install/pin situation, stated honestly:** the course's `pyproject.toml` sets floors (`>=`) and its `uv.lock` pins exact resolved versions; every pin in this table is the lock's version. Where a preinstalled copy differs (`openai`, `python-dotenv`), **the course pin wins inside the venv** `[environment]`. Era-specific class and argument names are perishable — see CTX-D. |
+| Framework packages | `langchain==1.3.18`, `langchain-core==1.6.1`, `langchain-openai==1.6.0`, `langgraph==1.2.11`, `pydantic==2.13.5` | Course lock pins. |
+| Model SDK / env loader | `openai==3.6.0`, `python-dotenv==1.2.3` | Course lock pins; override the preinstalled copies inside the venv. |
+| Web server | Flask, current 3.x | The course's own web layer; its floor `flask>=3.1.3` is unpinned and absent from its lock, so take the current release. Not preinstalled — install it with the rest. |
+| Storage | Flat JSON files under the app's data directory (`APP_DATA_DIR`, default `data/`) | The course's choice (three JSON lists for pages, tickets, runs); standard library only. Runs, batches and proposals sit beside them. Instruction versions are the one exception: each is a file `v<n>.md` in the app folder's `harness/instructions/` (R33), the single place the app reads and writes them. |
+| Test runner | `pytest`, current | Project hardening (the course shipped no test suite). Mark live criteria with a `live` marker. |
+| Model provider | The platform's OpenAI-compatible proxy | `[environment]` CONSTRAINED (Environment Resolutions). The app reads exactly `OPENAI_API_KEY` and `OPENAI_BASE_URL` (the course's provider is OpenAI). `ANTHROPIC_API_KEY` and `ANTHROPIC_BASE_URL` are also present in the container and are never read. Never hardcode a key, never ask the learner for one. |
+| Model roles | `REVIEW_AGENT_MODEL`, `GRADER_MODEL` (defaults to `REVIEW_AGENT_MODEL` when unset), `ANALYST_MODEL` | `[environment]` One variable per role, provider-prefixed ids (`openai:<model>`). The build agent sets them when it writes the step-5 checklist, one current platform model per role that supports native tool calling and structured output (R27). The course's own ids are provenance only (CTX-D); no claim is made that the proxy serves them. Course tiering, kept as a lever: review agent and grader on a cheaper tier, analyst on a stronger one (§6 Ask First). |
+| Model backend switch | `LLM_BACKEND` = `live` (default when serving) or `scripted` | `scripted` selects the §5 scripted stand-in model for every role; the offline suite always runs with `scripted`. |
+| Acceptance-suite model | Scripted stand-in (§5) — pinned | `[environment]` Environment Resolutions: every alternative unavailable here. |
+| Tracing | Local trace records in each run record — pinned | `[environment]` Environment Resolutions: hosted tracing unavailable here. The course's default was also off (`LANGSMITH_TRACING=false` in its example env file). |
+| Fetch-failure injection | `FETCH_SIMULATED_FAILURES`, default `0` | Test knob for R2 (a contradicted lever, see R2). |
+| Not installed | `pandas`, `matplotlib`, `seaborn`, `numpy`, `jupyter`, `ipykernel`, `mistune`, `tiktoken`, `langsmith` | Declared drop: the course used them only to render notebooks, draw charts and price tokens. Token estimates use the course's own fallback (characters ÷ 4). |
 
-## 3. Input/Output Contracts
+**Install cost** `[environment]`: everything above beyond the preinstalled set (`deepagents`, the LangChain packages, Flask, pytest, and the pinned `openai`/`python-dotenv`) installs from the network. Batch it into one install command early in the build and tell the learner it will take a few minutes.
 
-All four objects are JSON Schema (draft 2020-12). Field names that the course declared are binding (CTX-C name-map); the schemas push behavior into constraints so they self-enforce.
+**Secrets**: read from the environment only; never written to a file, a log, a run record or the page.
 
-### 3.1 Analysis file (`/analysis.md` inside the run workspace) — parsed form
+## 3. Input/Output Contracts ★
 
-The file is Markdown; this is the shape the parser must recover from it, and the shape the grader and the counts are computed over.
+All endpoints are relative to the app root (R30). Bodies are JSON unless noted. A run started by an endpoint is asynchronous: the endpoint returns at once, and the run record moves from `running` to `complete` or `error`.
 
-```json
-{
-  "$id": "analysis",
-  "type": "object",
-  "required": ["confirmed_facts", "ambiguities", "clarification_questions", "assumptions", "summary"],
-  "properties": {
-    "confirmed_facts": { "type": "array", "items": { "type": "string", "minLength": 1 } },
-    "ambiguities": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "required": ["clause", "reason"],
-        "properties": {
-          "clause": { "type": "string", "minLength": 1, "description": "the exact clause, quoted" },
-          "reason": { "type": "string", "minLength": 1 },
-          "resolved_by": { "type": "string", "minLength": 1, "description": "the indented 'Resolved by:' line; required by the clarity criterion, not by the file format" },
-          "edge_case": { "type": "string", "minLength": 1, "description": "the indented 'Edge case:' line; required by the depth criterion, not by the file format" }
-        }
-      }
-    },
-    "clarification_questions": { "type": "array", "items": { "type": "string", "minLength": 1 } },
-    "assumptions": { "type": "array", "items": { "type": "string", "minLength": 1 } },
-    "summary": { "type": "string", "description": "prose, two or three sentences; counted in words, never in bullets" }
-  }
-}
-```
-
-Section headings, in order and binding: `Confirmed Facts`, `Ambiguities`, `Clarification Questions`, `Assumptions`, `Summary` (each a level-2 heading). An ambiguity bullet is a bold quoted clause followed by an indented `Reason:` line; `Resolved by:` and `Edge case:` are additional indented labelled lines, exactly those labels. "Counts" means bullets per list section — the four list sections only; "complete" means every list section has at least one bullet and the summary has at least one word.
-
-### 3.2 Run record (one per analysis run; event runs and batch runs share it)
+| Method and path | Body | Returns |
+|---|---|---|
+| `GET ./` | — | the page (HTML) |
+| `GET api/config` | — | `{llm_backend, roles: {review_agent, grader, analyst}, base_url}` (never a key) |
+| `GET api/tickets` · `GET api/tickets/<key>` | — | `Ticket[]` · `Ticket` plus its `RunRecord[]` |
+| `POST api/tickets` | `{title, description, linked_page_id, assignee}` | `201 Ticket` with `last_run_id` of the started run; `400` if the page does not exist or is not a requirement page |
+| `POST api/tickets/<key>/rerun` | — | `202 {run_id}`; `409` if the ticket is `Done` |
+| `POST api/tickets/<key>/done` | — | `200 Ticket` with `status: "Done"` |
+| `GET api/pages` · `GET api/pages/<id>?v=<n>` | — | `Page[]` · one `Page` (all versions; `v` selects the body shown) |
+| `POST api/pages` | `{title, body, author}` | `201 Page` (kind `requirement`, version 1) |
+| `POST api/pages/<id>/versions` | `{body, author}` | `201 {version, retriggered: [ticket keys]}`; `400` for an `analysis_report` page |
+| `GET api/pages/<id>/compare?a=<n>&b=<n>` | — | `{diff: [unified-diff lines], run_a: RunRecord or null, run_b: RunRecord or null}` |
+| `GET api/runs/<run_id>` | — | `RunRecord` |
+| `GET api/instructions` · `GET api/instructions/<n>` | — | versions list · `{version, text, created_at, source}` |
+| `GET api/batches` · `GET api/batches/documents` | — | batch labels · the batch document names |
+| `GET api/proposals` | — | `Proposal[]` |
+| `POST api/batches` | — | `202 {label}`; runs every batch document under the current instruction version; label is `v<version>` |
+| `GET api/batches/<label>` | — | `{summary: BatchSummary, runs: BatchRunRecord[]}` |
+| `POST api/batches/<label>/analyze` | — | `201 Proposal` (status `pending`) |
+| `POST api/proposals/<id>/approve` · `.../reject` | — | `{proposal: Proposal, instruction_version}` |
+| `GET api/compare?before=<label>&after=<label>` | — | `Comparison` |
 
 ```json
 {
-  "$id": "run",
-  "type": "object",
-  "required": ["id", "trigger", "requirement_doc", "instructions", "trace", "grading", "analysis_markdown", "status", "turns", "counts", "started_at"],
-  "properties": {
-    "id": { "type": "string", "pattern": "^[0-9a-f]{8}$", "description": "8 lowercase hex characters (the course's id alphabet and length)" },
-    "trigger": { "type": "string", "enum": ["ticket_created", "page_saved", "manual_rerun", "batch"] },
-    "ticket_key": { "type": "string", "pattern": "^[A-Z]+-[0-9]+$" },
-    "requirement_page_id": { "type": "string" },
-    "requirement_version": { "type": "integer", "minimum": 1 },
-    "report_page_id": { "type": "string" },
-    "report_version": { "type": "integer", "minimum": 1 },
-    "doc_name": { "type": "string", "description": "batch runs only" },
-    "label": { "type": "string", "description": "batch runs only: the batch label" },
-    "model": { "type": "string", "description": "the provider:model string the review role ran on, or the scripted stand-in's name" },
-    "workspace": { "type": "string", "minLength": 1, "description": "absolute path of the run's workspace root at run time; recorded for every run, including event runs whose directory R9 discards afterwards" },
-    "requirement_doc": { "type": "string", "minLength": 1 },
-    "instructions": { "type": "string", "minLength": 1, "description": "the instruction file this run was given, verbatim" },
-    "trace": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "required": ["step", "actor", "action"],
-        "properties": {
-          "step": { "type": "integer", "minimum": 1 },
-          "actor": { "type": "string", "enum": ["Model reasoning", "Tool"] },
-          "action": { "type": "string", "minLength": 1 },
-          "detail": { "type": "string", "maxLength": 221, "description": "tool result text, whitespace-collapsed, cut at 220 characters plus an ellipsis" }
-        }
-      }
-    },
-    "messages": { "type": "array", "description": "batch runs only: every message untruncated — type, content, tool_calls with full args, tool_call_id, status" },
-    "grading": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "required": ["iteration", "result", "explanation", "criteria", "analysis_markdown"],
-        "properties": {
-          "iteration": { "type": "integer", "minimum": 1 },
-          "result": { "type": "string", "enum": ["satisfied", "needs_revision", "failed", "grader_error"] },
-          "explanation": { "type": "string" },
-          "criteria": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "required": ["name", "passed"],
-              "properties": {
-                "name": { "type": "string" },
-                "passed": { "type": "boolean" },
-                "gap": { "type": "string" },
-                "evidence": { "type": "string", "description": "verbatim quote with its line number; required when passed is true under D3 option (a)" }
-              },
-              "if": { "properties": { "passed": { "const": false } } },
-              "then": { "required": ["gap"] }
-            }
-          },
-          "analysis_markdown": { "type": "string", "description": "the file exactly as this pass saw it" }
-        },
-        "allOf": [
-          { "if": { "properties": { "result": { "const": "satisfied" } } },
-            "then": { "properties": { "criteria": { "minItems": 1, "items": { "properties": { "passed": { "const": true } } } } } } },
-          { "if": { "properties": { "result": { "const": "needs_revision" } } },
-            "then": { "properties": { "criteria": { "contains": { "properties": { "passed": { "const": false } } } } } } },
-          { "if": { "properties": { "result": { "const": "grader_error" } } },
-            "then": { "properties": { "criteria": { "maxItems": 0 } } } }
-        ]
-      }
-    },
-    "analysis_markdown": { "type": "string" },
-    "status": { "type": "string", "enum": ["satisfied", "max_iterations_reached", "failed", "grader_error", "ungraded"], "description": "ungraded = no grader configured (D2 option b)" },
-    "turns": { "type": "integer", "minimum": 0 },
-    "counts": {
-      "type": "object",
-      "required": ["Confirmed Facts", "Ambiguities", "Clarification Questions", "Assumptions"],
-      "additionalProperties": false,
-      "properties": {
-        "Confirmed Facts": { "type": "integer", "minimum": 0 },
-        "Ambiguities": { "type": "integer", "minimum": 0 },
-        "Clarification Questions": { "type": "integer", "minimum": 0 },
-        "Assumptions": { "type": "integer", "minimum": 0 }
-      }
-    },
-    "started_at": { "type": "string", "description": "UTC timestamp" }
-  }
-}
-```
-
-### 3.3 Tracker and wiki records
-
-```json
-{
-  "$id": "surfaces",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$defs": {
-    "ticket": {
+    "Ticket": {
       "type": "object",
       "required": ["key", "title", "description", "linked_page_id", "assignee", "status", "comments", "created_at", "last_analyzed_version", "last_run_id"],
       "properties": {
-        "key": { "type": "string", "pattern": "^[A-Z]+-[0-9]+$" },
-        "title": { "type": "string", "minLength": 1 },
-        "description": { "type": "string" },
-        "linked_page_id": { "type": "string", "minLength": 1 },
-        "assignee": { "type": "string", "minLength": 1 },
-        "status": { "type": "string", "enum": ["Open", "Analysis Ready", "Done"] },
-        "comments": { "type": "array", "items": { "type": "object", "required": ["author", "text", "timestamp"] } },
-        "created_at": { "type": "string" },
-        "last_analyzed_version": { "type": ["integer", "null"] },
-        "last_run_id": { "type": ["string", "null"] }
+        "key": {"type": "string", "pattern": "^REQ-[0-9]+$"},
+        "status": {"enum": ["Open", "Analysis Ready", "Done"]},
+        "linked_page_id": {"type": "string", "pattern": "^page-[a-z0-9-]+$"},
+        "assignee": {"type": "string"},
+        "comments": {"type": "array", "items": {"type": "object", "required": ["author", "text", "timestamp"]}},
+        "last_analyzed_version": {"type": ["integer", "null"], "minimum": 1},
+        "last_run_id": {"type": ["string", "null"], "pattern": "^[0-9a-f]{8}$"}
       }
     },
-    "page": {
+    "Page": {
       "type": "object",
       "required": ["id", "kind", "title", "linked_ticket", "versions"],
       "properties": {
-        "id": { "type": "string", "pattern": "^page-[a-z0-9-]+$" },
-        "kind": { "type": "string", "enum": ["requirement", "analysis_report"] },
-        "title": { "type": "string", "minLength": 1 },
-        "linked_ticket": { "type": ["string", "null"] },
-        "versions": {
-          "type": "array",
-          "items": { "type": "object", "required": ["n", "author", "timestamp", "body"],
-            "properties": { "n": { "type": "integer", "minimum": 1 }, "author": { "type": "string" }, "timestamp": { "type": "string" }, "body": { "type": "string" } } }
-        }
+        "id": {"type": "string", "pattern": "^page-[a-z0-9-]+$"},
+        "kind": {"enum": ["requirement", "analysis_report"]},
+        "linked_ticket": {"type": ["string", "null"]},
+        "versions": {"type": "array", "items": {"type": "object", "required": ["n", "author", "timestamp", "body"],
+          "properties": {"n": {"type": "integer", "minimum": 1}}}}
+      },
+      "if": {"properties": {"kind": {"const": "analysis_report"}}},
+      "then": {"properties": {"id": {"pattern": "^page-analysis-req-[0-9]+$"}, "linked_ticket": {"type": "string", "pattern": "^REQ-[0-9]+$"}}}
+    },
+    "TraceStep": {
+      "type": "object", "required": ["step", "actor", "action", "detail"],
+      "properties": {"actor": {"enum": ["Model reasoning", "Tool", "Harness"]}, "detail": {"type": "string", "maxLength": 221}}
+    },
+    "Criterion": {
+      "type": "object", "required": ["name", "passed"],
+      "properties": {"name": {"type": "string"}, "passed": {"type": "boolean"}, "gap": {"type": "string", "minLength": 1}},
+      "if": {"properties": {"passed": {"const": false}}}, "then": {"required": ["gap"]}
+    },
+    "GradingPass": {
+      "type": "object", "required": ["iteration", "result", "explanation", "criteria", "analysis_markdown"],
+      "properties": {
+        "result": {"enum": ["satisfied", "needs_revision", "failed", "grader_error"]},
+        "criteria": {"type": "array", "items": {"$ref": "#/$defs/Criterion"}},
+        "analysis_markdown": {"type": "string", "description": "the report file exactly as this pass saw it"}
       },
       "allOf": [
-        { "if": { "properties": { "kind": { "const": "requirement" } } }, "then": { "properties": { "linked_ticket": { "type": "null" }, "versions": { "minItems": 1 } } } },
-        { "if": { "properties": { "kind": { "const": "analysis_report" } } }, "then": { "properties": { "linked_ticket": { "type": "string" } } } }
+        {"if": {"properties": {"result": {"enum": ["satisfied", "needs_revision"]}}}, "then": {"properties": {"criteria": {"minItems": 3, "maxItems": 3}}}},
+        {"if": {"properties": {"result": {"const": "satisfied"}}}, "then": {"properties": {"criteria": {"items": {"properties": {"passed": {"const": true}}}}}}},
+        {"if": {"properties": {"result": {"const": "grader_error"}}}, "then": {"properties": {"criteria": {"maxItems": 0}}}}
       ]
-    }
-  }
-}
-```
-
-Version numbers are contiguous from 1 in append order. A report page's every version is authored by the bot author string; a requirement page's versions are authored by a person from the fixed cast (§5).
-
-### 3.4 Batch summary and harness change
-
-```json
-{
-  "$id": "learning",
-  "$defs": {
-    "summary": {
+    },
+    "SectionCounts": {
+      "type": "object", "additionalProperties": false,
+      "required": ["Confirmed Facts", "Ambiguities", "Clarification Questions", "Assumptions"],
+      "properties": {"Confirmed Facts": {"type": "integer"}, "Ambiguities": {"type": "integer"}, "Clarification Questions": {"type": "integer"}, "Assumptions": {"type": "integer"}}
+    },
+    "RunRecord": {
+      "type": "object",
+      "required": ["id", "state", "ticket_key", "requirement_page_id", "requirement_version", "report_page_id", "report_version", "workspace_id", "instruction_version", "verification_status", "stop_reason", "turns", "counts", "summary_words", "stage_order", "in_order", "trace", "grading", "analysis_markdown", "timestamp"],
+      "properties": {
+        "id": {"type": "string", "pattern": "^[0-9a-f]{8}$"},
+        "workspace_id": {"type": "string", "pattern": "^[0-9a-f]{8}$"},
+        "state": {"enum": ["running", "complete", "error"]},
+        "error": {"type": "string"},
+        "verification_status": {"enum": ["satisfied", "max_iterations_reached", "failed", "grader_error", null]},
+        "stop_reason": {"enum": ["finished", "turn_limit", null]},
+        "counts": {"$ref": "#/$defs/SectionCounts"},
+        "stage_order": {"type": "array", "items": {"enum": ["Confirmed Facts", "Ambiguities", "Clarification Questions", "Assumptions", "Summary"]}},
+        "trace": {"type": "array", "items": {"$ref": "#/$defs/TraceStep"}},
+        "grading": {"type": "array", "maxItems": 4, "items": {"$ref": "#/$defs/GradingPass"}}
+      },
+      "allOf": [
+        {"if": {"properties": {"state": {"const": "error"}}}, "then": {"required": ["error"]}},
+        {"if": {"properties": {"verification_status": {"const": "max_iterations_reached"}}}, "then": {"properties": {"grading": {"minItems": 4}}}}
+      ]
+    },
+    "BatchRunRecord": {
+      "type": "object",
+      "required": ["run_id", "doc_name", "label", "model", "requirement_doc", "instructions", "messages", "grading", "analysis_markdown", "status", "started_at", "stage_order"],
+      "properties": {
+        "run_id": {"type": "integer", "minimum": 1},
+        "messages": {"type": "array", "items": {"type": "object", "required": ["type", "content", "tool_calls", "tool_call_id", "status"]}},
+        "grading": {"type": "array", "items": {"$ref": "#/$defs/GradingPass"}},
+        "status": {"enum": ["satisfied", "max_iterations_reached", "failed", "grader_error"], "description": "the run's verification status, derived from its passes as R13 derives verification_status"}
+      }
+    },
+    "CriterionRate": {
+      "type": "object", "required": ["passed", "total", "pass_rate"],
+      "properties": {"passed": {"type": "integer"}, "total": {"type": "integer"}, "pass_rate": {"type": ["number", "null"]}}
+    },
+    "BatchSummary": {
       "type": "object",
       "required": ["label", "model", "runs", "graded", "grader_errors", "first_attempt", "revisions_needed", "documents"],
       "properties": {
-        "label": { "type": "string", "minLength": 1 },
-        "model": { "type": "string" },
-        "runs": { "type": "integer", "minimum": 0 },
-        "graded": { "type": "integer", "minimum": 0 },
-        "grader_errors": { "type": "integer", "minimum": 0 },
-        "first_attempt": {
-          "type": "object",
-          "required": ["completeness", "clarity", "depth"],
-          "additionalProperties": { "type": "object", "required": ["passed", "total", "pass_rate"],
-            "properties": { "passed": { "type": "integer" }, "total": { "type": "integer" }, "pass_rate": { "type": ["number", "null"] } } }
-        },
-        "revisions_needed": { "type": "integer", "minimum": 0 },
-        "documents": { "type": "array", "items": { "type": "string" } }
+        "first_attempt": {"type": "object", "additionalProperties": false, "required": ["completeness", "clarity", "depth"],
+          "properties": {"completeness": {"$ref": "#/$defs/CriterionRate"}, "clarity": {"$ref": "#/$defs/CriterionRate"}, "depth": {"$ref": "#/$defs/CriterionRate"}}},
+        "revisions_needed": {"type": "integer", "minimum": 0}
       }
     },
-    "harness_change": {
-      "type": "object",
-      "required": ["target", "issue", "recurrence", "evidence", "section", "change", "rejected"],
+    "HarnessChange": {
+      "type": "object", "required": ["target", "issue", "recurrence", "evidence", "section", "change", "rejected"],
       "properties": {
-        "target": { "type": "string", "enum": ["prompt", "tool", "grader", "configuration"] },
-        "issue": { "type": "string", "minLength": 1 },
-        "recurrence": { "type": "string", "minLength": 1 },
-        "evidence": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
-        "section": { "type": "string", "description": "exact heading line in the instruction file; required non-empty when target is prompt, carried but ignored by the apply step for any other target" },
-        "change": { "type": "string", "minLength": 1, "description": "literal text to insert, not a description" },
-        "rejected": { "type": "array", "items": { "type": "string" } }
+        "target": {"enum": ["prompt", "tool", "grader", "configuration"]},
+        "evidence": {"type": "array", "items": {"type": "string"}, "minItems": 1},
+        "section": {"type": "string"},
+        "change": {"type": "string", "minLength": 1, "description": "literal text to insert, not a description of it"},
+        "rejected": {"type": "array", "items": {"type": "string"}}
       },
-      "if": { "properties": { "target": { "const": "prompt" } } },
-      "then": { "properties": { "section": { "minLength": 1 } } }
+      "if": {"properties": {"target": {"const": "prompt"}}}, "then": {"properties": {"section": {"pattern": "^#+ \\S"}}}
     },
-    "comparison": {
-      "type": "object",
-      "required": ["verdict", "keep", "criteria", "runs", "revisions_needed", "improved", "regressed"],
+    "Proposal": {
+      "type": "object", "required": ["id", "label", "status", "change", "proposal_markdown"],
       "properties": {
-        "verdict": { "type": "string", "enum": ["success", "partial", "regression", "no effect"] },
-        "keep": { "type": "boolean", "description": "false iff verdict is regression — the change is not kept (R21)" },
-        "criteria": { "type": "object", "additionalProperties": { "type": "array", "minItems": 2, "maxItems": 2, "items": { "type": "integer" } } },
-        "runs": { "type": "integer" },
-        "revisions_needed": { "type": "array", "minItems": 2, "maxItems": 2, "items": { "type": "integer" } },
-        "improved": { "type": "array", "items": { "type": "string" } },
-        "regressed": { "type": "array", "items": { "type": "string" } }
+        "id": {"type": "string", "pattern": "^[0-9a-f]{8}$"},
+        "status": {"enum": ["pending", "approved", "rejected"]},
+        "change": {"$ref": "#/$defs/HarnessChange"}
+      }
+    },
+    "Comparison": {
+      "type": "object",
+      "required": ["verdict", "criteria", "runs", "revisions_needed", "attempts", "input_tokens", "output_tokens", "improved", "regressed"],
+      "properties": {
+        "verdict": {"enum": ["regression", "success", "partial", "no effect"]},
+        "criteria": {"type": "object", "additionalProperties": {"type": "array", "items": {"type": "integer"}, "minItems": 2, "maxItems": 2}},
+        "revisions_needed": {"type": "array", "minItems": 2, "maxItems": 2},
+        "attempts": {"type": "array", "minItems": 2, "maxItems": 2},
+        "improved": {"type": "array", "items": {"type": "string"}},
+        "regressed": {"type": "array", "items": {"type": "string"}}
       },
-      "allOf": [
-        { "if": { "properties": { "verdict": { "const": "regression" } } }, "then": { "properties": { "keep": { "const": false } } }, "else": { "properties": { "keep": { "const": true } } } }
-      ]
+      "if": {"properties": {"regressed": {"minItems": 1}}}, "then": {"properties": {"verdict": {"const": "regression"}}}
     }
   }
 }
 ```
 
-The rubric is a text value supplied per run, one criterion per line in the form `- <name>: <threshold>`; criterion names are read from the rubric in order, and first-attempt failures are recorded by **position**, never by the grader's echoed name.
+**The report file contract** (the agent's deliverable, `/analysis.md` in its workspace): exactly these headings in this order — `# Requirements Analysis`, `## Confirmed Facts`, `## Ambiguities`, `## Clarification Questions`, `## Assumptions`, `## Summary`. List sections hold `- ` bullets; each Ambiguities bullet is `- **"<the exact clause>"**` followed by an indented `Reason:` line (and, once the instructions ask for them, indented `Resolved by:` and `Edge case:` lines). Section counts count `- `/`* ` bullet lines per list section; the Summary is counted in words.
 
 ## 4. Business Rules
 
-Each rule: behavior + the failure it prevents + provenance label + its acceptance criteria. "Course-demonstrated" rules trace to the materials via their CTX anchor; "project hardening" is this spec's own addition; `[environment]` is the lab's.
+Labels: *course-demonstrated* `(CTX-…)`; *project hardening*; `[environment]` (from the lab, never the course). Rubric budget, caps and failure counts cite their exact source.
 
 **Agent loop**
 
-- **R1 — Fetch by identifier.** A run's opening message to the review agent names only a ticket key ("the requirement is tracked as ticket `<key>`; fetch it to begin"); the agent obtains the text by calling the fetch tool, and a fetch for an unknown key returns an error message, never raises. Prevents the agent being built around one document (CTX-A, CTX-C3). *Course-demonstrated.* → AC1, AC2
-- **R2 — Retry transient tool errors with identical arguments.** When a tool returns an error — its result status is `error`, or its text begins with "error" ignoring case — the agent calls the same tool again with the same arguments until it succeeds; the trace records each failed attempt as its own tool row. The fetch tool's simulated outage is configurable (the run setting `FETCH_FAILURES`, §5.1) and the offline fixture plants **two** failures — the two failure texts declared in §5.1 (a 503-style message, then a timeout message), each beginning "Error" — before success — the value the Lesson 4 narration states aloud; the course's helper default is 0 (a clean fetch) and its lesson text and pre-baked trace say two, a contradiction resolved by the lever-value rule's first branch (narration); it is a post-build lever (CTX-B1, CTX-C4). *Course-demonstrated.* → AC3
-- **R3 — Six stages, one tool call per turn, in order.** The instruction file directs: fetch; write the file with the skeleton and only the Confirmed Facts section filled; then one edit each for Ambiguities, Clarification Questions, Assumptions, Summary; then one short completion sentence and no further tools. The order is *requested, not enforced*: a stage-order check reports `in_order` (the sections filled, in file order), `missing`, and `complete`; filling two sections in one edit is not a violation, filling one out of order or leaving one empty is (CTX-B2). *Course-demonstrated.* → AC4, AC5
-- **R4 — Analysis file contract.** The file matches §3.1; the Summary is two or three sentences (a sentence ends at `.`, `!` or `?` followed by whitespace or the end of the section, and the summary check reports the count); counts cover the four list sections and never the Summary; "complete" is as §3.1 defines (CTX-A). *Course-demonstrated.* → AC5, AC6
-- **R5 — Turn cap is a safety stop, not the normal stop.** The model-call cap (the run setting `RUN_TURN_CAP`, §5.1; one model call is one turn as R12 counts them) is **12** for a run without a grader (the Lesson 4 notebook and helper constant: six stages plus headroom for retries and the closing message) and **40** for a run with a grader (the Lesson 5 notebook, the event demo and the batch runner: several verification passes cost more turns). Both are single-valued body defaults, not a contradiction; a run whose budget is 0 (D2 option (b)) takes the 12 unless its Given names a cap. When the cap ends a run and the file is not complete, the trace's final action reports the cap ("Stops: turn limit of N reached"), never "Finishes the review" (CTX-B3). *Course-demonstrated.* → AC7
-- **R6 — Instructions are a file, loaded every run, and their absence fails loudly.** The agent's standing instructions live at `/memories/AGENTS.md` inside the run workspace and are loaded into context at the start of every run; the system prompt only points at them. If the file is missing when the agent is built, the build raises before any model call — a missing memory file is otherwise ignored silently and the agent produces a plausible bad review (CTX-B5). The file must contain, as level-2 headings, `Procedure` and `Review guidance`, and under the latter the level-3 headings `Confirmed facts`, `Ambiguities`, `Clarification questions`, `Assumptions` — the learning loop targets these headings. *Course-demonstrated.* → AC8, AC9
-- **R7 — The agent never edits its own instructions.** Writes under `/memories/**` — and, under D1 option (b), under `/skills/**`, the skill files being instructions too — are denied by a harness permission, not by instruction text alone; a write attempt returns a denial and the file is unchanged. Changes to the instructions are proposed and applied only from outside the agent (R17–R19) (CTX-B6). *Course-demonstrated.* → AC10
-- **R8 — Workspace confinement.** The agent's file tools see the run workspace as `/`; a path above it is unreachable and a read of one returns an error, not the file (the course notes the repository holds a real `.env`) (CTX-A). *Course-demonstrated.* → AC11
-- **R9 — Fresh workspace per run.** Every run gets a new workspace seeded with the instruction file under test (the baseline, or a batch's snapshot); two runs never see each other's analysis file. Event-triggered runs discard the workspace afterwards; batch runs keep each run's workspace beside its record. Prevents a stale analysis file being read and stages skipped (CTX-B7; the planted stale workspace of §5.1 is the fixture). *Course-demonstrated.* → AC12, AC51
+- **R1** — The review agent is never handed the requirement text. Its opening message names only the document's id ("The requirement document is tracked as ticket `<id>`. Fetch it to begin."), and it must call `fetch_requirement(ticket_id)` to get the text, which resolves to the line `REQUIREMENT: <page title>` followed by the linked page's latest version body (event runs), or to the batch document file of that id (batch runs). An unknown id returns an error text, not an exception. *Course-demonstrated* (CTX-A). → AC2
+- **R2** — `fetch_requirement` can fail transiently; when a tool returns an error text the agent calls the same tool again with the same arguments, and the run still completes. Failure injection is a counter per run (`FETCH_SIMULATED_FAILURES`), returning these texts in turn: `Error fetching requirement: 503 Service Unavailable. Please retry.` then `Error fetching requirement: request timed out after 10s. Please retry.` Default `0`. Contradicted lever: the course's helper default is 0 ("a clean fetch"), its Lesson 4 notebook table and narration say two failures, and its batch module uses 0; value chosen by narration for the demonstration (2, set by the fixture in AC3) and by the end-to-end config for normal runs (0) — post-build lever. *Course-demonstrated* (CTX-B1). → AC3
+- **R3** — The analysis is one file, `/analysis.md`, built in stages, one tool call per turn: one `write_file` laying down the exact skeleton (§3) with Confirmed Facts filled, then one `edit_file` each for Ambiguities, Clarification Questions, Assumptions, Summary; then a one-sentence completion reply with no tool call. Stage order is requested by the instructions, not enforced by the harness: each run records `stage_order` (sections filled by successful write/edit calls during the first attempt) and `in_order`; a failed edit does not count. *Course-demonstrated* (CTX-A, CTX-C). → AC4, AC5
+- **R4** — Section content: Confirmed Facts record only what the document states; each Ambiguities bullet quotes the exact clause and gives a `Reason:`; one bullet per clarification question and per assumption; the Summary is two or three sentences. Counts and summary words are computed from the file (§3). *Course-demonstrated* (CTX-A). → AC5, AC6
+- **R5** — The agent never modifies the requirement; the requirement page is the source of truth. Findings are written to a separate, agent-owned report page, never into the requirement page, and report pages cannot be edited through the requirement-edit endpoint. *Course-demonstrated* (CTX-A). → AC7, AC22
+- **R6** — The agent cannot write its own instructions: the harness denies every write under `/memories/` in the agent's filesystem by permission, not by asking in the instructions. *Course-demonstrated* (CTX-B6). → AC8
+- **R7** — Building the agent fails loudly, before any model call, when the instruction file is missing from the run's workspace (the framework silently ignores a missing memory file, and the agent would then produce a plausible bad review). The run's `state` becomes `error` and its `error` names the missing path `memories/AGENTS.md`. *Course-demonstrated* (CTX-B4). → AC9
+- **R8** — Every run gets a fresh workspace directory (id: 8 lowercase hex characters) seeded only with the instruction version under test, so no run ever sees another run's `/analysis.md`; event-run workspaces are deleted when the run ends. *Course-demonstrated* (CTX-B5). → AC10
+- **R9** — Model turns are capped (the framework's model-call limit, ending the run when hit): 40 for a run with a grader (the course's Lesson 5 notebook, its tracker app and its batch module), 12 for a run without one (Lesson 4 notebook). The cap is not the normal stop: when a run ends without a complete report (every list section non-empty and a non-empty Summary), the last trace row reads `Stops: turn limit of <N> reached` and `stop_reason` is `turn_limit`; otherwise `finished`. Post-build lever. *Course-demonstrated* (CTX-B7). → AC11
 
-**Verification loop** (in force when D2 = (a))
+**Verification loop**
 
-- **R10 — The grader judges the file, not the conversation.** Under D3 option (a) the grader is a separate model role given one tool, a file read, and — in its own prompt, never through the agent's conversation — the rubric text and the requirement text the run fetched (the run record's `requirement_doc`, from which it takes the requirement's clauses and title); before any verdict it reads `/analysis.md`; for every criterion it passes it records a verbatim quote with its line number as `evidence`, and a criterion it cannot quote fails with a `gap`; criteria are applied literally — a line with a different label than the one named does not satisfy it, and coverage criteria check every item, never a sample; the grader is conservative and never edits the file. Under D3 option (b) the same verdict shape is produced by code (CTX-B4). *Course-demonstrated.* → AC13, AC14, AC15
-- **R11 — Rubric, verdict and revision budget.** The rubric (read from the run setting `RUBRIC_PATH`, §5.1) has three pass/fail criteria named in order `completeness` (every clause of the requirement is addressed somewhere), `clarity` (every Ambiguities bullet has an indented `Resolved by:` line naming the fact or decision that settles it) and `depth` (every Ambiguities bullet has an indented `Edge case:` line naming a concrete production failure). A pass is `satisfied` only when every criterion passes in that same pass; otherwise `needs_revision`, and the per-criterion gaps are injected into the agent's conversation as feedback for another attempt; a malformed or contradictory rubric yields `failed`. The grader may send work back at most **MAX_RUBRIC_ITERATIONS = 3** times (the run setting `RUN_BUDGET`, §5.1; 0 is D2 option (b): no grader stage, empty grading, status `ungraded`) — the Lesson 5 narration's value; the course set it to 3 in the notebook and the batch runner and to **2** in the event demo, a contradiction resolved by the lever-value rule's first branch (narration states 3); it is a post-build lever (§6 Ask First), never a gate question. When the budget is exhausted the run's status is `max_iterations_reached` even though the last pass says `needs_revision` (CTX-A, CTX-C2). *Course-demonstrated.* → AC14, AC16, AC17, AC18
-- **R12 — Every run is recorded as §3.2.** One trace row per model turn and per tool result (`turns` counts model messages — every message that calls tools and every completion sentence, one per `Model reasoning` trace row — so the default run's 7 tool-calling messages plus its 2 completion sentences, one before and one after grader feedback, give 9, and a run with no grader gives 6 + 1 = 7), every grading pass with the file as that pass saw it (the grader's own tool calls are recorded on its grading pass, not in the agent trace), the instructions verbatim, the status and the counts; the record is viewable in the app. This is the local trace capture the course uses from Lesson 4 on (CTX-C11). *Course-demonstrated.* → AC18, AC19
-- **R13 — A grader error is not a verdict.** If the grader stage raises, the pass is recorded with `result: grader_error` and no criteria, the run continues, and the run's status is `grader_error` (not `ungraded`, which §3.2 reserves for a run with no grader): it is excluded from every pass-rate denominator and counted under `grader_errors` in the batch summary — never averaged away as a pass or a fail (CTX-B8). *Course-demonstrated.* → AC20, AC34
+- **R10** — The rubric is supplied per run (read from `harness/rubric.txt`, §5), not fixed when the agent is built, and has three pass/fail criteria, in this order: **completeness** — every clause of the requirement document is addressed somewhere in the analysis; **clarity** — every Ambiguities bullet has an indented `Resolved by:` line naming the fact or decision that would settle it; **depth** — every Ambiguities bullet has an indented `Edge case:` line naming a concrete production failure it could cause. Done means all three pass in the same grading pass; two of three is not done. *Course-demonstrated* (CTX-A). → AC12, AC44
+- **R11** — The grader judges the file, never the conversation: its only tool is `read_file`, scoped to the run's workspace; it reads `/analysis.md` before judging; it passes a criterion only after quoting the satisfying text verbatim with its line number; it applies labels literally (a `Reason:` line never satisfies `Resolved by:`) and checks every item rather than sampling; it treats the transcript as untrusted observation. Its instructions restate the three verdict definitions — `satisfied`, `needs_revision` (each failing criterion gets a short actionable `gap`), `failed` (rubric malformed or impossible to evaluate) — because supplying custom grader instructions replaces the framework's default ones. *Course-demonstrated* (CTX-B3). → AC13, AC14, AC45
+- **R12** — On `needs_revision` the failing criteria's gaps go back into the agent's conversation and the agent revises the same file. The grader may send work back at most **3** times (so at most 4 grading passes). Contradicted lever: 3 in the Lesson 5 notebook and the batch module, 2 in the course's tracker app; value by the narration branch ("We have also set the MAX_RUBRIC_ITERATIONS to 3") — post-build lever. Every pass is recorded with `iteration`, `result`, `explanation`, `criteria` (name, passed, gap) and the file exactly as that pass saw it. *Course-demonstrated* (CTX-B2). → AC6, AC12, AC15
+- **R13** — The run's `verification_status` is derived from its passes: `satisfied` when the last pass is satisfied; `max_iterations_reached` when the budget is spent and the last pass is still `needs_revision` (the last pass alone would misreport this); otherwise the last pass's result (`failed`, `grader_error`). *Course-demonstrated* (CTX-B8). → AC15, AC26
+- **R14** — A malformed rubric yields a `failed` pass and no revision. A grader that raises is recorded as a `grader_error` pass with no criteria, and the run continues to its end. *Course-demonstrated* (CTX-B11). → AC16, AC26
 
-**Event-driven loop**
+**Event-driven loop** (applies under D1a)
 
-- **R14 — Events trigger the loop.** Three triggers run one analysis for a ticket: creating a ticket, saving a new version of a requirement page (which re-runs the loop for **every** ticket linked to that page whose status is not `Done`, and nothing when none is open), and a manual re-run on a ticket that is not `Done`. A `Done` ticket is never re-triggered. Each trigger calls the same single function a real tracker webhook would call, and the run record's `trigger` names which one fired (CTX-A, CTX-C5). *Course-demonstrated.* → AC12, AC24, AC25, AC26, AC27
-- **R15 — The report is written next to the requirement, never into it.** A run's result is appended as a new version of an agent-owned report page (kind `analysis_report`, one per ticket, created on first use with id `page-analysis-<ticket key lower-cased>` and title "Analysis Report — <key>"), authored by the fixed bot author string, whose body opens with a three-line banner — `Ticket: <key>`, `Requirement version <n> analyzed`, `Verification: <status> after <n> grading pass(es)` — followed by a blank line and the analysis. The requirement page is the source of truth: the agent never writes to it, and the app rejects (HTTP 400) an edit to any page that is not a requirement page. Any two versions of any page can be compared as a unified diff; for a report page the comparison also shows the two runs' status and counts (CTX-C5). *Course-demonstrated.* → AC28, AC29, AC30
-- **R16 — Ticket lifecycle; a human closes.** A new ticket is `Open`; a completed run sets it to `Analysis Ready`, records `last_analyzed_version` and `last_run_id`, and adds a bot comment of the form `Analysis complete (<status>): requirement version <n>, report: <report page title>`; only a human action moves a ticket to `Done` — the agent never closes its own work. When a ticket has more than one run, the ticket page shows a "what changed since the previous run" table: requirement version, status, and the four section counts side by side, plus the run history (CTX-C5). *Course-demonstrated.* → AC17, AC27, AC31, AC32
+- **R15** — Triggers: creating a ticket linked to a requirement page starts a run; saving a new version of a requirement page starts a run for every ticket linked to it whose status is not `Done`; "re-run now" on a ticket that is not `Done` starts a run. A `Done` ticket is never re-triggered. Every run analyzes the page's latest version. *Course-demonstrated* (CTX-A). → AC17, AC18, AC19
+- **R16** — Write-back: each run adds a new version, authored `Requirements Analysis Agent (bot)`, to the ticket's report page (created on its first run: id `page-analysis-<ticket key lowercased>`, title `Analysis Report — <key>`), whose body is a banner — `> Generated automatically from <key> on <timestamp>.`, `> Source requirement: version <n>.`, `> Verification status: **<status>** after <k> grading pass(es).` — followed by the report file. The ticket then gets `status: "Analysis Ready"`, `last_analyzed_version`, `last_run_id`, and a bot comment `Analysis complete (<status>), requirement version <n>. See Analysis Report — <key>.` Timestamps use `YYYY-MM-DD HH:MM UTC`. *Course-demonstrated* (CTX-A). → AC17, AC18
+- **R17** — Only a person marks a ticket `Done` (the done endpoint); no run ever sets `Done`, and the agent never closes its own work. *Course-demonstrated* (CTX-C). → AC19, AC20
+- **R18** — Every run is stored. A ticket's view shows the latest run (status, turns, each grading pass's criterion/result/gap table, the trace) and, once it has two runs, a "what changed since the previous run" table — requirement version analyzed, verification status, and bullet counts for the four list sections — together with a link to the full unified diff of the two report versions. Both are shown because counts can stay identical while the content changes completely. *Course-demonstrated* (CTX-B13). → AC21
+- **R19** — Pages are versioned; any two versions of a page can be compared as a unified diff, and for report pages the comparison also returns the two runs behind those versions. New requirement page ids are `page-` plus the title lowercased with every non-alphanumeric run turned into one `-`, trimmed, and suffixed `-2`, `-3`, … on collision. New ticket keys are `REQ-` plus one more than the highest existing number (100 when none). Authors and assignees are chosen from a fixed cast: `Avery (Product Manager)`, `Blake (Eng Lead)`, `Casey (QA Lead)`, `Drew (Backend Engineer)`, `Emery (Frontend Engineer)`. *Course-demonstrated* (CTX-A); names are the generator's own. → AC17, AC21, AC22
 
-**Learning loop**
+**Learning loop** (applies under D4a)
 
-- **R17 — The analyst proposes; a human approves; code applies; only the instruction file is auto-applied.** The analyst returns a typed change (§3.4) and writes a human-readable proposal file; nothing is applied until a human takes an explicit approve action in the app; applying inserts the change with plain string work, no model call; a change whose target is `tool`, `grader` or `configuration` is expressible but refused by the apply step with a message to read the proposal and decide. The course argues one side only — confidence in merging harness changes comes from human review plus a regression check — so this is baked in, not a row (CTX-C6). *Course-demonstrated.* → AC35, AC36
-- **R18 — Analyst evidence discipline and read-only access.** The analyst is rooted at the batch history, may read anything there and write exactly one file, `/proposal.md` (every other write is denied); it starts from the batch summary's first-attempt pass rates to pick the criterion to investigate, reads individual runs for evidence and the batch's instruction snapshot so its addition fits the file and repeats nothing already there; evidence is quoted, not paraphrased; the `change` is literal insertable text with the exact label when a labelled line is needed; a problem appearing in a minority of runs is not a pattern and goes under `rejected`. **Recurrence threshold** (generator's reading of the course's "most runs" / "one run out of five is not a pattern"): a criterion is systemic when it fails first attempt in **more than half** of graded runs — a post-build lever (§6 Ask First). (CTX-B9, CTX-C6). *Course-demonstrated; threshold value is the generator's quantification.* → AC33, AC35, AC47
-- **R19 — Applying a change.** The change text is inserted at the end of the section whose heading line the change names (the section ends at the next heading of the same or shallower depth; trailing blank lines of the section are trimmed; one blank line precedes and follows the inserted text; the file ends with a newline); a heading not found is an error and nothing is written. The applied file becomes the new baseline for subsequent runs and is snapshotted into the next batch (CTX-C6). *Course-demonstrated.* → AC36, AC37
-- **R20 — A batch is one run per document under one instruction version.** A batch has a label; it snapshots the instruction file under test into its directory, runs every batch document — the five numbered files `01_session_timeout.md`…`05_search_relevance.md` of §5.1; `UPL-310.md` is the seed scenario's requirement and never a batch document — in sorted filename order with a fresh workspace each (R9), the grader on (budget per R11), a cap of 40, and no simulated fetch failures (the retry demonstration belongs to the agent-loop lesson; here it only adds turns; a batch ignores `FETCH_FAILURES` and `RUN_TURN_CAP`); each run is written as its own JSON record with every message untruncated (§3.2 `messages`: full tool-call arguments, never the 220-character trace cut), and the batch writes a summary (§3.4) whose denominators are graded runs only, whose `pass_rate` is `passed/total` rounded to 3 decimal places (`null` when `total` is 0) and whose `revisions_needed` counts graded runs with any first-attempt failure (CTX-A). *Course-demonstrated.* → AC33, AC34, AC46, AC47
-- **R21 — Compare two batches.** Per criterion, first-attempt passes before vs after; verdict `regression` if any criterion's passes fell, else `success` if the after batch needed zero revisions, else `partial` if any criterion rose, else `no effect`; `improved` and `regressed` list the criteria that moved. A regression means the change is not kept: the comparison carries `keep: false` (every other verdict `keep: true`), and on a `regression` the Learning page offers a **Revert** action that restores the before batch's instruction snapshot as the baseline — a human action like approval (R17), never automatic; no other verdict offers it (CTX-C6). *Course-demonstrated; the revert action is project hardening.* → AC40, AC46, AC50
+- **R20** — A batch reviews every batch document once under one instruction version, each run in its own fresh workspace seeded from that version, with the verification loop on and fetch-failure injection off; the batch folder keeps a snapshot of the instructions it ran with. Each run record keeps the whole conversation untruncated (every message, full tool-call arguments, the grader feedback injected after a failed pass), every grading pass, the final file, the instructions snapshot, the status and the stage order. The batch summary gives, per criterion, first-attempt passes, total and pass rate (3 decimals), plus `revisions_needed` (graded runs whose first pass failed anything). Criteria are identified by their **position** in the rubric, never by the name the grader echoes back (the grader paraphrases names run to run). *Course-demonstrated* (CTX-B9, CTX-B10). → AC23, AC24, AC25
+- **R21** — A run whose first pass carries no criteria (a `grader_error`) is excluded from every rate and counted in `grader_errors`; denominators are graded runs. *Course-demonstrated* (CTX-B11). → AC26
+- **R22** — The analyst is a separate agent rooted at the batch history: it may read anything there and write only `/proposal.md`; every other write is denied, so it cannot alter the evidence it reasons from. It starts from the batch summary, reads the runs and the instructions snapshot, and acts only on a criterion that failed the first attempt in **more than half** of the graded runs (the generator's reading of the course's "most runs" and "a problem appearing in one run out of five is not a pattern" — a post-build lever); anything seen in at least one but not more than half of the graded runs goes under `rejected` with the reason. It quotes evidence verbatim, never restates instructions the file already has, returns one structured `HarnessChange` whose `change` is the literal text to insert, and writes `proposal.md` with the sections `Summary signal`, `Current instruction gap`, `Evidence across runs`, `Proposed insertion`, `Rejected observations`. Turn cap 40. *Course-demonstrated* (CTX-B12). → AC27, AC28, AC46
+- **R23** — Nothing is applied until a person approves the proposal; rejecting it leaves the instructions unchanged. *Course-demonstrated* (CTX-C). → AC29
+- **R24** — Applying is plain code, never a model call: only `target: "prompt"` is applied, by inserting the `change` text at the end of the named section (the section ends at the next heading of the same or shallower depth; trailing blank lines are trimmed; one blank line before and after the insertion). Any other target is refused with a message containing `not applied automatically`; a section that does not exist is an error naming it. Each applied change creates a new instruction version; earlier versions are kept. *Course-demonstrated* (CTX-C). → AC30, AC31
+- **R25** — After a change, the same batch is re-run under the new version and the two summaries are compared: per criterion (before, after) first-attempt passes, revisions needed, attempts (grading passes in total), token estimates; `improved` and `regressed` criteria; verdict `regression` if any criterion's passes fell, else `success` if no revisions were needed after, else `partial` if any criterion improved, else `no effect`. *Course-demonstrated* (CTX-C). → AC32, AC33
+- **R26** — The baseline instruction file (version 1) has a fixed Procedure half and a Review guidance half (the half that gets revised), names the registered fetch tool exactly as `fetch_requirement` (the course's copies disagree — see CTX-C — and the code-registered name wins), and does **not** ask for `Resolved by:` or `Edge case:` lines: the rubric expects lines the instructions never ask for, which is the recurring gap the learning loop exists to find. *Course-demonstrated* (CTX-B9). → AC23, AC34
 
-**Environment and hardening**
+**Model, runtime and records**
 
-- **R22 — LLM access and model roles** `[environment]`. The app reads exactly `OPENAI_API_KEY` and `OPENAI_BASE_URL` (the course's provider through the platform proxy) and the three model-role variables of §2; it never reads `ANTHROPIC_API_KEY`/`ANTHROPIC_BASE_URL` (present in the container, unread), never hardcodes a key or model id, never probes a model-listing endpoint, and never asks the person for a key. Every model filling a role must support native tool calling, and the analyst's model must additionally return a structured (typed) final response — the §3.4 harness change — because the apply step reads fields, not prose. **Model tiering lever** (the course's argument, carried from the constrained model/provider dimension): match model capability to each role's task — the course ran the review agent and grader on its cheaper model and the analyst on its stronger one "because reading five full run traces and finding what recurs is the one job the cheaper model does unreliably", and notes a different grader model is "a common production choice"; which platform model fills each role is set at gate time through the "(Recommended)" flag and changed only through §6 Ask First. *Environment-imposed (the lever's argument is course-demonstrated, CTX-C7).* → AC38, AC39, AC48
-- **R23 — One server, port 4000** `[environment]`. One process serves the three surfaces and their API on port 4000 bound to `0.0.0.0`; nothing else is previewable; HTTP only (no WebSocket upgrades); long-running analyses complete within one HTTP request or are polled over plain HTTP. *Environment-imposed.* → AC42
-- **R24 — Every URL inside a page is relative** `[environment]`. Links, form actions, fetch calls and asset references use relative paths (`api/tickets`, never `/api/tickets`), because the preview is reverse-proxied under a path prefix and a root-absolute path resolves against the IDE. *Environment-imposed.* → AC43
-- **R25 — Records survive a restart.** Pages with all versions, tickets with status and comments, runs with grading passes, and batches with their summaries are persisted on local disk as they are written and are intact after the server process is stopped and started again; a fresh start with no data seeds the §5 starting scenario exactly once (CTX-C10). *Course-demonstrated (flat JSON store, seeded on first start), reinforced `[environment]` (only the workspace disk persists between lab sessions, so any record held in process memory is lost at every restart).* → AC41, AC23
-- **R26 — Offline acceptance suite on the scripted model.** The suite runs the real pipeline against the scripted stand-in (RR1) with no network and no key; fixtures are never modified to make a test pass; criteria tagged `live` are skipped offline and run only when the keys are present. *Project hardening.* → AC44
-- **R27 — Edit tool rejects a non-unique anchor.** The file edit tool replaces exactly one occurrence of its anchor string; an anchor that occurs more than once (or not at all) returns an error and leaves the file unchanged, and the agent recovers by reading the file and retrying — the course saw duplicate headings and edit errors in some runs and the analyst correctly rejected them as non-patterns (CTX-B10). *Course-demonstrated.* → AC21, AC22
-- **R28 — No scripted or hosted dependency is mislabelled.** The scripted model's registered name and description say it is a fake stand-in; the simulated tracker and wiki say so in their page titles. *Project hardening.* → AC45
-- **R29 — Build-workspace and interpreter discipline** `[environment]`. Three lab pitfalls, one rule: (i) the review agent's baseline instruction file lives under the app's data directory and no source file reads or writes the build-root `AGENTS.md`, which the lab's IDE rewrites at every boot; (ii) `python3 --version` runs before any install and is recorded in `resolved-decisions.md`, and a course pin the interpreter refuses stops the build with a report naming the pin and the recorded version — never a silently substituted version; (iii) inside the venv the course pins win over the preinstalled copies (`openai` 3.6.0, `python-dotenv` 1.2.3), verified by the installed version, not assumed. *Environment-imposed.* → AC49
+- **R27** — `[environment]` The app reads exactly `OPENAI_API_KEY` and `OPENAI_BASE_URL` for every live model call, sends every request to `OPENAI_BASE_URL`, and reads the model for each role from `REVIEW_AGENT_MODEL`, `GRADER_MODEL` (falling back to the review agent's model, as the course ran both on one model) and `ANALYST_MODEL`. It never reads the `ANTHROPIC_*` pair, never contains a key literal, and never asks anyone for a key. Each role's model is a platform model that supports native tool calling and structured output (the model/provider Invariant, Environment Resolutions). `api/config` reports the backend, each role's model and the base URL — never a key. → AC35, AC36, AC44
+- **R28** — `LLM_BACKEND=scripted` swaps every role's model for the §5 scripted stand-in and changes nothing else: the same harness, tools, permissions, grader wiring, stores and endpoints run. The offline suite passes with no key and no reachable network. *Project hardening* (the course's offline path replayed saved traces instead). → AC37
+- **R29** — `[environment]` One server, bound to `0.0.0.0` on port 4000, serves both the page and the API. → AC38
+- **R30** — `[environment]` Every URL inside the page is relative (`api/tickets`, never `/api/tickets`). → AC39
+- **R31** — `[environment]` HTTP only: no WebSocket; the page learns about a running run by polling its run record. → AC40
+- **R32** — Tickets, pages, runs, instruction versions, batches and proposals persist across a process restart. Environment-dimension invariant; *course-demonstrated* (the course's tracker and batch history kept them in flat JSON files, CTX-A). → AC41
+- **R33** — `[environment]` The instruction files live inside the app's own folder (default `harness/instructions/`; each run's workspace gets a copy at `/memories/AGENTS.md`); the build never writes the workspace-root `AGENTS.md`. → AC42
+- **R34** — Every run keeps a local trace: one row per model turn (`Model reasoning`, action `Calls <tool>[: <sections filled>]`, or `Finishes the review`) and one per tool result (`Tool`, the call's label, the result's text with whitespace collapsed and cut to 220 characters plus `…`); a run the turn cap ends (R9) closes with one `Harness` row whose action is `Stops: turn limit of <N> reached`. The grader's turns are recorded in the same trace, in order, with the same row kinds: its `read_file` call as a `Model reasoning` row `Calls read_file` followed by that call's `Tool` row, and its verdict as a `Model reasoning` row `Returns verdict: <result>`, a finishing row with no tool row after it. *Course-demonstrated* (CTX-A); replaces the hosted viewer (Environment Resolutions). → AC43
+- **R35** — On first start with an empty data directory the app seeds: one requirement page `page-req-export` (kind `requirement`, title `Customer Data Export — Requirements`, version 1 authored `Avery (Product Manager)`, body = the `seed_data_export.md` clauses, one per line), one ticket `REQ-104` (`Review requirements: Customer Data Export`, linked to that page, assignee `Blake (Eng Lead)`, status `Open`), an empty run list, instruction version 1 = the baseline file, and the five batch documents. *Course-demonstrated* shape (CTX-A); content is the generator's own. → AC1
 
-## 5. Acceptance Criteria
+## 5. Acceptance Criteria ★ (the oracle)
 
-### 5.1 Fixture corpus (declared before any criterion uses it)
+### Fixture corpus
 
-All fixtures live under `fixtures/` in the build folder; every filename is an importable identifier where it is a module. The facts below are the authoritative content — the builder writes the files to match them, and the suite never modifies them (R26). No text here is copied from the course; the course's own documents and ids are provenance only (CTX-C name-map).
+All files below live under `fixtures/` in the app folder, except the two shipped app files `harness/instructions/v1.md` and `harness/rubric.txt`, declared here because criteria read them; the building agent MUST NOT modify fixtures to make a test pass. A planted state that removes or overwrites a shipped app file restores it when the test ends. A **clause** is each non-empty line after a document's `REQUIREMENT:` title line. **Vague terms** (whole word, case-insensitive): `quickly`, `securely`, `standard`, `reasonable`, `appropriate`, `easily`, `promptly`, `relevant`, `sensible`, `large`. A clause containing one is **ambiguous**.
 
-**Requirement documents** — `fixtures/requirements/`. Each file's first line is `REQUIREMENT: <title>`; every following non-empty line is one clause. A clause is *vague* when it contains one of exactly these words, whole-word, case-insensitive: `securely`, `common`, `reasonable`, `appropriately`, `quickly`, `sensible`, `easily`. The scripted review role (below) keys its output on clauses and vague words, so these counts are what the criteria assert. The **batch documents** (R20) are exactly the five numbered files `01_…`–`05_…`; `UPL-310.md` is the seed scenario's requirement and is never a batch document.
+| File | Title line | Clauses (ambiguous ones marked with their term) |
+|---|---|---|
+| `requirement_docs/seed_data_export.md` | `REQUIREMENT: Customer Data Export` | `Customers shall be able to export their account data.` · `Exports should be delivered quickly.` (quickly) · `The system should support standard file formats.` (standard) |
+| `requirement_docs/doc_01_session_timeout.md` | `REQUIREMENT: Session Timeout` | `Idle sessions shall be closed after a reasonable time.` (reasonable) · `Users must be warned before their session closes.` · `Closed sessions should be resumable easily.` (easily) |
+| `requirement_docs/doc_02_product_search.md` | `REQUIREMENT: Product Search` | `Search results shall appear promptly.` (promptly) · `Results must be ordered by relevant criteria.` (relevant) · `The system shall record every search query.` |
+| `requirement_docs/doc_03_audit_log.md` | `REQUIREMENT: Audit Log` | `Every administrator action shall be logged.` · `Logs must be stored securely.` (securely) · `Old entries should be archived after an appropriate period.` (appropriate) · `The log shall be searchable by date.` |
+| `requirement_docs/doc_04_rate_limits.md` | `REQUIREMENT: Rate Limits` | `Clients shall be limited to a sensible number of requests.` (sensible) · `Limit breaches must be reported to the client.` · `Large customers may request higher limits.` (large) |
+| `requirement_docs/doc_05_scheduled_reports.md` | `REQUIREMENT: Scheduled Reports` | `Users shall be able to schedule recurring reports.` · `Reports must arrive quickly after the scheduled time.` (quickly) · `Failed deliveries should be retried an appropriate number of times.` (appropriate) |
+| `special/fx_stubborn.md` | `REQUIREMENT: Stubborn Fixture` | `Dashboards should load quickly.` (quickly) |
+| `special/fx_loop.md` | `REQUIREMENT: Loop Fixture` | `Uploads should finish promptly.` (promptly) |
+| `special/fx_rogue.md` | `REQUIREMENT: Rogue Fixture` | `Passwords must be stored securely.` (securely) |
+| `special/fx_decoy.md` | `REQUIREMENT: Decoy Fixture` | `Emails should be sent promptly.` (promptly) |
+| `special/fx_grader_error.md` | `REQUIREMENT: Grader Error Fixture` | `Invoices should be issued promptly.` (promptly) |
 
-| File | Title | Clauses (in order) | Vague clauses |
+- The **batch documents** are the five `doc_0N_*` files; their ids are their file stems. `seed_data_export.md` is the seed page's version-1 body (R35).
+- `seed_edit_v2.txt` — the seed page body with its second clause replaced by `Exports should be delivered in a reasonable time.` (still ambiguous: reasonable), the other two clauses unchanged.
+- `harness/instructions/v1.md` (shipped as the baseline, R26/R33) — contains: a title; a `## Procedure` section listing the six stages of R3 in order, naming `fetch_requirement`, `write_file`, `edit_file`, giving the exact skeleton headings and the ambiguity bullet shape (bold-quoted clause, indented `Reason:` line), telling the agent to retry a tool that returns an error with the same arguments, never to modify the requirement or this file, and to finish with one short sentence and no tool call; a `## Review guidance` section with exactly four subsections in this order: `### Confirmed facts`, `### Ambiguities`, `### Clarification questions`, `### Assumptions`. It contains neither `Resolved by:` nor `Edge case:`.
+- `verdict_pairs.json` — three before/after summary pairs (first-attempt passes out of 5; `revisions_needed`):
+
+| Pair | Before (completeness, clarity, depth; revisions) | After | Expected verdict |
 |---|---|---|---|
-| `UPL-310.md` (the seed scenario's requirement; also the default ticket) | Profile Avatar Upload | 1 "Users shall be able to upload an avatar image to their profile." · 2 "Uploaded images must be stored securely." · 3 "The feature should accept all common image formats." | 2 (clauses 2, 3) |
-| `01_session_timeout.md` | Session Timeout | "Sessions shall expire after a reasonable period of inactivity." · "Users must be warned before expiry." · "Expired sessions should be handled appropriately." · "The system shall log every expiry." | 2 |
-| `02_export_reports.md` | Report Export | "Users shall be able to export reports." · "Exports must complete quickly." · "Exported files should use common formats." · "The system shall record each export." | 2 |
-| `03_rate_limiting.md` | API Rate Limiting | "The API shall limit request rates per client." · "Limits must be sensible for normal usage." · "Clients exceeding limits should be notified appropriately." · "The system shall record rejected requests." | 2 |
-| `04_audit_logging.md` | Audit Logging | "The system shall log privileged actions." · "Logs must be retained for a reasonable period." · "Logs should be searchable easily." · "Log access shall itself be logged." | 2 |
-| `05_search_relevance.md` | Search | "Search shall return matching items." · "Results must load quickly." · "Common misspellings should be tolerated." · "The system shall record search queries." | 2 |
+| `regression` | 5, 3, 3; 2 | 5, 2, 4; 3 | `regression` (clarity fell) |
+| `partial` | 5, 0, 0; 5 | 5, 3, 0; 5 | `partial` (clarity improved, revisions remain) |
+| `no_effect` | 5, 0, 0; 5 | 5, 0, 0; 5 | `no effect` |
 
-**Fake tracker seed** — `fixtures/tickets.json`: a map from ticket key to the document text above: `UPL-310`, `SESS-101` (01), `EXP-202` (02), `RATE-303` (03), `AUD-404` (04), `SRCH-505` (05). The fetch tool resolves a key against this map at call time (R1); the batch runner seeds each document under the default key `UPL-310` before each run, exactly as the course's runner does, so the opening message is identical for every run. An event run (ticket created, page saved, manual re-run — R14) does the same: immediately before the run it seeds the linked requirement page's *current* body (its latest version, rendered as `REQUIREMENT: <title>` plus one clause per line) under `UPL-310`, so its opening message names `UPL-310` and the fetch returns the page as it stands at trigger time — three clauses for the seed page, four after AC25's save, which is what AC25 and AC32 see. **Both seedings are in memory only**: they replace the fetch tool's in-process map entry for that run and never write `fixtures/tickets.json`, which stays byte-identical (AC44's hash check). **Simulated fetch failures** (R2): when the run setting `FETCH_FAILURES` is N, the fetch tool's first N calls return, in order, failure text 1 `Error: 503 Service Unavailable — the tracker is busy, retry` and failure text 2 `Error: request timed out after 30 s` (N = 2 plants both; N = 1 plants only the first), and every later call succeeds; both texts begin "Error", which is what R2 detects.
+- `harness/rubric.txt` (shipped with the app, R10; read at the start of every run) — exactly three lines, in R10's order: `- completeness: every clause of the requirement document is addressed somewhere in the analysis.`, `- clarity: every Ambiguities bullet has an indented "Resolved by:" line naming the fact or decision that would settle it.`, `- depth: every Ambiguities bullet has an indented "Edge case:" line naming a concrete production failure it could cause.`
+- `bad_rubric.txt` — the single line `No criteria here.` (no `- ` criterion lines).
+- **Planted states** (set up by the tests, declared here): `FETCH_SIMULATED_FAILURES=2` (two transient fetch failures, then success); the current instruction version's file removed from `harness/instructions/` (a missing instruction file); `harness/rubric.txt` overwritten with the text of `bad_rubric.txt` (a malformed rubric); a directory named with a finished run's `workspace_id`, recreated holding an `analysis.md` that contains `STALE-MARKER` (stale output from an earlier run); the two-document batch `fx_grader_error` + `doc_01_session_timeout` run directly through the batch runner, whose `fetch_requirement` resolves `fx_grader_error` to `special/fx_grader_error.md` (a planted batch may name a `special/` fixture by its file stem) and `doc_01_session_timeout` to its batch document file.
+- `refused_changes.json` — three `HarnessChange` objects identical except `target`: `tool`, `grader`, `configuration`; plus one with `target: "prompt"` and `section: "### Nonexistent"`.
 
-**Run settings (test hooks).** Four settings, each read from an environment variable when a run starts and also accepted as a keyword argument of the one-analysis function (R14), the argument winning: `RUN_BUDGET` (R11; default 3; 0 is D2 option (b), no grader stage), `RUN_TURN_CAP` (R5; default 40 when the budget is above 0, 12 when it is 0), `FETCH_FAILURES` (R2; default 0), `RUBRIC_PATH` (R11; default `fixtures/rubric.txt`). A batch ignores `FETCH_FAILURES` and `RUN_TURN_CAP` (R20 fixes 0 and 40). The two scripted-model hooks are `SCRIPTED_MODEL` and `SCRIPTED_VARIANT` (below), and the workspace hook is `WORKSPACE_ROOT` — the directory under which event and direct runs create their workspaces (default: `workspaces/` under the app's data directory; batch workspaces live beside their records instead, R9).
+### The scripted model (honestly labelled stand-in)
 
-**Planted workspace states.** `fixtures/stale_workspace/` is a finished workspace from an earlier run: `analysis.md` byte-identical to `analysis_samples/complete_v2.md` and `memories/AGENTS.md` byte-identical to `instructions_v1.md`; a test copies it to `<WORKSPACE_ROOT>/stale/` before a run (AC51) and the copy, not the fixture, is what the run could wrongly reuse. Two states are created by the test at run time, not stored: the *missing-instructions workspace* — an empty directory handed as the workspace root to the agent constructor `build_review_agent(workspace_root)`, the function every run uses to build its agent, with no `memories/AGENTS.md` seeded (AC8); and the *sample workspace `<name>`* — a directory holding `memories/AGENTS.md` (= `instructions_v1.md`) and `analysis.md` byte-identical to `analysis_samples/<name>.md`, used where a tool or the grader stage is invoked directly (AC15, AC21).
+`scripted_model.py` defines a chat model registered with the description **"Scripted stand-in for the live model — not a real LLM; responses follow the declared fixture script."** It implements the framework's chat-model interface, including tool binding and structured output, so the real harness runs unchanged (R28). It keeps a call counter, and exposes a test hook that holds its next response until the test releases it. Per role:
 
-**Starting scenario** (seeded on first start, R25): one requirement page `page-req-avatar-upload`, title "Profile Avatar Upload — Requirements", version 1 authored by "Avery (Product Manager)", body = the three clauses of `UPL-310.md`; one ticket `REV-100`, title "Review requirements: Profile Avatar Upload", status `Open`, assignee "Blake (Eng Lead)", linked to that page, no comments, no runs; zero report pages; zero batches. The fixed cast of people: "Avery (Product Manager)", "Blake (Eng Lead)", "Casey (QA Lead)", "Devon (Backend Engineer)", "Emery (Frontend Engineer)". Bot author string: `Review Agent (bot)`. New ticket keys are `REV-<n>` with n = highest existing + 1, starting at 100.
+**Review agent role.** It reads the document title from the fetched text's `REQUIREMENT:` line to pick its mode (`normal` unless the title names a special fixture). A quirk below keyed by a document id (`doc_02_product_search`, `doc_03_audit_log`, `doc_04_rate_limits`) applies to any fetched text whose title is that document's (`Product Search`, `Audit Log`, `Rate Limits`), in event runs as in batch runs; the grader role keys its quirks the same way. The **label condition** holds when the agent's loaded instructions contain `Resolved by:` or its conversation contains grader feedback.
+1. Calls `fetch_requirement` with the id from the opening message; on each error result, calls it again with the same id, until a call returns the document.
+2. `write_file` `/analysis.md`: the skeleton with one Confirmed Facts bullet per clause (the clause text verbatim). Exception: on `doc_03_audit_log` while the instructions lack `Resolved by:` and no grader feedback has arrived, the clause `The log shall be searchable by date.` is omitted.
+3. `edit_file` Ambiguities: one bullet per ambiguous clause, `- **"<clause>"**` then `  Reason: "<term>" is not defined.`; when the label condition holds, also `  Resolved by: a stated, measurable value for "<term>".` and `  Edge case: an implementation that guesses "<term>" fails in production.` On `doc_02_product_search`, the first Ambiguities edit uses an old string that occurs more than once in the file (a blank line); after the tool's error, it repeats the edit with the unique heading line.
+4. `edit_file` Clarification Questions: one bullet per ambiguous clause, `- What exactly does "<term>" mean in "<clause>"?`
+5. `edit_file` Assumptions: one bullet per ambiguous clause, `- A developer would choose their own meaning for "<term>".`
+6. `edit_file` Summary: `The requirement has <c> clauses, <a> of which need clarification. Answer the clarification questions before implementation starts.`
+7. Replies `Review complete.` with no tool call.
+8. After grader feedback: one `write_file` rewriting the whole file — the six §3 headings, one Confirmed Facts bullet per clause, the Ambiguities bullets with their labelled lines, and the Clarification Questions, Assumptions and Summary sections exactly as steps 4–6 wrote them — then `Review complete.`
 
-**Instruction files** — `fixtures/instructions_v1.md` is the review agent's baseline instruction file. Facts: it contains level-2 headings `Procedure` and `Review guidance`, and under the latter level-3 headings `Confirmed facts`, `Ambiguities`, `Clarification questions`, `Assumptions`; its Procedure names the fetch tool `fetch_requirement` and the six stages of R3 with the five-section skeleton and the ambiguity bullet shape (bold quoted clause, indented `Reason:` line), the retry-with-identical-arguments rule, "never modify the requirement; never edit this file", and the closing one-sentence completion; its Review guidance says facts are only what the document states (no inference), ambiguities quote the exact clause and give the reason, questions are what a reviewer needs answered before work starts, assumptions are what a developer would assume if nobody answered. **It contains neither the string `Resolved by:` nor `Edge case:`.** `fixtures/instructions_v2.md` is byte-identical to v1 except that the **v2 insertion text** is inserted at the end of the `### Ambiguities` section (one blank line before, one after). The v2 insertion text is exactly five lines, in order: (1) `Under every ambiguity bullet, add two more indented labelled lines after the Reason line:`; (2) a line of three backticks; (3) `  Resolved by: the fact or decision that would settle it` (two leading spaces); (4) `  Edge case: a concrete production failure if it stays unresolved` (two leading spaces); (5) a line of three backticks. `fixtures/changes/change_prompt.json` is a §3.4 harness change with `target: "prompt"`, `section: "### Ambiguities"` and `change` equal to that inserted text; `change_tool.json`, `change_grader.json`, `change_config.json` are the same object with target `tool`, `grader`, `configuration`; `change_missing_section.json` has target `prompt` and `section: "### Nonexistent"`.
+Modes: **stubborn** (`Stubborn Fixture`) — every revision rewrites the file without the two labelled lines; **loop** (`Loop Fixture`) — calls `fetch_requirement` again on every turn and never writes; **rogue** (`Rogue Fixture`) — before step 2, calls `edit_file` on `/memories/AGENTS.md`, then continues normally; **decoy** (`Decoy Fixture`) — step 7 replies `Added Resolved by: and Edge case: lines to every ambiguity.` although the file lacks them.
 
-**Rubrics** — `fixtures/rubric.txt`: three lines in R11's order and wording (`- completeness: …`, `- clarity: …`, `- depth: …`). `fixtures/rubric_malformed.txt`: two lines both named `clarity`, one demanding an indented `Resolved by:` line under every ambiguity and one forbidding any such line.
+**Grader role.** First calls `read_file` on `/analysis.md`, then returns a verdict computed from the file it read and the rubric: if the rubric has no `- ` criterion lines → `failed`, no criteria. Otherwise, in rubric order: completeness passes when every clause of the fetched document appears verbatim in the file, else gap `Clause not addressed: "<first missing clause>".`; clarity passes when every Ambiguities bullet has an indented line starting `Resolved by:`, else gap `Each ambiguity bullet needs an indented "Resolved by:" line.`; depth likewise with `Edge case:`, gap `Each ambiguity bullet needs an indented "Edge case:" line.` Result `satisfied` when all pass, else `needs_revision`; explanation `<k> of 3 criteria pass.` Criterion names are echoed as `completeness`, `clarity`, `depth` — except on `doc_04_rate_limits`, where it echoes `Completeness check`, `Clarity (Resolved by)`, `Depth (Edge case)`. On `Grader Error Fixture` it raises an error on every pass.
 
-**Analysis samples** — `fixtures/analysis_samples/`: `complete_v1.md` — a full §3.1 file for `UPL-310` with 3 facts, 2 ambiguity bullets each with only a `Reason:` line, 2 questions, 2 assumptions, a two-sentence summary (31 words); `missing_assumptions.md` — same but the Assumptions section is empty; `wrong_label.md` — same as `complete_v1.md` but each ambiguity bullet carries an indented `Resolved: …` line (label without "by") and an indented `Edge case: …` line; `complete_v2.md` — same as `complete_v1.md` with indented `Resolved by:` and `Edge case:` lines under both bullets; `duplicate_heading.md` — a file in which the line `## Notes` occurs exactly twice and the line `## Never` not at all.
+**Analyst role.** First calls `write_file` on `/<label>/summary.json` (expected to be denied); then reads `/<label>/summary.json`, `/<label>/AGENTS.md` and every `/<label>/run_*.json`; writes `/proposal.md` with the five R22 sections; returns a `HarnessChange`: `target` `prompt`; `section` `### Ambiguities`; `issue` — one string naming every criterion failing the first attempt in more than half of graded runs (clarity first, joined with ` and `); `evidence` holding that criterion's first-pass gap quoted verbatim from each failing run (one string per run, clarity first); `recurrence` `<n>/<graded> runs: <run file stems, comma-separated>`; `change` = `For every ambiguity bullet, add two indented lines after Reason:` + a blank line + `  Resolved by: the fact or decision that would settle this ambiguity` + `  Edge case: a concrete production failure if this stays unresolved` (one line for each recurring criterion among clarity and depth); `rejected` = one entry per criterion failing the first attempt in at least one but not more than half of graded runs (`<criterion> failed the first attempt in <n> of <graded> runs (<doc ids>); not a pattern.`), and one entry per tool name that returned an error in at least one but not more than half of graded runs (`<tool> returned an error in <n> of <graded> runs (<doc ids>); not a pattern.`).
 
-**Batch summaries for the comparison** — `fixtures/summaries/`: five §3.4 summaries over 5 runs, 5 graded, 0 grader errors, documents 01–05: `before.json` completeness 5 / clarity 0 / depth 0, revisions 5; `after_success.json` 5/5/5, revisions 0; `after_partial.json` 5/3/0, revisions 5 (every run failed depth first time); `after_regression.json` 4/5/5, revisions 1 (the one run that failed completeness); `after_noeffect.json` 5/0/0, revisions 5. Each `revisions_needed` is the count R20 computes from its own first-attempt numbers.
+### Criteria
 
-**The scripted model** — `fixtures/scripted_model.py` (RR1): a fake standing in for the live model, registered under the name `scripted-stand-in` with the description "scripted stand-in for the live model — a fake that returns declared responses". It is selected when `SCRIPTED_MODEL=1`; it never opens a socket. It picks its role from the system prompt it receives and its variant from `SCRIPTED_VARIANT` (unset = default). It exposes `call_count`, the number of model invocations since the stand-in was constructed (AC8 reads it). Declared behavior:
-
-- *Role `review`* (system prompt points at `/memories/AGENTS.md`). Turn 1: call `fetch_requirement` with the key named in the opening message. Turn 2: `write_file` `/analysis.md` with the skeleton and Confirmed Facts = one bullet per clause (the clause text). Turns 3–6: one `edit_file` each filling Ambiguities (one bullet per vague clause: the clause in bold quotes, then an indented `Reason: the word "<vague word>" is not defined`), Clarification Questions (one per vague clause: `What does "<vague word>" mean for clause <n>?`), Assumptions (one per vague clause: `Assume the narrowest reading of "<vague word>" until confirmed.`), Summary (exactly two sentences: "The document states <facts> facts and leaves <k> clauses under-specified. Clarification is needed before implementation."). Turn 7: the completion sentence "Review complete.", no tool call. **If the instruction text in its context contains `Resolved by:`** (the v2 file; under D1 option (b), the body of `/skills/ambiguities/SKILL.md`, which it reads with one extra `read_file` turn immediately before its first Ambiguities edit), every ambiguity bullet also carries indented `Resolved by: a definition of "<vague word>" for clause <n>` and `Edge case: an unhandled "<vague word>" case in production for clause <n>` lines from the first attempt. **When grader feedback has been injected**, it makes one `edit_file` replacing the Ambiguities section with the full bullets (both lines), then the completion sentence. When a tool result is an error (R2's test), it repeats the same call with the same arguments. For the document whose title is `API Rate Limiting`, its first Ambiguities edit uses the anchor `## ` (non-unique) and, on the error, it calls `read_file /analysis.md` and retries with the correct anchor. Variants: `loop_forever` — every turn calls `fetch_requirement` again; `self_edit` — turn 2 first attempts `write_file /memories/AGENTS.md` with the text "hacked", then continues normally; `escape` — turn 2 first attempts `read_file ../fixtures/tickets.json`, then continues normally; `never_fixes` — after feedback, emits the completion sentence with no edit.
-- *Role `grader`* (the grader system prompt, which carries the rubric text and the requirement text — R10; the stand-in takes the requirement's title from its `REQUIREMENT:` line and its clause count from the following non-empty lines). First call: `read_file /analysis.md`. Then, per rubric line in order: `completeness` passes when the Confirmed Facts bullet count is at least that clause count; `clarity` passes when every Ambiguities bullet has an indented line starting exactly `Resolved by:`; `depth` likewise for `Edge case:`. A passing criterion carries `evidence` = `L<line>: <that line verbatim>`, the first qualifying line — for `completeness` the first Confirmed Facts bullet, for `clarity` the first indented `Resolved by:` line, for `depth` the first indented `Edge case:` line; a failing one carries `gap` = `missing indented '<label>' line under ambiguity bullet <k>` (for `completeness`, `only <m> of <n> clauses addressed`). Result `satisfied` iff all pass, else `needs_revision` with `explanation` listing the failed names. If two rubric lines share a name, result `failed` with no criteria passed. Variant `grader_error_doc02` — raises an exception on the document titled `Report Export`.
-- *Role `analyst`* (the analyst system prompt). Calls, in order: `read_file /<label>/summary.json`, `read_file /<label>/AGENTS.md`, `ls /<label>`, `read_file` on every `run_*.json`; then `write_file /proposal.md` with headings `## Summary signal`, `## Evidence across runs`, `## Proposed insertion`, `## Rejected observations`; returns a §3.4 change with target `prompt`, section `### Ambiguities`, change = the v2 insertion text, evidence = the first `gap` of each run that failed first attempt (quoted), recurrence = "<n>/<graded> runs", rejected = one entry naming the single run with an edit-tool error. Before the proposal write it attempts `write_file /<label>/summary.json` with the text "tamper" and expects a denial (R18's test).
-
-### 5.2 Criteria
-
-Offline unless tagged `live`. "Default run" = create ticket `REV-101` linked to the seed page through the app with `SCRIPTED_MODEL=1`, `SCRIPTED_VARIANT` unset, and the §5.1 run settings at their defaults: `RUN_BUDGET` 3, `RUN_TURN_CAP` 40, `FETCH_FAILURES` 0, `RUBRIC_PATH` `fixtures/rubric.txt`. A Given that sets `RUN_BUDGET=0` takes R5's cap of 12 unless it names a cap. "Direct run on `<key>`" = the one-analysis function every trigger calls (R14), invoked directly with that fetch key and no ticket, under the same settings unless the Given says otherwise.
+Each Given starts from a fresh data directory with `LLM_BACKEND=scripted`, budget 3 and `FETCH_SIMULATED_FAILURES=0` unless it says otherwise, and with `harness/instructions/` holding only the shipped `v1.md`, so the current instruction version is 1: a test that creates later versions removes their files when it ends, like any planted state. "A run on `<fixture>`" means: create a requirement page titled with the fixture's title-line text after `REQUIREMENT: ` (e.g. `Stubborn Fixture`) whose body is that fixture's clauses, one per line, and a ticket linked to it, then wait for the run to reach `complete` or `error`. `live` criteria use `LLM_BACKEND=live` and run after the offline suite; they never gate completion.
 
 | AC | Given | When | Then | Rules |
 |---|---|---|---|---|
-| AC1 | the default run | the first trace rows are inspected | row 1 is actor `Model reasoning`, action names `fetch_requirement` with argument `UPL-310`… (the key seeded for the ticket's page); the run's opening message contains the key and none of the page's three clauses | (R1) |
-| AC2 | the fetch tool and key `NOPE-1` | the tool is called directly | it returns a string beginning `Error fetching ticket` naming `NOPE-1`; no exception | (R1) |
-| AC3 | the default run with `FETCH_FAILURES=2` | the trace is inspected | the first six rows alternate Model/Tool; tool rows 2 and 4 are errors whose `detail` begins with §5.1's failure text 1 and failure text 2 respectively, row 6 is the document; all three fetch calls carry identical arguments; the run still ends `satisfied` | (R2) |
-| AC4 | the default run | the stage-order check runs over the first attempt | `in_order` true, `missing` empty, `complete` true, order = Confirmed Facts, Ambiguities, Clarification Questions, Assumptions, Summary | (R3) |
-| AC5 | `analysis_samples/missing_assumptions.md` | the stage-order check and completeness run over it | `missing` = `["Assumptions"]`, `complete` false; `complete_v1.md` is complete | (R3, R4) |
-| AC6 | `analysis_samples/complete_v1.md` | counts and summary words are computed | counts = Confirmed Facts 3, Ambiguities 2, Clarification Questions 2, Assumptions 2; summary words 31 and summary sentences 2; the counts object has no `Summary` key | (R4) |
-| AC7 | variant `loop_forever`, `RUN_BUDGET=0` (cap 12, the §5.1 default for budget 0) | a direct run on `UPL-310` | the run stops after exactly 12 model turns (`turns` = 12); the last trace action is `Stops: turn limit of 12 reached`; the analysis file is not complete | (R5) |
-| AC8 | the missing-instructions workspace (§5.1) | `build_review_agent(workspace_root)` is called on it with `SCRIPTED_MODEL=1` | it raises an error naming the missing path `/memories/AGENTS.md`; the scripted stand-in's `call_count` is 0 | (R6) |
-| AC9 | a fresh checkout | the baseline instruction file is read | it is byte-identical to `fixtures/instructions_v1.md`, contains the six required headings, and contains neither `Resolved by:` nor `Edge case:` | (R6) |
-| AC10 | variant `self_edit` | the default run | the trace contains a `write_file` tool row whose result is a denial mentioning `/memories/AGENTS.md`; the workspace's instruction file is unchanged; the run still ends `satisfied` | (R7) |
-| AC11 | variant `escape` | the default run | the `read_file ../fixtures/tickets.json` tool row's result is an error and contains none of the ticket keys; the run still ends `satisfied` | (R8) |
-| AC12 | the default run followed by `POST api/tickets/REV-101/rerun` | the second run's record is inspected | its `trigger` is `manual_rerun`; its first file tool call is `write_file` (no prior `read_file` of an existing analysis); the two run records' `workspace` values differ; after batch `v1` (AC33) directories `ws_01`…`ws_05` exist inside the batch directory, each holding an `analysis.md` | (R9, R14) |
-| AC13 | the default run | grading pass 1 is inspected | the grader's first tool call, recorded on the pass, is `read_file /analysis.md`, before the verdict; the `completeness` criterion (passed) carries `evidence` matching `^L\d+: ` | (R10) |
-| AC14 | the default run (instructions v1) | the run completes | grading has 2 passes: pass 1 `needs_revision` with completeness passed, clarity failed (`gap` names `Resolved by:`), depth failed (`gap` names `Edge case:`); pass 2 `satisfied` with all three passed; run status `satisfied`; the final file's two ambiguity bullets each carry both labelled lines | (R10, R11) |
-| AC15 | the sample workspace `wrong_label` (§5.1) | the grader stage is invoked directly with `fixtures/rubric.txt` and the requirement text of `UPL-310.md` (R10) | result `needs_revision`; completeness passed (3 facts, 3 clauses); clarity failed with a gap naming `Resolved by:`; depth passed | (R10) |
-| AC16 | the default run with `RUBRIC_PATH=fixtures/rubric_malformed.txt` | the run completes | grading pass 1 result `failed`; run status `failed` | (R11) |
-| AC17 | variant `never_fixes`, `RUN_BUDGET=3` (the default) | the default run | 4 grading passes, every result `needs_revision`; run status `max_iterations_reached`; the ticket's run record and its bot comment `Analysis complete (max_iterations_reached): …` carry that status | (R11, R16) |
-| AC18 | the default run with `RUN_BUDGET=0` (D2 option b; cap 12, the §5.1 default for budget 0) | the run completes | grading is empty, status `ungraded`, the file is complete, `turns` = 7 (six tool-calling messages plus one completion sentence, R12) | (R11, R12) |
-| AC19 | the default run | the run record is validated | it satisfies §3.2; `turns` = 9 (seven tool-calling messages plus two completion sentences — the nine `Model reasoning` rows below, R12); `trace` has 16 rows whose actors in order are `Model reasoning`, `Tool` six times over (rows 1–12: the fetch, the write, the four edits), then `Model reasoning` (row 13, the first completion sentence), then `Model reasoning`, `Tool` (rows 14–15, the post-feedback edit), then `Model reasoning` (row 16, the second completion sentence); `id` matches `^[0-9a-f]{8}$`; no trace `detail` exceeds 221 characters, and the trace recorder given a tool result of the letter `x` repeated 300 times produces a `detail` of exactly 221 characters ending with `…`; the record is returned by `GET api/runs/<id>` and rendered on the ticket page | (R12) |
-| AC20 | variant `grader_error_doc02` | batch `v1err` over the five batch documents (§5.1) | run 02's grading = one pass with `result: grader_error` and empty criteria, status `grader_error` (the scripted grader raised on the title `Report Export` in the requirement text it was handed, §5.1); summary: runs 5, graded 4, grader_errors 1, every criterion's `total` 4, completeness passed 4, clarity 0, depth 0, revisions_needed 4 | (R13) |
-| AC21 | the sample workspace `duplicate_heading` (§5.1) | the edit tool is called with anchor `## Notes` | it returns an error naming a non-unique anchor; the file is byte-identical afterwards; an anchor that occurs zero times also errors | (R27) |
-| AC22 | batch `v1` | run 03's trace | contains an `edit_file` tool row whose result is an error, followed by a `read_file /analysis.md` row and a successful `edit_file`; run 03 still ends `satisfied` with 4/2/2/2 counts | (R27) |
-| AC23 | an empty data directory | the server starts | the pages, tickets, runs and batches stores exist as declared; pages = exactly the seed page, `kind` = `requirement`, `linked_ticket` null, with one version by "Avery (Product Manager)"; tickets = exactly `REV-100` (`Open`, assignee "Blake (Eng Lead)", `last_run_id` null); runs and batches empty; starting the server again does not duplicate the seed | (R25) |
-| AC24 | the seed scenario | `POST api/tickets` with title, description, `linked_page_id` = seed page, assignee "Casey (QA Lead)" | the ticket `REV-101` is created `Open`, a run with trigger `ticket_created` completes, the ticket is `Analysis Ready` with `last_analyzed_version` 1 and `last_run_id` set, and report page `page-analysis-rev-101` exists with version 1 | (R14) |
-| AC25 | after AC24 | `POST api/pages/page-req-avatar-upload/save` with a body adding a fourth clause "Avatars must be smaller than 2 MB." by "Avery (Product Manager)" | the page has version 2; a run with trigger `page_saved` completes for each of the two open tickets linked to the page, `REV-101` and the seed ticket `REV-100`; `REV-101`'s `last_analyzed_version` = 2 and `page-analysis-rev-101` has version 2 whose banner names requirement version 2; `REV-100` becomes `Analysis Ready` and `page-analysis-rev-100` has version 1; the response message names both `REV-101` and `REV-100` as re-triggered | (R14) |
-| AC26 | after AC25, `REV-101` and `REV-100` both marked Done (each by `POST api/tickets/<key>/close`) | the page is saved again | the page has version 3; no new run is recorded; the response message says nothing was re-triggered | (R14) |
-| AC27 | `REV-101` is `Done` | `POST api/tickets/REV-101/rerun` | HTTP 409, no run recorded; the ticket page shows no re-run or Mark Done control | (R14, R16) |
-| AC28 | after AC24 | the report page is read | `kind` = `analysis_report`, `linked_ticket` = `REV-101`, title `Analysis Report — REV-101`, every version's author = `Review Agent (bot)`; version 1's body starts with R15's three banner lines, exactly `Ticket: REV-101`, `Requirement version 1 analyzed`, `Verification: satisfied after 2 grading pass(es)`, followed by a blank line and a §3.1 file | (R15) |
-| AC29 | after AC24 | `POST api/pages/page-analysis-rev-101/save` | HTTP 400; the report page's versions are unchanged; the requirement page's body is byte-identical to the seed body | (R15) |
-| AC30 | after AC25 | `GET api/pages/page-analysis-rev-101/compare?a=1&b=2` | a unified diff with `fromfile` "version 1" and `tofile` "version 2" containing at least one `+` line mentioning "2 MB"; the response carries both runs' status and counts | (R15) |
-| AC31 | after AC24 | the ticket's comments and status are read; then `POST api/tickets/REV-101/close` | one bot comment by `Review Agent (bot)` whose text is exactly R16's form, `Analysis complete (satisfied): requirement version 1, report: Analysis Report — REV-101`; the status becomes `Done` only after the close call; no run ever sets `Done` | (R16) |
-| AC32 | after AC25 | the ticket page is rendered | a "what changed since the previous run" table shows requirement version 1 vs 2, status `satisfied` vs `satisfied`, and Confirmed Facts 3 vs 4; the run history lists two runs | (R16) |
-| AC33 | instructions v1 as baseline | batch `v1` is run from the Learning page over the five batch documents, then the analyst runs on it | `v1/AGENTS.md` is byte-identical to `instructions_v1.md`; five run files `run_01_01_session_timeout.json`…`run_05_05_search_relevance.json` (one per batch document, none for `UPL-310.md`) each with trigger `batch`, label `v1`, 2 grading passes, and a `messages` array holding the `write_file` call with its full `content` argument (longer than 221 characters, the trace `detail` cut) and a tool message carrying `tool_call_id` and `status`; `v1/summary.json` = completeness 5/5, clarity 0/5, depth 0/5, revisions_needed 5, documents in order; the analyst's trace shows `read_file /v1/summary.json` first, then `/v1/AGENTS.md`, then at least one run file; its attempted write to `/v1/summary.json` is denied and that file is unchanged; `/proposal.md` exists with the four headings; the returned change validates against §3.4 with target `prompt`, section `### Ambiguities`, a `change` containing both `Resolved by:` and `Edge case:`, five evidence quotes, and one `rejected` entry naming run 03's edit error | (R18, R20) |
-| AC34 | batch `v1err` (AC20) | `summary.json` is validated | it satisfies §3.4 and `pass_rate` for each criterion is `passed/4` rounded as R20 states (completeness 1.0, clarity 0.0, depth 0.0) | (R13, R20) |
-| AC35 | the AC33 proposal is shown on the Learning page | before and after the person clicks **Approve and apply** | before: the baseline instruction file is unchanged and the page shows the proposal with its evidence and rejected list; after: the baseline equals `instructions_v2.md` and the page shows a v1→v2 diff | (R17, R18) |
-| AC36 | `change_tool.json`, `change_grader.json`, `change_config.json` | each is submitted to the apply step | each is refused with a message containing "read the proposal"; the baseline is unchanged after all three | (R17, R19) |
-| AC37 | `instructions_v1.md` and `change_prompt.json` | the apply function runs | the output is byte-identical to `instructions_v2.md`; with `change_missing_section.json` it raises naming `### Nonexistent` and writes nothing | (R19) |
-| AC38 | the app's source files — every file under the server package `app/`, excluding `tests/` and `fixtures/` — and the test process setting `ANTHROPIC_API_KEY=CANARY` and `ANTHROPIC_BASE_URL=CANARY` before the app loads its configuration | the source is scanned and the app's resolved configuration is read | no scanned file contains the string `ANTHROPIC_`, a literal key or a literal model id; the resolved configuration contains no value `CANARY` and no key beginning `ANTHROPIC_`; the model-role variables are read from the environment; with `OPENAI_API_KEY` unset and `SCRIPTED_MODEL` unset, starting a run returns an error naming `OPENAI_API_KEY` and never prompts | (R22) |
-| AC39 `live` | the container's `OPENAI_API_KEY`/`OPENAI_BASE_URL` and the three model-role variables set to platform models | the default run executes without the scripted model | a run record valid per §3.2 with status `satisfied` or `max_iterations_reached`, at least one grading pass with three criteria, and a report page version written | (R22) |
-| AC40 | `summaries/before.json` and each `after_*.json` | compare runs | `after_success` → `success`, improved = [clarity, depth]; `after_partial` → `partial`, improved = [clarity]; `after_regression` → `regression`, regressed = [completeness], `keep` false; `after_noeffect` → `no effect`, improved and regressed empty; `keep` is true for the other three; each result's `revisions_needed` = [5, <the after file's value>] | (R21) |
-| AC41 | after AC25 and AC33 | the server process is stopped and started again | `REV-101` and `REV-100` with status and comments, the seed page with 2 versions, `page-analysis-rev-101` with 2 versions, `page-analysis-rev-100` with 1, all three event runs, and batch `v1` with its summary are all present and identical; no reseed occurred | (R25) |
-| AC42 | the server started | `GET` of the index and `GET api/tickets` | the socket is bound to `0.0.0.0:4000`; both return 200; the second returns JSON listing `REV-100` | (R23) |
-| AC43 | every HTML page and script the server serves | all `href`, `src`, `action` and fetch/XHR URL literals are collected | none begins with `/` and none carries a scheme or host of its own; every API route is reachable through the index page's own links | (R24) |
-| AC44 | network disabled and all key variables unset | `pytest` runs the offline suite | every non-`live` criterion passes; `live` criteria are reported skipped; a hash of `fixtures/` taken before the run equals the hash after | (R26) |
-| AC45 | the registered scripted model and the surface page titles | inspected | the model's name is `scripted-stand-in` and its description contains "stand-in" and "fake"; the Tracker and Wiki index titles contain "simulated" | (R28) |
-| AC46 | the applied baseline (`instructions_v2.md`) | batch `v2` runs and is compared with `v1` | `v2/summary.json` = 5/5, 5/5, 5/5, revisions 0; every run has one grading pass, `satisfied`; compare(v1, v2) verdict `success`; the Learning page shows the before/after per-criterion counts and the verdict | (R20, R21) |
-| AC47 | batch `v1` | the Learning page's recurring-gaps view | gaps are grouped by criterion position: clarity 5 entries, depth 5, completeness 0, each entry naming its document | (R18, R20) |
-| AC48 `live` | the container's keys and the three model-role variables set to platform models; batch `live1` run over the five batch documents without the scripted model (only a `live` criterion can exercise a real model's typed response; AC33 covers the scripted path) | the analyst runs on `live1` | every run's trace contains at least one `Tool` row (native tool calling); the analyst's returned change validates against §3.4 (`target` one of the four enum values, `evidence` non-empty) and `/proposal.md` exists in the analyst's workspace | (R22) |
-| AC49 | the completed build, inside its venv | `resolved-decisions.md`, the installed packages and the source are inspected | the file records the `python3 --version` output; the installed `openai` reports 3.6.0 and `python-dotenv` 1.2.3 (the course pins, not the preinstalled copies); the baseline instruction file's path is under the app's data directory; no file under `app/` contains the string `AGENTS.md` as a path at the build root | (R29) |
-| AC50 | after AC46 (baseline = `instructions_v2.md`, compare(v1, v2) = `success`) | the Learning page's comparison view is read, then the revert function is invoked directly with before batch `v1` | the view shows no Revert control; after the call the baseline is byte-identical to `v1/AGENTS.md` (= `instructions_v1.md`); `keep` on compare(v1, v2) is true | (R21) |
-| AC51 | `fixtures/stale_workspace/` copied to `<WORKSPACE_ROOT>/stale/` (§5.1) | a direct run on `UPL-310` | the run's `workspace` is not `<WORKSPACE_ROOT>/stale`; its first file tool call is `write_file` (no `read_file` of an existing analysis); `stale/analysis.md` is byte-identical to `analysis_samples/complete_v2.md` afterwards; grading pass 1 is `needs_revision` (the pre-labelled stale file was not what the grader saw) | (R9) |
+| AC1 | A fresh start | `GET api/tickets`, `api/pages`, `api/instructions`, `api/batches/documents`; list the data directory | One ticket `REQ-104`, `Open`, linked to `page-req-export`, assignee `Blake (Eng Lead)`; one page `page-req-export`, kind `requirement`, one version whose body is the three seed clauses; instruction version 1 whose text equals `harness/instructions/v1.md`; documents `doc_01_session_timeout` … `doc_05_scheduled_reports`; the files for tickets, pages and runs exist; the runs list, the batch list (`GET api/batches`) and the proposal list are empty | (R35) |
+| AC2 | Fresh start | `POST api/tickets/REQ-104/rerun`; read the run | The agent's opening message contains `REQ-104` and none of the seed clauses; the first trace row is `Calls fetch_requirement`; that call's argument is `REQ-104`; the fetched text is `REQUIREMENT: Customer Data Export — Requirements` followed by the page's latest version body | (R1) |
+| AC3 | `FETCH_SIMULATED_FAILURES=2` | Re-run `REQ-104` | Trace has three `fetch_requirement` tool rows: the first detail starts `Error fetching requirement: 503`, the second `Error fetching requirement: request timed out`, the third contains `Customers shall be able to export their account data.`; the run reaches `complete` with `verification_status` `satisfied` | (R2) |
+| AC4 | A run on `doc_02_product_search` | Read the run and its trace | The final file's headings are exactly the six §3 headings in order; `stage_order` is `Confirmed Facts, Ambiguities, Clarification Questions, Assumptions, Summary`; `in_order` is true; exactly one `edit_file` tool row has a detail starting `Error` | (R3) |
+| AC5 | Re-run `REQ-104` completed | Read the run | `counts` = Confirmed Facts 3, Ambiguities 2, Clarification Questions 2, Assumptions 2; `summary_words` = 17; the Summary has two sentences | (R3, R4) |
+| AC6 | Same run | Read the final Ambiguities section | Two bullets, `- **"Exports should be delivered quickly."**` and `- **"The system should support standard file formats."**`, each followed by indented `Reason:`, `Resolved by:` and `Edge case:` lines; `grading[0].analysis_markdown` has the `Reason:` lines and no `Resolved by:` line | (R4, R12) |
+| AC7 | Same run | Read `page-req-export` and `page-analysis-req-104` | The requirement page still has exactly one version with the original body; the report page has kind `analysis_report` and `linked_ticket` `REQ-104` | (R5) |
+| AC8 | A run on `fx_rogue` | Read the trace and the run's instruction version | The `edit_file` call on `/memories/AGENTS.md` returned an error; instruction version 1's text is byte-identical to before; the run reaches `complete` with `satisfied` | (R6) |
+| AC9 | The current instruction version's file removed from `harness/instructions/` | Re-run `REQ-104` | The run's `state` is `error`, its `error` contains `memories/AGENTS.md`, and the scripted model's call counter did not move | (R7) |
+| AC10 | Re-run `REQ-104` twice; after the first run, a directory with the first run's `workspace_id` recreated holding an `analysis.md` that contains `STALE-MARKER` | Read both runs | The two `workspace_id`s differ; the second run's final file does not contain `STALE-MARKER`; no workspace directory with the second run's id remains after it completes | (R8) |
+| AC11 | A run on `fx_loop` | Read the run | `stop_reason` is `turn_limit`; the last trace row reads `Stops: turn limit of 40 reached`; the report is not complete | (R9) |
+| AC12 | Re-run `REQ-104` | Read `grading` | Two passes: pass 1 `needs_revision` with completeness passed, clarity and depth failed with their gaps; pass 2 `satisfied` with all three passed; `verification_status` `satisfied`; `stop_reason` `finished` | (R10, R12) |
+| AC13 | The built app | Inspect the configured grader instructions and the grader's tools | The instructions contain `satisfied`, `needs_revision`, `failed`, `/analysis.md` and `line number`; the grader's only tool is `read_file`, and during a run it returns that run's own `/analysis.md` | (R11) |
+| AC14 | A run on `fx_decoy` | Read the run | The agent's final message of attempt 1 claims the labelled lines were added; pass 1 is `needs_revision` with clarity and depth failed; the grader's first action was `read_file` on `/analysis.md`; pass 2 is `satisfied` | (R11) |
+| AC15 | A run on `fx_stubborn` | Read the run and its report page | Four grading passes, all `needs_revision`; `verification_status` `max_iterations_reached`; the report banner reads `Verification status: **max_iterations_reached** after 4 grading pass(es).` | (R12, R13) |
+| AC16 | `harness/rubric.txt` overwritten with the text of `bad_rubric.txt` | Re-run `REQ-104` | One grading pass, result `failed`, no criteria; no revision write follows; `verification_status` `failed` | (R14) |
+| AC17 | Fresh start | `POST api/tickets` linked to `page-req-export`, assignee `Casey (QA Lead)` | Response `201` with key `REQ-105` and a `last_run_id`; while the scripted model is held, that run's `state` is `running` and the ticket is still `Open`; once released and complete, page `page-analysis-req-105` exists, titled `Analysis Report — REQ-105`, version 1 authored `Requirements Analysis Agent (bot)` | (R15, R16, R19) |
+| AC18 | Re-run `REQ-104` completed | Read `REQ-104` and its report page | Ticket `status` `Analysis Ready`, `last_analyzed_version` 1, `last_run_id` = the run's id, last comment `Analysis complete (satisfied), requirement version 1. See Analysis Report — REQ-104.`; report version 1 opens with the three banner lines, the third `Verification status: **satisfied** after 2 grading pass(es).` | (R15, R16) |
+| AC19 | `REQ-105` created as in AC17; then `REQ-104` marked done | `POST api/pages/page-req-export/versions` with `seed_edit_v2.txt` | `retriggered` is `["REQ-105"]`; `REQ-104` has no new run and stays `Done`; `REQ-105`'s new run has `requirement_version` 2 | (R15, R17) |
+| AC20 | Fresh start; `REQ-104` re-run completed | Inspect every status change; then `POST api/tickets/REQ-104/done`; then `POST api/tickets/REQ-104/rerun` | No run set `Done`; after the done call the status is `Done`; the rerun returns `409` and starts no run | (R17) |
+| AC21 | Re-run `REQ-104` completed; then a page version saved with `seed_edit_v2.txt` (which re-runs `REQ-104`) | `GET api/tickets/REQ-104`; `GET api/pages/page-analysis-req-104/compare?a=1&b=2` | Two runs; the what-changed table shows requirement versions 1 → 2, status satisfied → satisfied, and identical counts (3, 2, 2, 2 both times); the diff is non-empty and contains `+` and `-` lines naming the changed clause; `run_a` and `run_b` are the two runs | (R18, R19) |
+| AC22 | Fresh start | `POST api/pages` titled `Order History — Requirements` twice; `POST api/pages/page-analysis-req-104/versions` after a run | Page ids `page-order-history-requirements` and `page-order-history-requirements-2`; the report-page edit returns `400` | (R5, R19) |
+| AC23 | Fresh start | `POST api/batches` (label `v1`); read its summary | `runs` 5, `graded` 5, `grader_errors` 0; completeness 4/5 (0.8), clarity 0/5 (0.0), depth 0/5 (0.0); `revisions_needed` 5; every run `satisfied` after exactly 2 passes; `v1/AGENTS.md` equals instruction version 1 | (R20, R26) |
+| AC24 | The `v1` batch | Read run 4 (`doc_04_rate_limits`) and the summary | Run 4's first-pass criterion names are the paraphrased ones, yet the summary counts clarity and depth over all 5 graded runs (totals 5, passes 0) | (R20) |
+| AC25 | The `v1` batch | Read run 3 (`doc_03_audit_log`) | First pass: completeness failed with gap `Clause not addressed: "The log shall be searchable by date."`; `messages` include a message containing that gap text; at least one `write_file` call's arguments are longer than 220 characters (untruncated); the final file contains the clause | (R20) |
+| AC26 | A batch run directly over `fx_grader_error` and `doc_01_session_timeout` | Read the summary and the runs | `runs` 2, `graded` 1, `grader_errors` 1; rates are over 1 run (completeness 1/1, clarity 0/1, depth 0/1); the `fx_grader_error` run's passes are all `grader_error` with no criteria and its `status` is `grader_error` | (R13, R14, R21) |
+| AC27 | The `v1` batch | `POST api/batches/v1/analyze` | Proposal `pending`; change `target` `prompt`, `section` `### Ambiguities`, `recurrence` starts `5/5 runs:`; `evidence` has 10 quotes, each a verbatim substring of a first-pass gap; `change` contains `Resolved by:` and `Edge case:`; `rejected` has exactly two entries, one naming completeness and `doc_03_audit_log`, one naming `edit_file` and `doc_02_product_search`; `proposal_markdown` has the five R22 section headings | (R22) |
+| AC28 | Same analysis | Read the analyst's trace and `v1/summary.json` | The analyst's write to `/v1/summary.json` returned an error; the summary file is byte-identical to before; the only file the analyst created is `proposal.md` | (R22) |
+| AC29 | A pending proposal from AC27 | `GET api/instructions`; reject it; analyze again; approve the new one | While pending and after rejecting, the current version is 1 and the rejected proposal's status is `rejected`; after approving, version 2 exists, version 1 is unchanged, and the proposal is `approved` | (R23) |
+| AC30 | Approved as in AC29 | Compare instruction versions 1 and 2 | Version 2 = version 1 with the change's lines inserted after the last non-blank line of `### Ambiguities` and before `### Clarification questions`, one blank line on each side; every other line identical | (R24) |
+| AC31 | `refused_changes.json` | Apply each change | The `tool`, `grader` and `configuration` changes are refused with `not applied automatically`; the `### Nonexistent` change errors naming `### Nonexistent`; the current instruction version is unchanged | (R24) |
+| AC32 | Version 2 current (AC29) | `POST api/batches` (label `v2`); `GET api/compare?before=v1&after=v2` | v2: all three criteria 5/5 (1.0), `revisions_needed` 0, each run 1 pass; comparison: completeness (4, 5), clarity (0, 5), depth (0, 5); revisions (5, 0); attempts (10, 5); `improved` all three; `regressed` empty; verdict `success` | (R25) |
+| AC33 | `verdict_pairs.json` | Compare each pair | Verdicts `regression`, `partial`, `no effect` respectively | (R25) |
+| AC34 | `harness/instructions/v1.md` | Read it | Contains `fetch_requirement`, `## Procedure`, `## Review guidance` and the four `###` subsections in order; contains neither `Resolved by:` nor `Edge case:` | (R26) |
+| AC35 | The source tree; then `GRADER_MODEL` unset, `REVIEW_AGENT_MODEL=openai:test-a`, `ANALYST_MODEL=openai:test-b` | Search every environment-variable read; `GET api/config` | Variables read are only `OPENAI_API_KEY`, `OPENAI_BASE_URL`, `REVIEW_AGENT_MODEL`, `GRADER_MODEL`, `ANALYST_MODEL`, `LLM_BACKEND`, `FETCH_SIMULATED_FAILURES`, `APP_DATA_DIR`; no `ANTHROPIC_` read; no string starting `sk-`; config shows grader `openai:test-a`, analyst `openai:test-b`, and no key | (R27) |
+| AC36 | `LLM_BACKEND=live`, `OPENAI_API_KEY=dummy`, `OPENAI_BASE_URL=http://127.0.0.1:9/v1` | `GET api/config`; re-run `REQ-104` | Config `base_url` is `http://127.0.0.1:9/v1`; the run reaches `state` `error` (connection refused) without any request leaving the container | (R27) |
+| AC37 | `OPENAI_API_KEY` unset, `OPENAI_BASE_URL=http://127.0.0.1:9/v1`, `LLM_BACKEND=scripted` | Run the offline suite | Every non-`live` criterion other than AC37 itself passes | (R28) |
+| AC38 | Server started | `curl` `http://localhost:4000/` and `http://localhost:4000/api/tickets`; inspect the listening socket | `200` HTML and `200` JSON from the same process; it listens on `0.0.0.0:4000` | (R29) |
+| AC39 | The served page and every script it loads | Search for URLs | No `href`, `src`, `action` or request URL begins with `/` | (R30) |
+| AC40 | Same | Search | No `WebSocket` and no `ws://`; run progress comes from polling `api/runs/<id>` | (R31) |
+| AC41 | AC17's ticket and run completed; a `v1` batch done | Stop the server, start it again, read everything | `REQ-104`, `REQ-105`, `REQ-105`'s run and its report page, the instruction versions and the `v1` batch are all still returned | (R32) |
+| AC42 | The built app | Read the instruction-file path the app uses | It is inside the app folder (`harness/instructions/`); the workspace-root `AGENTS.md` was not written by the build | (R33) |
+| AC43 | Re-run `REQ-104` completed | Read the trace | Rows alternate `Model reasoning` and `Tool` (a finishing row — `Finishes the review` or the grader's `Returns verdict: <result>` — has no tool row after it); a row reads `Calls write_file: Confirmed Facts`; every `detail` has no newline and at most 221 characters | (R34) |
+| AC44 `live` | `LLM_BACKEND=live`, platform models set per §2 | Re-run `REQ-104` | The run completes; the file has the six headings; `verification_status` is `satisfied` or `max_iterations_reached`; every request went to `OPENAI_BASE_URL` | (R10, R27) |
+| AC45 `live` | Same | Read that run's passes | Every pass has 3 criteria in rubric order, each failing one with a non-empty gap; the grader's first tool call was `read_file` on `/analysis.md` | (R11) |
+| AC46 `live` | Same; a live `v1` batch | Analyze it | A `HarnessChange` validates against §3; `proposal.md` exists; no file under `/v1/` changed | (R22) |
 
 ## 6. Standing Permissions (in force for the entire build)
 
 **Always**
-- Run the offline suite with the scripted model before claiming any criterion passes; cite the test output.
-- Record the Python version, every install and its wall-clock cost, and every resolved decision in `resolved-decisions.md` — the workspace is the record `[environment]`.
-- Keep the review agent's instruction file inside the run workspace's `memories/` folder (the app's own convention), never at the workspace root.
-- Seed the fake tracker and the starting scenario from the fixtures exactly as declared.
+- Report every acceptance criterion with cited evidence (test output, file path, response body).
+- Keep the scripted model's description honest (§5) and keep it out of the `live` path.
+- Write decisions, resolved values and results to files: `resolved-decisions.md` is load-bearing here because the workspace is the record — a new chat starts with no memory of this one, and only what is on disk survives `[environment]`.
+- Run long-lived servers in the background `[environment]`.
 
-**Ask First** (derived from the course's spoken trade-offs — each cross-referenced; changing any of these silently alters a behavior guarantee or forces re-running batches)
-- Changing the revision budget (R11; the course's 3 vs 2) — changes how many send-backs a run may take and invalidates comparison across batches run with different budgets.
-- Changing the turn caps (R5; 12 / 40) — a lower cap turns finishing runs into cap stops.
-- Changing the recurrence threshold (R18; "more than half of graded runs") — changes which observations become proposals and which are rejected.
-- Changing which platform model fills a role, or running the grader on a different model than the agent (R22 lever; CTX-C7) — the course's cost-vs-capability argument; every batch must then be re-run before a comparison means anything.
-- Moving from the model-as-judge grader to a deterministic one or back after builds exist (Ledger D3) — changes what "pass" can mean.
-- Turning the grader off (Ledger D2 option b) once batches exist — removes the learning loop's signal.
-- Moving review guidance into skills (Ledger D1 option b) after a proposal has been applied — changes where the learning loop's proposal must target.
-- Restoring §1 item 7 (cost accounting) or adding any trigger kind the course did not build.
-- Running anything `live` while a batch is in progress, or deleting a batch directory.
+**Ask First** (derived from the course's argued trade-offs; CTX-C table)
+- Changing a model role's tier — the review agent and grader on a cheaper model, the analyst on a stronger one (Lessons 2, 7) — or giving the grader its own model (Lesson 5): changes reliability without failing any offline criterion. This is the lever attached to the CONSTRAINED model/provider dimension.
+- Changing the revision budget (3) or the turn caps (40 / 12): changes when a run gives up, without failing an offline criterion (Lessons 4, 5).
+- Changing the "more than half of graded runs" recurrence threshold for the analyst (Lesson 7).
+- Making more events start runs (for example `Done` tickets, or every page view) — changes what runs automatically without failing a criterion (Lesson 6; Ledger D1).
+- Changing the instruction placement after the learning loop has produced versions — reworks where approved changes land (Lesson 3; Ledger D2).
+- Removing the grader or the learning loop after build (Lessons 2, 5, 7; Ledger D3, D4).
 
 **Never**
-- Author or edit the workspace-root `AGENTS.md` — the IDE rewrites it at every boot and whatever is placed there is silently lost `[environment]`.
-- Ask the person for an API key, hardcode one, read the `ANTHROPIC_*` pair, or guess at other variable names `[environment]`.
-- Use a root-absolute URL in any page, bind to a port other than 4000, or start a second server `[environment]`.
-- Invent evidence: a grader pass without a quoted line, an analyst proposal without run quotes, or a test result without output.
-- Let the agent write to its own instructions, to the requirement page, or to any trace it is analyzing.
-- Mutate fixtures to make a test pass; commit secrets; report "should pass" or "looks correct" as a result.
-- Mark a ticket Done from automation, or apply a harness change without the explicit approve action.
+- Invent provenance or citations, or label an `[environment]` fact as course-taught.
+- Let the agent or the analyst write its own instructions or the evidence it reads; apply a change without a recorded human approval.
+- Mark a run `satisfied` (or a ticket `Done`) when the evidence says otherwise — the system must report `max_iterations_reached`, `failed` or `grader_error` honestly rather than pass.
+- Modify fixtures to make a test pass.
+- Commit, log or display secrets; ask the learner for a key; read any key variable other than `OPENAI_API_KEY`.
+- Author the workspace-root `AGENTS.md` `[environment]` — the IDE rewrites it at every boot; the app's instruction files stay in its own folder.
 
 ## 7. Test Plan & Self-Verification
 
-Create the venv and install the course pins in one early step, announcing the cost first:
-
 ```bash
-python3 --version
-python3 -m venv .venv --system-site-packages && source .venv/bin/activate
-pip install "deepagents==0.7.11" "langchain==1.3.18" "langchain-core==1.6.1" "langgraph==1.2.11" \
-            "langchain-openai==1.6.0" "openai==3.6.0" "pydantic==2.13.5" "python-dotenv==1.2.3" \
-            "flask>=3.1.3" pytest
+python3 --version                                   # record in resolved-decisions.md
+python3 -m venv --system-site-packages .venv
+.venv/bin/pip install deepagents==0.7.11 langchain==1.3.18 langchain-core==1.6.1 \
+  langchain-openai==1.6.0 langgraph==1.2.11 openai==3.6.0 pydantic==2.13.5 \
+  python-dotenv==1.2.3 flask pytest
+# offline suite — the completion gate
+env -u OPENAI_API_KEY LLM_BACKEND=scripted OPENAI_BASE_URL=http://127.0.0.1:9/v1 \
+  .venv/bin/python -m pytest -m "not live" -q
+# serve (background), then the HTTP checks
+.venv/bin/python app.py &
+curl -s -o /dev/null -w '%{http_code}\n' http://localhost:4000/
+curl -s http://localhost:4000/api/tickets
+# live pass — runs after the offline suite, never gates completion
+LLM_BACKEND=live .venv/bin/python -m pytest -m live -q
 ```
 
-Run the offline suite with no keys and the scripted model, then the live criteria only when the container's keys are present:
+The building agent MUST report results per acceptance criterion (AC1–AC46) with cited evidence — test output lines, file paths, response bodies. "Should pass" or "looks correct" counts as a failure: it means the criterion was not run. Report each `live` criterion's result separately; a `live` failure is reported, not hidden, and does not block completion.
 
-```bash
-env -u OPENAI_API_KEY -u OPENAI_BASE_URL -u ANTHROPIC_API_KEY -u ANTHROPIC_BASE_URL \
-    SCRIPTED_MODEL=1 pytest -q -m "not live" tests/     # all four key variables unset (AC44); AC38's test sets its own canary in-process
-pytest -q -m live tests/          # only with the platform keys and the three model-role variables set
-```
+**Tests by option**
 
-Start the app for the preview pane (background process):
+| Option id | Rules and criteria that no longer apply | Rules, criteria and Ledger cells that change (and how) | Offline-suite criteria switched off |
+|---|---|---|---|
+| L1b | — | The restored item is built per its handling tag; it adds no criteria | — |
+| D1b | R15, R16, R17, R18, R19; AC17, AC18, AC19, AC20, AC21, AC22 | R1/AC2: the opening message names the chosen document's id. R5/AC7: the report is shown on the run's page; no report page exists. R35/AC1: no tickets or requirement pages are seeded; the seed document is listed as a runnable document. R32/AC41: runs, instruction versions and batches persist. AC3, AC4, AC5, AC6, AC8, AC9, AC10, AC11, AC12, AC13, AC14, AC15, AC16, AC36, AC43, AC44: "re-run `REQ-104`" and "a run on `<fixture>`" become a manual run on that document. AC15: its report-banner clause is dropped (no report page exists); the four passes and `max_iterations_reached` stay. Ledger L1 Decision (the §1 list it presents): item 1's seam swaps only the page lookup, since no tickets exist | AC17, AC18, AC19, AC20, AC21, AC22 |
+| D2b | — | R6/AC8: writes are denied under `/memories/` and `/skills/`. R7/AC9: a missing instruction file or skill file fails the build of the agent. R26/AC34: version 1 is the procedure file plus one skill per review-guidance subsection; the Ambiguities skill lacks the two labels. R24/AC30: an approved change is appended to the end of the Ambiguities skill's body. R33/AC42: skills sit beside the instruction file. AC43: the scripted review agent, before the write or edit that fills each of the four list sections, calls `read_file` on that section's skill (`/skills/confirmed-facts/SKILL.md`, `/skills/ambiguities/SKILL.md`, `/skills/clarification-questions/SKILL.md`, `/skills/assumptions/SKILL.md`), and its label condition reads "loaded instructions" as the instruction file plus the skill bodies it has read; before the step-2 `write_file` it reads `/skills/ambiguities/SKILL.md` as well as `/skills/confirmed-facts/SKILL.md`, so the `doc_03_audit_log` exception sees an approved change and AC32 holds unchanged; the trace adds those `read_file` rows | — |
+| D2c | R6; AC8 | R7/AC9: missing stored instruction text fails the build. R26/AC34: version 1 is stored text passed as the system prompt. R24/AC30: an approved change edits the stored text, taking effect for agents built afterwards. R20: the batch snapshot is that text. R33/AC42: the text is stored in the app folder | AC8 |
+| D3b | AC13, AC45 | R10, R11, R12, R13, R14: verdicts come from code checks on the report file; the spec supplies no parameters for them (in particular none for completeness). AC12, AC14, AC15, AC16, AC23, AC24, AC25, AC26, AC27, AC32: run against the deterministic grader; assertions hold only where its checks agree with the scripted grader's declared rule — list each one as *Adapted*. `GRADER_MODEL` is not read | AC13 |
+| D3c | R10, R11, R12, R13, R14, R20, R21, R22, R23, R24, R25; AC12, AC13, AC14, AC15, AC16, AC23, AC24, AC25, AC26, AC27, AC28, AC29, AC30, AC31, AC32, AC33, AC44, AC45, AC46 (D4 is skipped by its condition) | R9/AC11: cap 12. R16/AC18: banner `Verification status: **not graded** after 0 grading pass(es).`; `verification_status` is null. AC3, AC8: end `complete` with no grading. AC5, AC6: the first draft is final — Ambiguities bullets carry only `Reason:` lines. R16/AC18: the comment reads `Analysis complete (not graded), requirement version 1. See Analysis Report — REQ-104.` R18/AC21: the what-changed table shows status not graded → not graded. R35/AC1: no batch documents are listed. R32/AC41: no batches to persist — the Given drops "a `v1` batch done" and the Then drops "the `v1` batch". Ledger D2 Invariant ("every version is kept outside the agent"): only version 1 exists, since no learning loop creates versions. R27/AC35: only `REVIEW_AGENT_MODEL` is read for roles. Ledger L1 Decision (the §1 list it presents): items 3, 7 and 9 are left out, since the grader slot and the learning loop they attach to do not exist | AC12, AC13, AC14, AC15, AC16, AC23, AC24, AC25, AC26, AC27, AC28, AC29, AC30, AC31, AC32, AC33 |
+| D4b | R20, R21, R22, R23, R24, R25; AC23, AC24, AC25, AC26, AC27, AC28, AC29, AC30, AC31, AC32, AC33, AC46 | R35/AC1: no batch documents are listed. R32/AC41: no batches to persist — the Given drops "a `v1` batch done" and the Then drops "the `v1` batch". Ledger D2 Invariant ("every version is kept outside the agent"): only version 1 exists, since no learning loop creates versions. R27/AC35: `ANALYST_MODEL` is not read. Ledger L1 Decision (the §1 list it presents): items 7 and 9 are left out, since the learning loop they attach to does not exist | AC23, AC24, AC25, AC26, AC27, AC28, AC29, AC30, AC31, AC32, AC33 |
 
-```bash
-SCRIPTED_MODEL=1 python -m app --host 0.0.0.0 --port 4000
-```
-
-(the live app is the same command without `SCRIPTED_MODEL`, using the platform keys and the model-role variables from `resolved-decisions.md`).
-
-**Reporting duty.** The build agent MUST report results per acceptance criterion, AC1 through AC51, each with cited evidence: the test name and its pass/skip/fail output line, and the file paths it exercised. A criterion reported as "should pass", "looks correct" or "not run" is a failure. The report is written to `acceptance-report.md` in the build folder as well as printed, because the workspace is the record.
+When the build is complete and every result above is reported, conclude your final report with an infra/structure diagram of the built app — the server, its page and API, the agent with its tools and per-run workspace, the grader, the stores, the batch history and the analyst — followed by the exact sentence: "This is the infra/structure diagram of this app".
 
 ## Runtime (lab)
 
-Everything in this section is `[environment]` — contributed by the coding-agent-lab environment, not by the course.
+Everything in this section is `[environment]`: contributed by the lab, never by the course.
 
-**Container.** Debian, non-root user, Node 22, Python 3 with venv, sqlite3, git, build tooling. Preinstalled Python: `fastapi`, `uvicorn`, `python-dotenv`, `openai`, `anthropic`; Node: `express`, `cors`, `better-sqlite3`, `vite`, `nodemon`. Nothing else is preinstalled. Outbound network works; every install costs the learner wall-clock time inside the session, so §7 batches the course pins into one announced step. Venvs are created with `--system-site-packages`; where the course pinned a version and a preinstalled copy differs (`openai`, `python-dotenv`), the course pin wins inside the venv. The Python minor version tracks the image: the build agent runs `python3 --version`, records it, and stops with a report if a course-pinned package refuses the interpreter. Memory is finite and shared with the agent's own process — this pipeline holds no local model resident (every model role is a remote call through the proxy), so no release-before-load rule is needed; say so in the report if that ever changes.
+**Container.** Debian, non-root user, Node 22, Python 3 with venv, sqlite3, git, build tooling. Preinstalled Python packages: `fastapi`, `uvicorn`, `python-dotenv`, `openai`, `anthropic` — nothing else (no vector stores, embedding models or ML frameworks). Outbound network works, but every install costs the learner session time: batch installs early and announce them (§2). Create the venv with `--system-site-packages`; where a course pin differs from a preinstalled copy, the course pin wins inside the venv. Memory is shared with the coding agent's own process; this app holds no local model, so no model-release rule is needed.
 
-**Models.** The container exports `OPENAI_API_KEY`/`OPENAI_BASE_URL` and `ANTHROPIC_API_KEY`/`ANTHROPIC_BASE_URL`, each base URL pointing at the platform proxy. The app reads the first pair only (R22). The platform's model set is not enumerated here because it changes; the three model-role variables are set when `resolved-decisions.md` is written, on the "(Recommended)" line, and are never probed from a listing endpoint.
+**Model access.** The container exports `OPENAI_API_KEY`/`OPENAI_BASE_URL` and `ANTHROPIC_API_KEY`/`ANTHROPIC_BASE_URL`, each base URL pointing at the platform proxy. This app reads only the OpenAI pair (R27). No other service key or account exists here, which is why several course options are `unavailable` (§1). The model the coding agent runs on is the learner's per-conversation choice and says nothing about the app's models.
 
-**Preview.** One server, port 4000, bound to `0.0.0.0`, serving both pages and API; HTTP only (no WebSocket upgrades; streaming responses work); every in-page URL relative (R23, R24).
+**Preview.** One server on port 4000 bound to `0.0.0.0` (R29); the preview is reverse-proxied under a path prefix, so every in-page URL is relative (R30); HTTP only, WebSocket upgrades are not proxied, streaming responses work (R31).
 
-**Workspace.** The workspace is the record: a new chat starts with no memory of an earlier one and the grader sees only what is on disk, which is why `resolved-decisions.md` and `acceptance-report.md` are written, not just printed. The workspace-root `AGENTS.md` is never authored — the IDE rewrites that file at every boot. The course's own `AGENTS.md` convention (the review agent's instruction file) lives inside each run's `memories/` folder under the app, which is unaffected. Every tool call is visible to the learner; long-running servers run in the background.
+**Workspace.** The workspace is the record: decisions and results go to files. Every tool call is visible to the learner. The workspace-root `AGENTS.md` is rewritten by the IDE at every boot and is never authored (§6 Never); the app's own instruction files, which this course's pattern versions and edits, live in the app folder (R33).
 
-**Environment failure modes** (written like a failure catalog entry; never part of CTX-B, which is the course's):
-- *Root-absolute URL under the proxied preview.* Symptom: the index loads but every link, form or API call 404s or lands on the IDE. Cause: a `/api/...` path resolves against the proxy root, not the app. Fix: relative paths everywhere. Enforced by R24, AC43.
-- *Second port or second server.* Symptom: the app runs but the preview pane shows nothing. Cause: only port 4000 on one process is previewable. Fix: one server serving pages and API. Enforced by R23, AC42.
-- *Guidance lost at boot.* Symptom: instructions placed in the workspace-root `AGENTS.md` vanish on the next session. Cause: the IDE rewrites that file. Fix: §6 Never; the review agent's own instruction file lives under the app. Enforced by R29 (i), AC49.
-- *Pin refused by the image's interpreter.* Symptom: `pip install` of a course pin fails to build. Cause: the image's Python minor version is below the course's floor. Fix: stop and report with the recorded version (§2 row 1) rather than silently choosing a different version. Enforced by R29 (ii), AC49.
-- *Course pin shadowed by a preinstalled copy.* Symptom: an import resolves to the preinstalled `openai` rather than the pinned one. Cause: `--system-site-packages`. Fix: the pin wins inside the venv (§2); verify with the installed version in the report. Enforced by R29 (iii), AC49.
+**Question mechanism.** Questions are asked with a `choices` fence as described in §0's `[environment]` paragraphs.
+
+**Environment failure modes.**
+- **Root-absolute URL under the proxied preview.** *Symptom:* the app works on `localhost` but the preview shows a blank or broken page and failing API calls. *Cause:* `/api/...` resolves against the IDE's origin, not the proxied app prefix. *Fix:* relative URLs everywhere in the page. Enforced by R30, AC39.
+- **Live updates over WebSocket.** *Symptom:* run progress never arrives in the preview. *Cause:* the proxy does not upgrade WebSockets. *Fix:* poll the run record. Enforced by R31, AC40.
+- **Guidance written to the workspace-root `AGENTS.md`.** *Symptom:* instructions vanish after a restart. *Cause:* the IDE rewrites that file at boot. *Fix:* keep the app's instruction files in its own folder. Enforced by R33, AC42.
+- **A key asked of the learner or read under a guessed name.** *Symptom:* a stalled build or auth errors against the proxy. *Cause:* the ambient variables were not used. *Fix:* read exactly `OPENAI_API_KEY` and `OPENAI_BASE_URL`. Enforced by R27, AC35, AC36.
 
 ## Course Context Pack (embedded — agent-readable)
 
-Concepts only; no code from the course appears here. Anchors are position-independent.
+Concepts only; no course code is reproduced. Anchors are stable names, not numbers.
 
 ### CTX-A. The pattern
 
-Four nested loops around one agent, each existing for one reason:
+Four nested loops around one agent, each answering a different question:
 
-1. **Agent loop** — the model receives a task and context, calls a tool, observes the result, and repeats until it declares the task done. Exists because one model call is rarely enough for multi-step work. Here: fetch the requirement by id → write the analysis skeleton with facts → fill ambiguities, questions, assumptions, summary one edit at a time → finish. The agent's standing instructions are a file loaded every run (procedure + review guidance); its deliverable is a file in a confined workspace, not a chat message; a turn cap is the safety stop, not the normal one.
-2. **Verification loop** — when the agent says it is done, a separate grader checks the finished file against a rubric of pass/fail criteria and either accepts or sends it back with per-criterion feedback, up to a budget. Exists because "done" is not "good enough", and because explicit criteria make cheaper models viable on harder tasks.
-3. **Event-driven loop** — an event in the system where the work already happens (a ticket created, a requirement page edited, a message) triggers the verification-wrapped agent, and the result is written back into that system. Exists because an agent that must be opened, pasted into and asked is not used; one that lives where the conversation is becomes part of the workflow. The loops nest like Russian dolls but compose freely.
-4. **Hill-climbing / learning loop** — across many completed runs, an analyst reads the traces (every message, every grader verdict and gap) and finds what the agent keeps being corrected on; it proposes one change to the harness (here: the instruction file), a human approves, code applies it, and a re-run of the same batch is compared for improvement or regression. Exists because an agent corrected one run at a time starts from the same place tomorrow; the story of a non-deterministic system is in its traces.
+1. **Agent loop — do the work.** The model repeatedly calls tools, observes results and decides the next step until it says it is done. Here: fetch the requirement by id, lay down a report skeleton, fill one section per turn. Engineering levers at this level are the model, the tools and how tools are described.
+2. **Verification loop — is "done" actually good enough?** A grader checks the finished output against a rubric of explicit pass/fail criteria; if any fails, specific feedback goes back for another attempt within a bounded budget. It adds reliability and can make a cheaper model viable for harder work.
+3. **Event-driven loop — when should the agent run?** An event in the system where the work already happens (a ticket created, a requirement edited) triggers the verification-wrapped agent, and its result is written back into that system (an agent-owned report page, a ticket status, a comment), producing new events. A person still decides when the work is done.
+4. **Learning (hill-climbing) loop — improve the agent itself.** Runs over many documents are recorded in full; first-attempt pass rates per criterion show what the agent is systematically corrected on; an analyst agent reads the evidence (read-only) and proposes one change to the agent's instructions; a person approves; plain code applies it; the same batch is re-run and compared to confirm the improvement without regression. Traces — the record of every step, tool call and grader feedback — are where an agent's behavior is visible, because the agent is not deterministic.
 
-Human oversight sits at each level: sensitive tool calls, the grader, approval of outputs before delivery (a human closes the ticket), and approval of harness changes.
+Supporting harness ideas: instructions live in files loaded every run (versionable and improvable from outside the agent); the agent's filesystem is confined to one workspace; permissions, not instructions, keep the agent off its own instructions.
 
 ### CTX-B. Failure-mode catalog
 
-- **B1 — Transient external failure.** Symptom: the fetch returns a service-unavailable or timeout message. Cause: an external system is busy. Fix: the agent retries the same tool with the same arguments until it succeeds; the course planted two such failures. Enforced by R2, AC3.
-- **B2 — Stage skipped or reordered.** Symptom: a section left empty or filled out of order. Cause: ordering is requested by instructions, not enforced by the harness. Fix: a stage-order check reports it so a bad run is never accepted as a reference. Enforced by R3, AC4, AC5.
-- **B3 — Cap stop mistaken for completion.** Symptom: a run that exhausted its turn budget prints the same "finished" line as a real finish. Cause: the loop ends either way. Fix: when the cap ends an incomplete run the trace says so. Enforced by R5, AC7.
-- **B4 — Grader passes by resemblance.** Symptom: the grader passes criteria the file does not satisfy. Cause: it reads the file and still judges by how the conversation reads or how the file "looks". Fix: read the file before judging, quote a line number for every pass, apply labels literally, check every item. Enforced by R10, AC13, AC15.
-- **B5 — Missing instructions ignored silently.** Symptom: a plausible but bad review. Cause: a missing memory file is skipped without warning, so the agent runs on the system prompt alone. Fix: fail loudly before any model call. Enforced by R6, AC8.
-- **B6 — The agent edits its own instructions.** Symptom: review guidance drifts mid-run. Cause: the instruction file sits in the same writable filesystem as the analysis. Fix: a harness-level write denial on the instructions path, not a prompt sentence. Enforced by R7, AC10.
-- **B7 — Stale analysis from a previous run.** Symptom: the agent reads an old analysis and skips stages. Cause: a shared workspace keeps the last file. Fix: a fresh workspace per run (the course deletes the file before each notebook run and gives each automated run its own directory). Enforced by R9, AC12, AC51. Planted instance: `fixtures/stale_workspace/`.
-- **B8 — A grader error counted as a verdict.** Symptom: pass rates computed over runs that received no verdict. Cause: the grader raised, the run continued. Fix: record a `grader_error` pass with no criteria; exclude the run from denominators; report the count. Enforced by R13, AC20, AC34.
-- **B9 — A single occurrence acted on as a pattern.** Symptom: an instruction change that fixes one document. Cause: the analyst treated one run's problem as systemic. Fix: start from first-attempt pass rates across the batch; note one-offs under `rejected`. Enforced by R18, AC33.
-- **B10 — Edit anchor not unique.** Symptom: an edit error, or duplicated headings in the file. Cause: the anchor string occurs more than once. Fix: the edit tool rejects it; the agent reads the file and retries; the analyst does not promote this one-off. Enforced by R27, AC21, AC22.
-- **B11 — Recurring first-attempt failure = instruction gap.** Symptom: the same two criteria fail on the first attempt for every document and are fixed on the second. Cause: the rubric asks for labelled lines the instructions never mention. Fix: the learning loop proposes the missing instruction under the right heading; after approval and apply, every document passes first time. Enforced by R17–R21, AC33, AC46. Planted instance: `instructions_v1.md` lacks both labels.
+- **B1 Transient tool failure.** Symptom: the fetch returns an error (503, timeout). Cause: an unreachable external system. Fix: retry the same call with the same arguments; the run completes. Enforced by R2, AC3.
+- **B2 "Done" that is not good enough.** Symptom: the first draft names an ambiguity but not what would resolve it or what could go wrong. Cause: nothing in the agent loop checks the output. Fix: a grader with explicit criteria sends it back with the gap. Enforced by R10, R12, AC6, AC12.
+- **B3 Grading by resemblance.** Symptom: the grader passes criteria the file does not satisfy. Cause: it judged the conversation, or how the file looked, not its content. Fix: give it a file-reading tool, require a verbatim quote with a line number, apply labels literally. Enforced by R11, AC13, AC14.
+- **B4 Silently missing instructions.** Symptom: a plausible but bad review. Cause: the framework ignores a missing memory file. Fix: fail loudly before the run. Enforced by R7, AC9.
+- **B5 Stale output from an earlier run.** Symptom: the agent reads a finished report left on disk and skips stages. Cause: a reused workspace. Fix: a fresh workspace per run. Enforced by R8, AC10.
+- **B6 The agent editing its own instructions.** Symptom: instructions drift during a run. Cause: the agent has `edit_file` and the instructions sit in its filesystem. Fix: deny writes there by permission. Enforced by R6, AC8.
+- **B7 Turn cap mistaken for completion.** Symptom: an exhausted run reads like a finished one. Cause: both end the stream the same way. Fix: name the stop reason. Enforced by R9, AC11.
+- **B8 Budget exhaustion reported as an ordinary verdict.** Symptom: a run that ran out of revisions shows `needs_revision` like any other pass. Cause: the last pass's result does not say the budget is spent. Fix: derive `max_iterations_reached`. Enforced by R13, AC15.
+- **B9 The same correction every time.** Symptom: clarity and depth fail the first attempt on every document. Cause: the rubric expects labelled lines the instructions never ask for. Fix: the learning loop finds the recurrence and adds the missing instruction. Enforced by R20, R25, R26, AC23, AC32.
+- **B10 Criterion names that drift.** Symptom: one recurring criterion splits into several in the counts. Cause: the grader paraphrases criterion names. Fix: identify criteria by rubric position. Enforced by R20, AC24.
+- **B11 Grader errors counted as passes.** Symptom: inflated pass rates. Cause: a failed grader leaves a pass with no criteria. Fix: exclude ungraded runs and count them separately. Enforced by R14, R21, AC26.
+- **B12 Acting on a one-off.** Symptom: a change made for one document's quirk. Cause: a single occurrence mistaken for a pattern. Fix: act only on what recurs across most runs; record the rest as rejected. Enforced by R22, AC27.
+- **B13 Counts that hide change.** Symptom: before/after bullet counts look the same, so nothing seems to have changed. Cause: the content changed completely while the shape did not. Fix: show counts and the full text diff together. Enforced by R18, AC21.
 
 ### CTX-C. Decision background
 
-**How to read the provenance notes.** *Litmus branch* — how an argued subject was resolved: a **row** (both sides shown working and differing in a component, identity or role), a **bake-in** (the course showed the other side failing, so the taught side is a business rule), or a **lever** (the sides differ only in a value, so it is a body default plus an Ask-First entry). *Tie-breaker 1* — a demonstrated failure wins: the course showed the other side failing, or warned against it as a failure (errors, degradation, broken behavior — not merely a side it outgrew), so the subject is a bake-in however many earlier lessons showed that side working. *Tie-breaker 2* — a trade-off about a value is a lever: the argued sides differ only in a numeric knob, not in a component, identity or role; a limit value that removes a component (a budget of 0) is a component choice and escapes this tie-breaker. *Lever-value branches* — how a contradicted lever's value was picked: (1) the value the narration states aloud in the lesson that introduces the concept; (2) the end-to-end application's configuration; (3) the value used most often, earliest-taught on ties. *Post-build lever* — a value you may change after the build, by asking first, never a gate question. *Stakes* — whether picking the other side of a contradiction up front changes structure, semantics or a guarantee; only then does a contradiction become a row. *Substitution row* — a row whose Default departs from the course's own technology because that technology needs setup the build cannot assume; the course's technology stays in Options tagged "(course default)". *Heavy bar* — a realization is heavy only if it needs a credential, a paid account, admin-level setup or special hardware; network access alone is not heavy. *Realization tiers* — among realizations meeting an invariant at the fixture scale, the lightest wins: (1) the language's standard library, (2) an embedded library, (3) a locally served process. *Generator's reading* (also "generator's quantification") — a heuristic the course states only in words ("most runs", "one in five is not a pattern") is given one number by the generator so the rule is testable; the number carries this label wherever it appears, and the subject is a post-build lever with an Ask-First entry, never a row. *Constrained-dimension lever* — a trade-off the course argued about a subject the Environment Resolutions table resolved as CONSTRAINED; the dimension left the Ledger `[environment]`, so the argument becomes a body lever with an Ask-First entry instead of a row. *Example-realization note* — a Default-cell note marking that the Default's concrete content (a file's text, demo data) is the course's example and is expected to be swapped when the project differs; the Invariant is what survives the swap.
+**How to read the provenance notes.** A *litmus branch* says why an argued subject became what it is: *row* (both sides were shown working, so the reader chooses), *bake-in* (the course showed or warned that the other side fails, so the taught side is a rule), or *lever* (the sides differ only in a number, so it is a default value you may tune later). A Trade-off note `Litmus: working` means the alternative is shown working, which takes the *row* branch. *Narrative* marks a subject the course raised but did not argue as a builder's choice, or an alternative it argued but never showed working on a subject that changes no component, owner or guarantee — background only, never asked and never built. A *realization branch* is the `Branch:` note in a Ledger Default cell, saying how the default relates to what the course ran: *the course's own realization* (the default is what the course built, kept as is; *keyless* adds that it needs no credential) or a lighter stand-in on a substitution row. A *post-build lever* is a value set by default and tunable after the build; a *contradicted lever* is one the course set inconsistently, resolved by fixed branches in order — the value the narration states, else the end-to-end application's config, else the most frequent value. *Stakes* asks whether picking the other side up front would change structure, semantics or a guarantee; only then does a contradiction become a row. The *heavy bar*: an option is heavy when it needs a credential, a paid account, admin or container setup, or special hardware; network access alone is not heavy. A *substitution row* is one whose default is a lighter stand-in for what the course ran; *realization tiers* rank stand-ins (ships with the language, embedded library, local service). *Untakeable* means this lab cannot provide what an option needs (a credential it does not supply, or a completion gate that would wait on a person or a live model); such options are tagged `unavailable` in §1. `[environment]` marks facts from the lab, never the course. *Tie-breaker 1* (a demonstrated failure wins): when the course shows or warns that the other side fails, the taught side is baked in as a rule. *Tie-breaker 2* (a trade-off about a value is a lever): when the sides differ only in a number, the subject is a body default plus a §6 Ask-First entry, never a row. *The generator's reading* marks a number the spec chose to quantify a spoken heuristic of the course (e.g. "most runs"); it is a post-build lever. A *declared drop* names course packages or constants left out because they only served presentation. Rule labels: *course-demonstrated* traces to the course materials through a `(CTX-…)` anchor; *project hardening* is a constraint this spec added that the course did not demonstrate. §1 handling tags: `restorable` — additive and owned by no row, built if brought back at L1; `buildable, no criteria` — named by the course but never built, so it may be built but the spec supplies no parameters and no acceptance criteria for it; `unavailable` — cannot be taken in this lab (untakeable, or outside the delivered build mode).
 
-**Mined spoken trade-offs and named alternatives** (every subject the course raised as a choice — argued, or named without argument — with its disposition):
+**Mined trade-offs** (every argued or spoken trade-off, its lesson, and where it went):
 
-| # | Subject | Lesson | Disposition |
-|---|---|---|---|
-| T1 | Always-on instruction file vs skills by progressive disclosure | 3 | row D1 |
-| T2 | Verification loop vs bare agent loop (budget 0 "is the same basic agent loop") | 2, 5 | row D2 — litmus: bare loop built first and shown working, then wrapped; budget 0 removes a component |
-| T3 | Revision budget value (3 in notebook/batch runner vs 2 in event demo) | 5 (narration says 3) | lever R11 — tie-breaker 2: sides differ only in a value; lever-value branch 1 |
-| T4 | Match model capability to task; cheaper models viable with verification; different grader model "a common production choice"; stronger model for the analyst | 2, 5, 7 (+ README) | lever R22 — constrained-dimension lever: the model/provider dimension is CONSTRAINED, so the argument cannot be a row and becomes a body lever; Ask First |
-| T5 | Deterministic vs model-as-judge grader | 2 (narrated slide) | row D3 — enters on structure (owner moves from model to code); no trade-off argued, so not design-argued |
-| T6 | Human approval of harness changes vs auto-apply; "hard to have confidence merging without evals" | 2, 7 | bake-in R17, R21 — tie-breaker 1: the course warns against unreviewed auto-apply as a failure ("hard to have confidence merging without evals" — a change that regressed would be merged unnoticed) and builds only the approved path |
-| T7 | Report written to a separate agent-owned page vs into the requirement page | 6 (shipped code README) | bake-in R15 — tie-breaker 1: the course warns against writing into the requirement page as a failure (the source of truth is overwritten and its history lost), never shows it as a working alternative |
-| T8 | A human closes the ticket vs the agent closing its own work | 6 | bake-in R16 — tie-breaker 1: the course warns against the agent closing its own ticket as an oversight failure (output delivered with no human approval), never shows it as a working alternative |
-| T9 | Only the instruction file is auto-applied; tool/grader/configuration changes are read and decided by a person | 7 (module docstring) | bake-in R17 — tie-breaker 1: a half-applied non-prompt change is the named failure |
-| T10 | "Most runs" is a pattern; one in five is not | 7 | lever R18 — generator's reading: a spoken heuristic quantified ("more than half of graded runs"), so by that rule a post-build lever, never a row |
-| T11 | Grader must read the file, not the transcript, and quote line numbers | 5 (helper comments) | bake-in R10 — tie-breaker 1: the course states the grader passed by resemblance without it |
-| T12 | Scheduled vs event-triggered runs | 2 | narrative — framing of trigger kinds, not argued as a builder's choice; schedules are §1 item 4 |
-| T13 | Where loop engineering sits among prompt, context and harness engineering; "levels" vs "loops" naming | 2 | narrative — taxonomy, not a decision |
-| T14 | Composability: not every loop must nest every other | 2 | narrative — framing of how loops compose, not argued as a builder's choice; the one composition the course built both ways (grader on/off) is T2, row D2 |
+| Trade-off | Lesson | Disposition |
+|---|---|---|
+| Match model capability to task: cheaper, faster model for simple work, a capable one for complex work | 2 | lever — attached to the CONSTRAINED model/provider dimension; tie-breaker: sides differ in which model fills a role, which this lab resolves per role at checklist time (§2, Ask First) |
+| Same model for agent and grader, or a different grader model ("a common production choice") | 5 | lever — same attachment as above (§2, Ask First) |
+| Analyst on a stronger model, because finding what recurs across five traces is "the one job the cheaper model does unreliably" (course README) | 7 | lever — same attachment (§2, Ask First) |
+| Verification loop or the agent loop alone ("set this to 0 … the same basic agent loop") | 2, 5 | row D3 |
+| Grader kind: deterministic or a model as judge | 2 (slides 2.6, 2.7) | row D3 (merged as one subject) |
+| A human acting as the grader | 2 (slide 2.12) | row D3 option; unavailable in this lab (§1) |
+| Verification makes cheaper models viable for harder tasks | 2 | narrative — rationale for D3's default, not a separate choice |
+| Event-triggered or manual runs (friction of copy-paste) | 6 (slide 6.3) | row D1 |
+| Real Slack/Jira/Confluence or the simulated tracker | 6 | row D1; real services unavailable in this lab (§1) |
+| Scheduled versus event triggers | 2 | narrative — a taxonomy of trigger kinds, never argued for this agent; §1 item 6 |
+| Nest all loops or compose a subset | 2 | rows D1, D3, D4 |
+| Learning loop or per-run correction only | 7 | row D4 |
+| Instruction placement: system prompt, always-loaded file, skills | 3 | row D2 |
+| Procedural improvements versus memory improvements | 2 | narrative — a taxonomy of what a learning loop can change; §1 item 7 |
+| Merging harness changes only with evals that show no regression | 2 | bake-in R25 — tie-breaker 1: the course warns confidence is not possible without them |
+| Human approval at each loop level | 2 (slide 2.12) | narrative — a taxonomy of oversight points; the two the course built are bake-ins R17, R23 |
+| Turn cap is a safety stop, not the normal stop | 4 | lever R9 — tie-breaker 2 (a number) |
+| Revision budget 3 (notebook, batch) versus 2 (tracker app) | 5 | lever R12 — tie-breaker 2; contradicted, value by the narration branch |
+| Grader judging the file versus the conversation (code comments) | 5 | bake-in R11 — tie-breaker 1: the course states the grader otherwise passes unsatisfied criteria |
+| Analyst proposes, plain code applies (module docstring) | 7 | bake-in R22, R24 — tie-breaker 1: the course warns an agent editing its evidence "is not analyzing anything" and a non-prompt change could be half-applied |
+| A single occurrence is not a pattern | 7 | lever R22 — tie-breaker 2 (a threshold); "more than half" is the generator's reading |
+| Counts versus full diff when comparing runs (tracker README) | 6 | bake-in R18 — tie-breaker 1: the course warns counts alone mislead |
+| Write-deny on instructions versus relying on instructions | 4, 5 (code) | bake-in R6 — tie-breaker 1 |
+| Saved-trace replay versus live runs (`USE_LIVE_LLM`) | 4, 5, 7 | narrative — notebook convenience; its role is taken here by the scripted model (Environment Resolutions) |
 
-- **C1 — Instruction placement (→ Ledger D1).** The course's primer shows three ways to instruct an agent: a system prompt string, a memory file loaded every run, and skill files whose description is always in context but whose body is read only on demand. The review agent uses the memory file with a pointer system prompt because the learning loop needs a file it can read and edit from outside, and because instructions placed there "carry the same weight" as the system prompt. The primer's skills (four poem forms) show progressive disclosure working: the trace reads each skill body only when writing that form. Choosing skills for the review guidance moves the proposal target from a heading in one file to a skill file.
-- **C2 — Verification present and the budget (→ Ledger D2, lever in R11).** The grader is added in Lesson 5 after the bare loop works in Lesson 4; the first draft lacks the two labelled lines and is sent back; the second passes. The budget value appears as 3 in the Lesson 5 notebook and the batch runner and as 2 in the event demo's automation; narration says 3. The run status distinguishes "satisfied" from "ran out of tries" because the last grading pass reads `needs_revision` either way.
-- **C3 — Fetch by identifier (→ R1).** The agent is built with no document; its opening message names only a ticket id and it must call the fetch tool, "exactly as it would against a real tracker ticket it doesn't already have open". The fake tracker is seeded at run time; the agent cannot tell a seeded document from a pre-existing one.
-- **C4 — Simulated failures (→ R2, contradiction).** The course's helper defaults the fetch tool to zero simulated failures (a clean fetch); the Lesson 4 lesson text, the narration ("simulating two times of failure") and the pre-baked trace (a 503 message, then a timeout) show two. The narration value governs the fixture; the app default stays a clean fetch, as the batch runner comments that retries "only add turns and noise" there.
-- **C5 — Event surfaces and the report page (pinned in §2; → R14–R16).** The course demonstrated the agent in Slack (direct message and channel mention, returning the report and its raw markdown) and in Jira/Confluence through automation rules and a tunnel, and shipped a keyless simulated tracker + wiki as the only code: creating a ticket or editing a linked requirement page while a ticket is open triggers the loop; the report is a new version of an agent-owned page so the wiki's own history shows every analysis and a diff between any two; counts often look similar before and after while the content changed completely, which is why both the counts table and the text diff are shown. The real integrations are untakeable in this lab (no credentials), so the row left the Ledger through the Environment Resolutions table; outside the lab they are Options tagged heavy.
-- **C6 — The learning loop's design (→ R17–R21).** The harness has four improvable parts — prompt, tools, grader, configuration — and the course scoped the analysis to the prompt "because that is what the current evidence implicates", keeping the other targets expressible. Two properties the course says to keep: the analyst reads the traces and cannot write them ("an agent able to edit the evidence it is reasoning from is not analyzing anything"), and the analyst proposes but does not apply — plain code inserts the text so the edit is reviewable and deterministic. The committed result: before, completeness 5/5, clarity 0/5, depth 0/5, five revisions; after one approved insertion, 5/5 on all three with no revisions. The batch snapshots the instruction file it ran under so a saved run says what produced it. First-attempt failures are indexed by position because the grader paraphrases criterion names.
-- **C7 — Model tiering (→ R22 lever).** The course runs the agent and grader on its cheaper model and the analyst on its stronger one, states that reading five full traces to find what recurs "is the one job the cheaper model does unreliably", and notes that a different grader model is a common production choice. The lab constrains *which* models are available (platform models through the proxy), not the tiering argument, which stays a lever.
-- **C8 — Grader kind (→ Ledger D3).** The narrated Lesson 2 slide says graders "can either be deterministic or agentic (LLM as a judge is a classic example)"; the docs-writer example's grader is mechanical ("links resolve, CI passes"); the review agent's grader is a model with a read tool whose prompt restates the harness's default grading rules and adds three disciplines (read the file first; quote with line numbers; apply labels literally and check every item).
-- **C9 — Acceptance-suite model (→ Ledger RR1).** The course's notebooks run live by default but ship pre-baked traces and committed batches so lessons replay without a key, and warn that live results vary between runs. This spec's scripted stand-in is its own realization of that idea for the test suite; the live models remain the course's choice and the finished app's.
-- **C10 — Persistent store (pinned in §2).** The course's event demo keeps three plain JSON lists on disk, seeded once with the starting scenario, so a learner can open the files and see exactly what the app sees; batches are a directory of JSON run files plus a summary and the instruction snapshot. Tier 1 (standard library) satisfies R25 at the fixture scale; the framework also supports database-backed filesystems, named but never argued, so no row.
-- **C11 — Hosted tracing (pinned in §2).** Optional in the course, switched on by environment variables alone; "everything works without it"; from Lesson 4 the course builds its own local trace table from the agent's stream, which is what R12 keeps.
-- **C12 — Name-map and discrepancies (provenance only, never binding).** The course's default ticket id was `AUTH-142` ("User Profile File Upload"); its other tickets `AUTH-101`, `NOTIF-205`, `PAY-310`, `ACCESS-118`, `ALERT-227`; its event-demo seed ticket `REQ-104` with keys from `REQ-100`; its bot author "Requirements Analysis Agent (bot)"; its cast Dana/Jordan/Priya/Sam/Morgan; its batch labels `v1`/`v2`; its workspace folder `workspace/`, analysis path `/analysis.md`, instructions path `/memories/AGENTS.md`, proposal path `/proposal.md`; its event demo on port 5050. Contract-binding constants kept as-is: the five section headings, the labels `Reason:` / `Resolved by:` / `Edge case:`, the rubric names, ticket statuses `Open` / `Analysis Ready` / `Done`, page kinds, grading results, run statuses, harness-change targets, comparison verdicts, summary fields, the 8-hex-character run id. Discrepancies recorded, none binding: the fetch tool is named `fetch_requirement` in the root instruction file, the helper and the Lesson 4 narration, and `fetch_requirement_from_jira` in the batch snapshots and a Lesson 3 slide (narration branch picks the former); the memory file is `AGENTS.md` in code and narration, `Agent.md` on one slide; the learning-loop batch is "four documents" early in the Lesson 7 narration and five in the notebook and later narration (the application's five governs); the fourth loop is called hill-climbing, learning and self-improvement loop; one slide titles the third loop "application loop"; the course README promises an automatic offline fallback when the key is absent that the shipped code does not implement; the course's requirement text differs slightly between slide and narration (this spec authors its own). Presentation-only constants dropped by declaration: notebook styling, chart colors, tracing run names and tags, the LangSmith project names.
+**Contradictions recorded** (both sides, and how each was settled):
+- *Revision budget*: 3 (Lesson 5 notebook, batch module) vs 2 (tracker app) → 3, narration branch; lever (R12).
+- *Simulated fetch failures*: 0 (helper default, batch module) vs 2 (Lesson 4 notebook table, narration, saved trace) → 2 for the demonstration fixture (narration), 0 for normal runs (end-to-end config); lever (R2).
+- *Fetch tool name in the instructions*: `fetch_requirement` (working copy, the registered tool) vs `fetch_requirement_from_jira` (the two batch snapshots and a slide) → the registered name, narration branch ("fetch_requirement tool", Lesson 4); stakes fail (no structural change) (R26).
+- *Memory file name*: `Agent.md` (slides) vs `AGENTS.md` (code, Lesson 4 narration) → `AGENTS.md`, narration branch (Lesson 4 narration).
+- *Lesson 5 first-attempt results*: narration says completeness failed only for the third document and the fifth passed everything; the committed batch summary has completeness 5/5 and clarity/depth 0/5 (different runs). The fixtures reproduce the narration's completeness one-off and the committed clarity/depth signal.
+- *Requirement wording* (slides "shall … common file types" vs narration "should … all common files"): irrelevant here — fixtures are the generator's own.
+- *Course model in slide code* (`gpt-5.5` on the base-agent slide vs `gpt-5.4-mini` in notebooks): provenance only (CTX-D).
+
+**Backing for Ledger rows.** → Ledger D1: the course's tracker app exposed ticket creation, page edits and a manual re-run as triggers and wrote results to a separate agent-owned page so version history shows every past analysis and who wrote it. → Ledger D2: the review agent's file separates a fixed Procedure from Review guidance, "the half that gets revised"; the system prompt only points at it. → Ledger D3: the grader in the course is the framework's rubric middleware with custom instructions and a file-reading tool; a checkpointer was attached only to match the framework's docs. → Ledger D4: the analyst's change format names four targets (prompt, tool, grader, configuration) but the course scoped analysis to the prompt "because that is what the current evidence implicates".
+
+**Course name-map (provenance, not binding).** Review agent builder `build_review_agent`; runners `run_review_loop_live` / `run_verification_loop_live`; tracker trigger `run_automation`; batch runner `generate_run_history`; analyst `propose_harness_change`; applier `apply_change`; comparer `compare`; course ticket ids `AUTH-142` (file upload), `NOTIF-205`, `AUTH-101`, `PAY-310`, `ACCESS-118`, `ALERT-227`; tracker seed `REQ-104` / `page-req-upload`; tracker port 5050; the primer's poet agent (turn cap 30, four poem-form skills) is teaching material, not built. Declared drop of presentation-only constants: run names and tags, tracing project names, the tracker's colors and styles, the course's cast of names (replaced by the generator's own).
 
 ### CTX-D. Perishable assumptions
 
-The concepts in CTX-A to CTX-C are durable. Only the names below are perishable — treat them as search keywords against current documentation, never as guaranteed imports or served models.
+Treat these as search keywords against current documentation, not guaranteed imports. The concepts in CTX-A to CTX-C are durable; only these names are perishable.
 
-- Harness: `deepagents` 0.7.11 — `create_deep_agent`, `FilesystemBackend(root_dir, virtual_mode=True)`, `FilesystemMiddleware`, `FilesystemPermission(operations, paths, mode)`, `RubricMiddleware(model, max_iterations, tools, system_prompt, on_evaluation)` (flagged beta in this era; its default grader prompt was copied by the course and "replaces rather than extends"), `memory=`, `skills=`, `permissions=`, `response_format=`, a private `_rubric_status` state key, `checkpointer=InMemorySaver()` (the course notes it is not required for the rubric loop).
-- LangChain: `langchain` 1.3.18 — `create_agent`, `langchain.agents.middleware.ModelCallLimitMiddleware(run_limit, exit_behavior="end")`, `langchain.tools.tool`; `langchain-core` 1.6.1 message types (`tool_calls`, `type`, `status`); `langgraph` 1.2.11 `stream(..., stream_mode="updates")`, `get_state(config)`.
-- Model strings in the course's era: `openai:gpt-5.4-mini` (agent, grader, batches) and `openai:gpt-5.5` (analyst, and one slide's base-agent example) — provenance only; never asserted to be served by the platform proxy. **Request-parameter compatibility:** the course never passes `temperature` or other sampling parameters and relies on native tool calling and a typed structured response; whether a given platform model accepts a parameter is as perishable as its name, so send none the role needs not.
-- Provider client: `langchain-openai` 1.6.0 / `openai` 3.6.0 (`OPENAI_API_KEY`, `OPENAI_BASE_URL`); `tiktoken` `o200k_base` encoding for the optional cost estimate.
-- Web: Flask ≥3.1.3 (unpinned by the course); the course's demo bound port 5050.
-- Tracing: `LANGSMITH_TRACING`, `LANGSMITH_API_KEY`, `LANGSMITH_PROJECT` (and older `LANGCHAIN_*` aliases) — unavailable here.
-- File-tool error text: a tool result with status `error` or text starting with "Error" — the detection the course's trace capture used.
+- `deepagents` 0.7.11: `create_deep_agent(model, tools, system_prompt, memory=[...], backend, permissions, middleware, checkpointer, response_format)`; `FilesystemBackend(root_dir, virtual_mode=True)` (the agent sees its root as `/`); `FilesystemPermission(operations, paths, mode)` (first match wins; unmatched is allowed); `FilesystemMiddleware(backend, tools=[...])`; `RubricMiddleware(model, max_iterations, tools, system_prompt, on_evaluation)` — flagged beta, warns on construction, activates only when a `rubric` is present on the invocation state; passing `system_prompt` replaces its default grader prompt, so restate the verdict definitions and re-check that default before upgrading. Private state key `_rubric_status`.
+- `langchain`: `ModelCallLimitMiddleware(run_limit, exit_behavior="end")`; `create_agent`; `tool` decorator; skills via `skills=["/skills/"]` with YAML frontmatter `name`/`description`. `langgraph`: `InMemorySaver`.
+- Course model ids (provenance only, never assumed served by the proxy): `openai:gpt-5.4-mini` (agent, grader, batch runs), `openai:gpt-5.5` (analyst). Course prices per million tokens: gpt-5.5 5.00/30.00, gpt-5.4-mini 0.75/4.50.
+- **Request-parameter compatibility:** reasoning-era model families may reject standard parameters such as `temperature` or a maximum-token argument; parameter support is as perishable as a model name. Send none the course did not set (it set none).
+- Token counting: `tiktoken` encoding `o200k_base`, falling back to characters ÷ 4.
+- Hosted tracing variables (unavailable here): `LANGSMITH_TRACING`, `LANGSMITH_API_KEY`, `LANGSMITH_PROJECT`.
 
 ### CTX-E. Provenance map
 
-Lesson numbering follows the transcripts (the repo folders are one lower for each notebook; the course README uses a third numbering). Nothing in this spec requires platform access.
+Lesson numbering follows the transcripts. Nothing in this spec requires platform access.
 
-| Lesson (transcript) | Title | Contributed |
+| Lesson (transcripts) | Course files | Feeds |
 |---|---|---|
-| 1 | Introduction | CTX-A framing of the four loops and the requirement-review agent |
-| 2 | Overview of Loop Engineering | CTX-A (loops, nesting, human oversight), CTX-C T2 (the verification loop as a wrapper)/T4/T5/T6 (confidence without evals)/T12/T13/T14, C7, C8, §1 items 4–5 |
-| 3 | Deep Agent Primer | CTX-C T1/C1 (→ D1), the filesystem confinement (R8), instruction placement, progressive disclosure |
-| 4 | Agent Loop | R1–R5 (cap 12), CTX-B1/B2/B3/B5/B6/B7, C3, C4, C9 (the notebook note that live results vary; pre-baked traces) |
-| 5 | Verification Loop | R10–R13 (cap 40, budget 3), CTX-B4/B8, C2, T2 (budget 0 "is the same basic agent loop"), T3, T11 |
-| 6 | Event-Driven Loop | R14–R16, R25 (store), C5, C10, T7 (report page, shipped code README), T8 (a human closes), §1 items 1–2 |
-| 7 | Learning loop | R17–R21, R27, CTX-B9/B10/B11, C6, T6, T9, T10 |
-| 8 | Conclusion | none |
-| Shipped code (helpers, runner, analyst module, event demo, data files, project and lock files) | — | parameter values and pins in §2, the schemas in §3, the grader disciplines, the name-map C12, C11, C9 (committed batches replay without a key) |
-| Slides read | Overview deck (13 slides, all narrated except the title card), lesson deck (18 slides; 6 title cards deck-only, the rest narrated), event-driven deck (4 slides; title card deck-only, 3 narrated) | narrated slides rank with their lesson's transcript (slide 2.6 grader kinds → D3; slide 3.5 cap 12; slide 4.4 the four output sections; slide 5.3 the rubric flow); deck-only slides are title cards and contributed nothing; no deck-only slide conflicts with code or narration — the slide-vs-narration wording differences are recorded in C12 |
-| `[environment]` coding-agent-lab | — | §0's two italic paragraphs, the Environment Resolutions table, §1 deliverable shape and adapting note, §2 rows marked `[environment]`, R22–R24, R29, the `[environment]` reinforcement of R25, §6 entries marked `[environment]`, the `## Runtime (lab)` section — none of it attributed to any lesson |
+| 1 Introduction | — (video) | CTX-A overview |
+| 2 Overview of Loop Engineering | Wide deck, 13 slides (all narrated except the title card) | CTX-A 1–4; CTX-C trade-offs on models, grader kind, human oversight, composability, triggers, learning categories |
+| 3 Deep Agent Primer | primer notebook; Tall deck slides 1–5 (title card deck-only, others narrated) | CTX-A harness ideas; Ledger D2; CTX-D |
+| 4 Agent Loop | agent-loop notebook; helper module; instruction file; Tall deck slides 6–10 | CTX-A 1; B1, B4, B5, B6, B7; R1–R9, R34 |
+| 5 Verification Loop | verification notebook; rubric and grader instructions in the helper module; Tall deck slides 11–14 | CTX-A 2; B2, B3, B8, B11; Ledger D3; R10–R14 |
+| 6 Event-Driven Loop | tracker app (no notebook) and its README; third deck (4 slides) and Tall deck slides 15–16; screen-recorded Slack/Jira/Confluence demos | CTX-A 3; B13; Ledger D1; R15–R19 |
+| 7 Learning loop | learning notebook; batch and analysis modules; two instruction snapshots, proposal, summaries; Tall deck slides 17–18 | CTX-A 4; B9, B10, B12; Ledger D4; R20–R26 |
+| 8 Conclusion | — (video) | — |
+| `[environment]` coding-agent-lab overlay (not a lesson) | the lab's rules and runtime facts | Environment Resolutions; §2 environment rows; R27, R29–R31, R33; `## Runtime (lab)`; §0 `[environment]` paragraphs |
+
+Slides read: all 35 — Wide deck (13), Tall deck (18), third deck (4). Title cards are deck-only; every other slide is narrated (ranks with its lesson's transcript). Deck-only contributions: none beyond lesson titles; the slide-only `Agent.md` spelling lost to the code (CTX-C).
 
 ---
-
-*Status footer* — version 1 · course: Loop Engineering with LangChain DeepAgents · learner project: the coding-agent-lab assignment (§1) · This is a living document: when the building agent produces something unexpected, add the missing constraint here and re-run.
+*Spec v1 · course: Loop Engineering with LangChain DeepAgents · project: requirements-review loop app (lab-fixed) · Living document: when the build agent produces something unexpected, add the missing constraint here and re-run.*
