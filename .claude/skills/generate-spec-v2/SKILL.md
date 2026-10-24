@@ -11,7 +11,7 @@ description: >
   (courses/<name>/). For an environment spec (--env=<slug>) use
   generate-spec instead. Do NOT use this skill to edit an existing spec.md
   or to change the guide.
-allowed-tools: [Read, Write, Glob, Grep, Bash, Agent, AskUserQuestion]
+allowed-tools: [Read, Write, Glob, Grep, Bash, AskUserQuestion]
 ---
 
 # generate-spec-v2
@@ -34,13 +34,25 @@ the card, then regenerate.
 | `references/card-prompt.md` | the card-proposal agent (step 3a) |
 | `references/generation-prompt.md` | the generator agent (step 4) |
 | `courses/<name>/pattern.md` | the generator agent, and the owner at step 3 |
+| `scripts/run_clean.sh` | this session, to start both agents |
 
-Fill each prompt's slots before sending it, with absolute paths:
-- `{GUIDE}`: this skill's `references/guide.md`;
-- `{COURSE_DIR}`: the course folder;
-- `{OUT}`: the step's output file.
+## The empty folder
 
-Send the filled prompt exactly as it is; add nothing to it.
+Both agents run through `scripts/run_clean.sh`, never through the Agent tool.
+An agent started inside the repo gets this session's CLAUDE.md, memory index,
+git status and skill list attached automatically, and that context differs by
+session. On LangChain (2026-10-24/25), four specs generated that way from a
+separate session missed 12 of the owner's required properties in total; four
+generated through this script from a separate session missed 3.
+
+The script makes an empty temporary folder outside any repo, copies in the
+guide, the materials (never `materials/repo/`) and, for generation, the card,
+fills the prompt's slots with those copies, and runs `claude -p` there. It
+copies the agent's output back and prints the agent's final report. The
+prompt is sent exactly as it is; add nothing to it.
+
+A run takes about 10 minutes, longer than the shell's foreground limit: run
+the script in the background and wait for it to finish.
 
 ## Steps
 
@@ -60,10 +72,9 @@ Send the filled prompt exactly as it is; add nothing to it.
    unconfirmed card is never used, because a stale card passes its errors
    into the spec.
 
-   a. **No `pattern.md` yet:** spawn a fresh general-purpose agent (never a
-      fork) on the chosen model, with `references/card-prompt.md`. Set
-      `{OUT}` = `<course>/pattern-proposed.md`. It writes a proposed card and
-      stops.
+   a. **No `pattern.md` yet:** from the course folder, run
+      `bash <skill>/scripts/run_clean.sh card . <model> pattern-proposed.md`.
+      The agent writes a proposed card and stops.
 
    b. **Check every quote.** For each quote, in the proposal or in an existing
       `pattern.md`, grep `materials/` and confirm it is there and says what
@@ -93,10 +104,9 @@ Send the filled prompt exactly as it is; add nothing to it.
       - "## What every build keeps";
       - numbered items, each with its quotes.
 
-4. **Generate.** Spawn a fresh general-purpose agent (never a fork) on the
-   chosen model, with `references/generation-prompt.md`. Set `{OUT}` =
-   `<course>/spec-v2-draft.md`; git ignores that name, so a failed run leaves
-   nothing tracked.
+4. **Generate.** From the course folder, run
+   `bash <skill>/scripts/run_clean.sh generate . <model> spec-v2-draft.md`.
+   Git ignores that name, so a failed run leaves nothing tracked.
    - The agent reads only the guide, the card and the materials, writes the
      spec, and runs the guide's section 10 self-check itself.
    - Do not audit, check or edit the spec afterwards. The guide was validated
