@@ -1,6 +1,9 @@
 ---
 name: generate-spec
 description: >
+  Since 2026-10-24 this skill is ONLY for an environment spec (--env=<slug>,
+  which writes spec.<slug>.md); for the course-agnostic spec.md use
+  generate-spec-v2 instead, even for the phrasings below.
   Produces spec.md for a course in the spec-build-lab by reading the
   course's materials and writing a build-ready specification. Use this skill
   ANY time the user asks to generate, write, produce, build, regenerate,
