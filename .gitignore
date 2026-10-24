@@ -9,6 +9,8 @@ builds/
 # from `/generate-spec --env=<slug>`, named spec.<slug>.md. The negation is
 # a wildcard rather than one exact filename so a new variant or a new
 # environment slug needs no .gitignore edit.
+# The owner-confirmed pattern card, courses/<name>/pattern.md, is tracked too:
+# /generate-spec-v2 needs it to regenerate a spec (and reconfirms it first).
 # Everything else per course (builds/, evals/, scratch) stays local.
 # Ignoring at depth two (courses/*/*) instead of courses/* lets the
 # negations work — git can't re-include files whose parent directory is ignored.
@@ -16,6 +18,7 @@ courses/*/*
 !courses/*/spec.md
 !courses/*/materials/
 !courses/*/spec.*.md
+!courses/*/pattern.md
 
 # Personal scratch file — kept on disk, not version-controlled.
 notes.md
