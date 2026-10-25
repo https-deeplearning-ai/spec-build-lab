@@ -27,11 +27,16 @@ made with it are shown better before it lands.
 |---|---|
 | `.claude/skills/generate-spec-v2/references/guide.md` | generators; this session when changing it |
 | `references/owner-decisions.md` | this session only, never a generator. Every owner decision the guide carries. |
-| `references/musts/<course>.md` | this session and the scorer only. The owner-confirmed properties a course's spec must have, with the baseline scores. |
-| `references/scorer-prompt.md`, `scripts/score.sh` | the blind scorer |
+| `references/scorer-prompt.md`, `scripts/score.sh` | the blind scorer, which takes a round's musts file as input |
 
 None of this goes into CLAUDE.md, AGENTS.md or any file a generator or build
 agent reads.
+
+Every file here, like everything under `.claude/`, stays course-agnostic. A
+build agent can read any of them, and CLAUDE.md forbids course content in
+documents a build agent can read. Course-specific test data (a course's
+musts, its scores, examples from its specs) lives in the round's notes
+outside the repo, never in this skill.
 
 ## The principle
 
@@ -61,6 +66,13 @@ agent reads.
    before the runs, and compare afterwards.
 9. **Report every generator note to the owner, unfiltered.** Where the
    guide was unclear is a finding about the guide.
+10. **Nothing course-specific in agent-readable files.** No course name,
+    course content, musts or scores in the guide, the prompts, this skill,
+    the register, CLAUDE.md or AGENTS.md. The guide speaks in general terms;
+    course examples stay in the round's notes.
+11. **Only what was agreed.** Before committing, list every file the change
+    adds or touches beyond what the owner agreed, and get the owner's go on
+    each.
 
 ## Steps
 
@@ -88,23 +100,43 @@ agent reads.
      version named in `generate-spec-v2/SKILL.md`.
    - Ask the owner which model runs the generators, and have the owner
      reconfirm each course's pattern card (register row 24).
+   - **Agree the musts with the owner** for each test course: the
+     properties its spec must have, each written so a reader can mark it
+     PASS or FAIL, with an id (M1, M2, …). Start from the previous round's
+     notes if there are any, and have the owner confirm them item by item,
+     as with the card. Write them into the round's notes file, outside the
+     repo, between the lines `<!-- MUSTS -->` and `<!-- /MUSTS -->`, after
+     one sentence naming what the app is. Keep the baseline scores (the
+     current guide's runs) in the same notes.
    - Write predictions (rule 8).
    - Generate with `generate-spec-v2/references/generation-prompt.md`, its
      slots filled: `{GUIDE}` = the changed guide in the worktree,
      `{COURSE_DIR}` = the course folder, `{OUT}` = a scratch file. Use a
      fresh general-purpose subagent (never a fork) for each run, and send
-     the prompt unchanged. At least 8 runs on each course that has a musts
-     file, and 2 on each other benchmark course for the owner's reading.
+     the prompt unchanged. At least 8 runs on each course with agreed musts,
+     and 2 on each other benchmark course for the owner's reading. Run the
+     baseline arm (the current guide) the same way if the notes have no
+     baseline yet.
    - Score each spec with
-     `scripts/score.sh references/musts/<course>.md <spec> <out.json>`, and
-     compare with the baseline in the musts file.
+     `scripts/score.sh <round notes with musts> <spec> <out.json>`, and
+     compare with the baseline.
    - Show the owner the scores, the specs' question lists and every
      generator note. Run builds where rule 6 asks for them.
 
 4. **Land it.** If the owner accepts:
    - one PR, one commit per rule;
    - add register rows (or new status) for each change;
-   - update the baseline in each musts file with the round's scores.
+   - record the round's scores in the round's notes as the next baseline.
+
+   **Before committing,** for every file the PR adds or changes:
+   - table who **can** read it (generators, build agents, eval agents, any
+     session), not only who is meant to;
+   - check it against CLAUDE.md's constraints, above all "documents a
+     build agent reads stay course-agnostic";
+   - grep the diff for every course folder name
+     (`git ls-tree -d --name-only origin/main courses/`); a hit under
+     `.claude/`, CLAUDE.md or AGENTS.md blocks the commit;
+   - list any file beyond what the owner agreed (rule 11).
 
    The PR body carries this checklist:
    - [ ] each changed sentence names its purpose clause or evidence;
@@ -113,7 +145,9 @@ agent reads.
    - [ ] runs per course, scores against the baseline, predictions against
      results;
    - [ ] builds run, or why none were needed;
-   - [ ] generator notes reported to the owner.
+   - [ ] generator notes reported to the owner;
+   - [ ] who-can-read table done; no course names or content in
+     agent-readable files; no file beyond what the owner agreed.
 
    Specs already generated are not regenerated here. That is
    `generate-spec-v2`, run by the owner per course.
@@ -125,5 +159,6 @@ agent reads.
 - Don't add a rule because two runs disagreed, or because an audit counted
   something.
 - Don't let a generator read the register, the musts or the scores.
+- Don't store a course's musts, scores or examples anywhere under `.claude/`.
 - Don't edit a spec to make a must pass. A spec problem is fixed through
   the card or the guide, then a regeneration.

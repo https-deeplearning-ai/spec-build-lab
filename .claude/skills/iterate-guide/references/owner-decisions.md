@@ -16,7 +16,7 @@ Rows 1–19 were collected on 2026-10-23 from the history research (sessions 7ff
 | 3 | Learners can build with real services, not only the offline version (2026-10-11) | 4.6 (real provider when a key is present); options include the real services; `live` tests | carried |
 | 4 | Purpose: learners build on the course's pattern, customize it, swap in a similar project with the same structure (2026-10-13) | P1, P3; "Who the spec is for" | carried |
 | 5 | Showing only one side doesn't rule out a decision ("the course example only uses files shouldn't be a reason to not enable this", 2026-10-13) | 5.1 stage scan; 5.4 | carried |
-| 6 | Options the course named but never built are allowed (real Jira, 2026-10-13) | 5.4 | carried |
+| 6 | Options the course named but never built are allowed (2026-10-13) | 5.4 | carried |
 | 7 | No option that omits a taught stage (PR #45) | 4.4; 5.3 last sentence | carried |
 | 8 | A course stage shown working is an option: the stepping stone (2026-10-18, PR #52) | 5.1, last sentence | **restored in v2.2** (dropped in v2.0) |
 | 9 | A side the course shows failing (or warns against) is never an option (2026-10-18; ed68ad64) | 5.3: "shows failing, or explicitly tells you not to use" | **narrowed back in v2.2**; a stated cost or limit is not a warning (v2.0 had widened this to any "warns against") |
@@ -33,7 +33,7 @@ Rows 1–19 were collected on 2026-10-23 from the history research (sessions 7ff
 | 20 | When the code and the instructor's explicit statement disagree, follow the instructor; keep bug-like code only when the course says nothing otherwise | 4.1 | carried (v2.3) |
 | 21 | The must-stay-true list = the owner-confirmed pattern card, the essence of the pattern; full-program features are rules of the recommended build | P5; section 2 input; section 6 | carried (v2.4) |
 | 22 | An option is allowed by three tests: it keeps the pattern card, the course does not show it failing, a learner situation exists | 5.2 | carried (v2.4) |
-| 23 | The owner's line: the course's choices set the recommended build; its arguments become costs; only what it shows failing is excluded (e.g. agent-driven memory reading is offered, with its cost) | P3; 5.2; 5.3 | carried (v2.4) |
+| 23 | The owner's line: the course's choices set the recommended build; its arguments become costs; only what it shows failing is excluded | P3; 5.2; 5.3 | carried (v2.4) |
 | 24 | The pattern card is reconfirmed by the owner, item by item, before every generation; an unconfirmed card is never used, "otherwise it can become pollution" (2026-10-24) | process: `generate-spec-v2` step 3 | carried |
 | 25 | No audit, checker or edit after generation; the guide was validated on unedited specs (2026-10-24) | process: `generate-spec-v2` step 4 | carried |
 | 26 | The owner picks the generator's model every time; there is no default (2026-10-24) | process: `generate-spec-v2` step 2 | carried |
