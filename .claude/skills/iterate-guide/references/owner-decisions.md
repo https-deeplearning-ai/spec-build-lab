@@ -1,0 +1,43 @@
+# Owner decision register
+
+Every owner decision that the spec-generation guide (`.claude/skills/generate-spec-v2/references/guide.md`) or its process carries. Read by the session that changes the guide; **never by a generator** (the generation prompt bars `.claude/` except the guide).
+
+**Rules:**
+- Every guide change updates this file.
+- No row is removed. A retired decision keeps its row, with status "retired by the owner, <date>: <reason>".
+- A change that overrides a row needs the owner's explicit decision, recorded as a new row that names the row it overrides and why.
+
+Rows 1–19 were collected on 2026-10-23 from the history research (sessions 7ffaca56, 0345ced7, 6301e520, ed68ad64, f3e352fd, 0d41113c) and checked against guide v2.2. Rows 20–23 came with v2.3 and v2.4. "Where" names the guide section that carries the row (P = purpose clause), or "process".
+
+| # | Owner decision (source) | Where | Status |
+|---|---|---|---|
+| 1 | Recommended build = the most efficient build of the taught pattern; course choices except where a choice needs an API key or a huge download (2026-09-07) | P2; 4.1; 4.4 (heavy now includes a large download) | carried |
+| 2 | Only two option labels, no "three categories" (2026-09-07) | 5.5; gate step 3 | carried |
+| 3 | Learners can build with real services, not only the offline version (2026-10-11) | 4.6 (real provider when a key is present); options include the real services; `live` tests | carried |
+| 4 | Purpose: learners build on the course's pattern, customize it, swap in a similar project with the same structure (2026-10-13) | P1, P3; "Who the spec is for" | carried |
+| 5 | Showing only one side doesn't rule out a decision ("the course example only uses files shouldn't be a reason to not enable this", 2026-10-13) | 5.1 stage scan; 5.4 | carried |
+| 6 | Options the course named but never built are allowed (2026-10-13) | 5.4 | carried |
+| 7 | No option that omits a taught stage (PR #45) | 4.4; 5.3 last sentence | carried |
+| 8 | A course stage shown working is an option: the stepping stone (2026-10-18, PR #52) | 5.1, last sentence | **restored in v2.2** (dropped in v2.0) |
+| 9 | A side the course shows failing (or warns against) is never an option (2026-10-18; ed68ad64) | 5.3: "shows failing, or explicitly tells you not to use" | **narrowed back in v2.2**; a stated cost or limit is not a warning (v2.0 had widened this to any "warns against") |
+| 10 | Honestly labelled stand-ins for paid or heavy tools (2026-09-07) | 4.4; 7.3 | carried |
+| 11 | Repairs never change decisions (U10, 2026-10-19) | process rule, not guide text; memory `audit-repairs-consistency-only` | carried (process) |
+| 12 | Gate: the "too many questions" complaint is solved; per-option compact wording was "too overwhelming" and confused readers (#56 closed) | P3 (fewer questions); P4 (plain words) | carried |
+| 13 | "Why is it a fixed number?" (six learner rows) | Q7: no fixed context questions | carried (Q7) |
+| 14 | Q1–Q9 redesign decisions (this session) | P1–P8, "How this guide may change", sections 3–10 | carried |
+| 15 | O1 settings never asked; O2 trade-off list not shipped; O3 test-suite model not asked | 4.3; 5.1; 5.9 | carried |
+| 16 | G4 context questions may offer options the course never mentioned; G12 per-item test for bring-back; G14 keep bug-like course behaviour, with a build-agent note | 5.4; 5.8; 4.1 | carried |
+| 17 | No "the course never built this" wording in options; learners see only questions and options | 5.4; section 9 opening | carried |
+| 18 | One idea, one question, with complete-build options ("exactly the best result we want") | 5.6 | carried |
+| 19 | Clean room for every generation and build in the benchmark | process: `generate-spec-v2` steps 3a and 4 (a fresh subagent with the validated prompt) | carried (process) |
+| 20 | When the code and the instructor's explicit statement disagree, follow the instructor; keep bug-like code only when the course says nothing otherwise | 4.1 | carried (v2.3) |
+| 21 | The must-stay-true list = the owner-confirmed pattern card, the essence of the pattern; full-program features are rules of the recommended build | P5; section 2 input; section 6 | carried (v2.4) |
+| 22 | An option is allowed by three tests: it keeps the pattern card, the course does not show it failing, a learner situation exists | 5.2 | carried (v2.4) |
+| 23 | The owner's line: the course's choices set the recommended build; its arguments become costs; only what it shows failing is excluded | P3; 5.2; 5.3 | carried (v2.4) |
+| 24 | The pattern card is reconfirmed by the owner, item by item, before every generation; an unconfirmed card is never used, "otherwise it can become pollution" (2026-10-24) | process: `generate-spec-v2` step 3 | carried |
+| 25 | No audit, checker or edit after generation; the guide was validated on unedited specs (2026-10-24) | process: `generate-spec-v2` step 4 | carried |
+| 26 | The owner picks the generator's model every time; there is no default (2026-10-24) | process: `generate-spec-v2` step 2 | carried |
+| 27 | Every spec rewrite goes on a new branch and a new PR (2026-10-24) | process: `generate-spec-v2` step 5 | carried |
+| 28 | The generator stays a subagent of the session running the skill. The empty-folder runner (`claude -p` outside the repo) was tried and reverted: exact copies of the separate-session input and the owner's own fresh session scored as well as the empty folder (2026-10-25, PR #75 e734123) | process: `generate-spec-v2` step 4 | carried |
+| 29 | Setups and guide versions are compared on several runs per arm, scored blind against the owner-confirmed musts; never 4 runs against 4. The same input gave 4, 2 and 0 misses on one day (2026-10-25) | process: `iterate-guide` | carried |
+| 30 | A Jupyter notebook is never offered as a way to use the app, not even as a non-recommended option: "jupyternotebook as an option is something we definitely DON'T WANT" (2026-10-25). It overrides row 23 and test 3 of 5.2 for this subject; the reason is to be recorded when the guide changes | not yet in the guide | **decided; guide change pending** |
