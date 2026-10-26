@@ -62,7 +62,7 @@ If notebooks or transcripts are missing, stop: no spec. If the pattern card is m
 
 1. Name the one kind of program the course builds, in general terms (e.g. "a program that answers questions from documents"), not in the course's example terms ("a product-catalog bot").
 2. Write its stages in order, one line each with the reason the stage exists (e.g. `load → embed → store → retrieve → answer → remember → evaluate`).
-3. For a course that surveys several components, choose the components that together form that one program. A component from another lesson enters only if it changes one of the stages. Everything else goes to the background notes and the "Not Included" list.
+3. For a course that surveys several components, choose the components that together form that one program. A component from another lesson enters only if it changes one of the stages. What later lessons add to this same program is decided by 4.1: its final end-to-end version. A tool that only shows what ran, without judging the output (logs, step traces, a run dashboard), is not a stage; it may be an option. Everything else goes to the background notes and the "Not Included" list.
 4. The course's example (its data, its domain) becomes the recommended build's sample instance (section 4.5). It is never written into the stages as if it were the program.
 
 ---
