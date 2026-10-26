@@ -80,6 +80,8 @@ Send the filled prompt exactly as it is; add nothing to it.
         belongs off the card.
       - The owner's answer decides. With an existing `pattern.md`, the owner
         keeps, rewords or drops each item.
+      - Separately, the owner decides which parts from other lessons are
+        offered as questions. None is a valid answer, and the usual one.
 
    d. **Write `pattern.md`.** The first lines, in italics, record:
       - the date it was confirmed;
@@ -91,7 +93,9 @@ Send the filled prompt exactly as it is; add nothing to it.
       format of the card itself:
       - the line "**The one kind of program:** …";
       - "## What every build keeps";
-      - numbered items, each with its quotes.
+      - numbered items, each with its quotes;
+      - "## Offered from other lessons", optional: one line per part, with
+        the learner situation it serves. Absent or empty means none.
 
 4. **Generate.** Spawn a fresh general-purpose agent (never a fork) on the
    chosen model, with `references/generation-prompt.md`. Set `{OUT}` =
