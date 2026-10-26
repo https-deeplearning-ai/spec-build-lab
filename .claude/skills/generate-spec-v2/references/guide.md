@@ -106,7 +106,7 @@ If notebooks or transcripts are missing, stop: no spec. If the pattern card is m
 - options with ids (`C1a`, `C1b`, …), each with "pick this when …" and its setup cost (key, account, download) written inside the option;
 - exactly one recommended option. Labels, and only these: "(course default)" on the option the course used; "(Recommended)" on the recommended option; "(Recommended - course default)" when they are the same. Never a bare "(default)".
 
-**5.6 One idea, one question.** When the course argues one idea across many operations (e.g. which memory actions run automatically and which the agent decides), ask one question about the idea, with a few complete builds as options. Never ask per operation, and never offer "mix and match" as an option. If one answer makes a later question pointless, the later question says "Ask only when `C<n>` is `C<n>x`", naming only earlier questions.
+**5.6 One idea, one question.** When the course argues one idea across many operations (e.g. which memory actions run automatically and which the agent decides), ask one question about the idea, with a few complete builds as options. Never ask per operation, and never offer "mix and match" as an option. If one answer makes a later question pointless, the later question says "Ask only when `C<n>` is `C<n>x`", naming only earlier questions. Two choices a learner can make independently are two questions. Never merge one into the other's options (e.g. which files to read, and whether to split them).
 
 **5.7 Order.** Context questions (project, data, …) first, then the program's stages in order.
 
