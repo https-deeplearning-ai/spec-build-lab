@@ -19,7 +19,7 @@ HARD ISOLATION RULES — the experiment's validity depends on these:
 - Do NOT use prior knowledge of this course from training memory — only the supplied materials count.
 - Do NOT ask anyone anything.
 
-For the spec's provenance line, the guide version is "guide v2.4 (2026-10-23)".
+For the spec's provenance line, the guide version is "guide v2.5 (2026-10-26)".
 
 FINAL REPORT (returned to me, not written to the file): (a) the program you named and its stages;
 (b) every question you asked, with its options, and every candidate you turned into a background note

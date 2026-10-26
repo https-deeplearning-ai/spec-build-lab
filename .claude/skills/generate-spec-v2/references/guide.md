@@ -1,6 +1,6 @@
 # Spec Generation Guide — v2 (draft)
 
-*Guide v2.4, 2026-10-23. Every rule names the purpose clause (P1–P8) it serves. Owner decisions O1–O3 (settings never asked; the alternatives list is a working note; the test-suite model is not asked) were accepted on 2026-10-23.*
+*Guide v2.5, 2026-10-26. Every rule names the purpose clause (P1–P8) it serves. Owner decisions O1–O3 (settings never asked; the alternatives list is a working note; the test-suite model is not asked) were accepted on 2026-10-23.*
 
 ---
 
