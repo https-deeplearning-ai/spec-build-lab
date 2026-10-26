@@ -1,6 +1,6 @@
 # Spec Generation Guide — v2 (draft)
 
-*Guide v2.5, 2026-10-26. Every rule names the purpose clause (P1–P8) it serves. Owner decisions O1–O3 (settings never asked; the alternatives list is a working note; the test-suite model is not asked) were accepted on 2026-10-23.*
+*Guide v2.6, 2026-10-27. Every rule names the purpose clause (P1–P8) it serves. Owner decisions O1–O3 (settings never asked; the alternatives list is a working note; the test-suite model is not asked) were accepted on 2026-10-23.*
 
 ---
 
@@ -76,7 +76,7 @@ If notebooks or transcripts are missing, stop: no spec. If the pattern card is m
 **4.3 Settings are not questions.** A value that only tunes a part that is there (a size, a limit, a count, a temperature) is never asked at the gate. Switching a whole part on or off, or removing it, is not a setting: it goes through the test in 5.2. It appears in the spec as a setting with its course source and, where the course says so, "change this when …". The learner tunes it after the build.
 
 **4.4 Lighter stand-ins.** A course part is **heavy** if it needs a credential, a paid account, admin or container setup, special hardware, or a large download. Network access alone is not heavy; tests needing it are marked `live`.
-- A heavy part gets the lightest stand-in that keeps everything in section 6, chosen by tier: (1) the language's standard library; (2) an embedded package; (3) a locally served component. Judge the tier at the sample data's scale. Never weaken a section-6 item to reach a lighter tier.
+- A heavy part (models: 4.6; tools: the tool bullet below) gets the lightest stand-in that keeps everything in section 6, chosen by tier: (1) the language's standard library; (2) an embedded package; (3) a locally served component. Judge the tier at the sample data's scale. Never weaken a section-6 item to reach a lighter tier. The recommended build uses that stand-in only when the course's part needs a key or paid account the build does not already need for its model, a hosted account, admin or container setup, special hardware, or a download over 3 GB; otherwise it keeps the course's part and offers the stand-in as an option.
 - Exception: if the heavy technology is itself what the course teaches (a course *about* that product), keep it and give setup steps.
 - A heavy **tool** that is the only part exercising a taught behavior gets an honestly labelled stand-in. Otherwise it is left out of the recommended build, because the course's keyless parts already carry the behavior. Leaving out a taught stage is never allowed.
 - Every stand-in says in its own description that it is a stand-in, and what it stands in for.
