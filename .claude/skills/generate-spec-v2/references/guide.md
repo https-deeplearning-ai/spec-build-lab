@@ -62,7 +62,7 @@ If notebooks or transcripts are missing, stop: no spec. If the pattern card is m
 
 1. Name the one kind of program the course builds, in general terms (e.g. "a program that answers questions from documents"), not in the course's example terms ("a product-catalog bot").
 2. Write its stages in order, one line each with the reason the stage exists (e.g. `load → embed → store → retrieve → answer → remember → evaluate`).
-3. For a course that surveys several components, choose the components that together form that one program. A component from another lesson enters only if it changes one of the stages. What later lessons add to this same program is decided by 4.1: its final end-to-end version. A tool that only shows what ran, without judging the output (logs, step traces, a run dashboard), is not a stage; it may be an option. Everything else goes to the background notes and the "Not Included" list.
+3. For a course that surveys several components, choose the components that together form that one program. A component from another lesson enters only if it changes one of the stages. What later lessons add to this same program is decided by 4.1: its final end-to-end version. A tool that only shows what ran, without judging the output (logs, step traces, a run dashboard), is not a stage; it may be an option. Everything else goes to the background notes.
 4. The course's example (its data, its domain) becomes the recommended build's sample instance (section 4.5). It is never written into the stages as if it were the program. Likewise, how the course is taught (notebooks run cell by cell) is not part of the program: the build is never a notebook, and a notebook is never offered as a way to use it.
 
 ---
@@ -93,7 +93,7 @@ If notebooks or transcripts are missing, stop: no spec. If the pattern card is m
 
 ## 5. Choosing the questions (P3, P4)
 
-**5.1 Gather candidates.** List every alternative the course mentions anywhere (code, transcripts, slides, demos). Then go through each stage of the program (section 3) and ask whether a learner's project could leave it out, simplify it or swap it; each yes is a candidate too. Every earlier, simpler stage the course builds or shows working on its way to the final program is also a candidate (e.g. an agent with conversation memory only, before the course adds more memory types); it passes or fails 5.2's tests like any other. Add these context subjects: the learner's project, data, model provider, where it runs, and what the build leaves out. This list is a working note; it is not shipped in the spec. Its reasons move into the questions' "pick this when …" and into the background notes.
+**5.1 Gather candidates.** List every alternative the course mentions anywhere (code, transcripts, slides, demos). Then go through each stage of the program (section 3) and ask whether a learner's project could leave it out, simplify it or swap it; each yes is a candidate too. Every earlier, simpler stage the course builds or shows working on its way to the final program is also a candidate (e.g. an agent with conversation memory only, before the course adds more memory types); it passes or fails 5.2's tests like any other. Add these context subjects: the learner's project, data, model provider, and where it runs. This list is a working note; it is not shipped in the spec. Its reasons move into the questions' "pick this when …" and into the background notes.
 
 **5.2 The tests.** A candidate becomes an option when it passes three tests: (1) it keeps every pattern-card item (P5); (2) the course does not show it failing (5.3); (3) you can write one learner situation in which it is the right choice (e.g. "your documents are long notes, not short product rows"). Its costs, taken from the course's arguments, go in its "pick this when …". A candidate that fails becomes a background note. Write the situation into the option's "pick this when …".
 
@@ -110,9 +110,7 @@ If notebooks or transcripts are missing, stop: no spec. If the pattern card is m
 
 **5.7 Order.** Context questions (project, data, …) first, then the program's stages in order.
 
-**5.8 What the build leaves out.** The spec lists what it does not build ("Not Included"). Each item is tagged: *can be added on request*; *decided by question Cn*; or *not available in this build* (for example, grafting onto an existing codebase). An item is offered in a "bring something back?" question only if it passes 5.2's test on its own; items that fail stay in the list. The question exists only if at least one item passes.
-
-**5.9 Test-suite model is not a question.** Which model the tests run against is not asked. Tests always run offline on the stand-ins; the `live` tests also run automatically when a key is present.
+**5.8 Test-suite model is not a question.** Which model the tests run against is not asked. Tests always run offline on the stand-ins; the `live` tests also run automatically when a key is present.
 
 ---
 
@@ -206,7 +204,7 @@ The spec ends with background notes. No code (W5). Background notes and the sett
 1. Opening note (under 320 words): **"What you're building:"** — one sentence naming the recommended build in plain words and what you see it do, addressed to the reader as "you"; the fastest path (answer "recommended build", the build is done when the offline tests pass, a key only unlocks the `live` tests); the file is self-contained; one provenance line (course, materials used, date, guide version).
 2. `## 0. Before you build` (section 8).
 3. **Questions** (section 5), then the **departures list** (4.8).
-4. Objective (one sentence) and **Not Included** (5.8).
+4. Objective (one sentence).
 5. Tech stack and versions (4.7), secrets handling.
 6. Input/output contracts as schemas (JSON Schema or equivalent), with behavior pushed into the schema where possible.
    - **Model roles:** each role that calls a model, which the gate's model line uses (section 8).
