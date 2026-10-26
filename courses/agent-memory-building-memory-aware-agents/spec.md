@@ -1,716 +1,478 @@
-# Spec: Memory-Aware Research Assistant Agent — Standalone Takeaway
+# Spec: a memory-aware research agent
 
-> **What you're building:** a command-line research assistant agent that remembers its conversations across sessions. You ask it a question in a thread, ask a follow-up that only makes sense with the earlier turn, quit and start it again, ask it to summarize the conversation with its tool, then ask what your first question was — and you watch it expand the stored summary to answer. Answering the gate's first question with the recommended baseline build builds it end to end; the build is COMPLETE when the offline acceptance suite passes — API keys unlock only the `live` tests and live use of the finished agent.
->
-> This file is self-contained: the embedded Course Context Pack replaces every external course reference, and nothing here requires course-platform access. (CTX-X) anchors mark course-derived knowledge. The Decision Ledger below holds every point where the build could diverge, each pinned to one course-derived default, so the spec builds as-is with no intake.
->
-> Generated from the "Agent Memory: Building Memory-Aware Agents" notebooks + transcripts on 2026-10-20, guide @ 5caba53.
+**What you're building:** a command-line research assistant that keeps its memory in a local database file and reads the relevant part before every answer, so you see it find a paper, save it when you later say "save the content of the paper", and still tell you your first question after the chat has been summarized, even in a new session.
+
+**Fastest path:** at the first question, answer "recommended build". The build is done when the offline tests pass; they need no key and no network. An OpenAI key (or the provider you choose) only unlocks the `live` tests and real answers.
+
+This file is self-contained: everything the build needs is here. Nothing in it requires access to the course.
+
+*Provenance: course "Agent Memory: Building Memory-Aware Agents"; materials used: notebooks with their helper module and requirements file, lesson transcripts, two slide decks (images); generated 2026-10-26 with guide v2.5 (2026-10-26).*
+
+---
 
 ## 0. Before you build — REQUIRED (do this first)
 
-You are the build agent. Before writing ANY code, you MUST surface the design decisions
-in the Decision Ledger (next section) to the person you are building for. Do **not** skip
-this because the defaults look complete — the defaults exist so the build is *reproducible*,
-not because they are the right choice for this person's project.
-
-1. **Use a structured question tool if you have one.** If your environment offers an
-   interactive structured-question tool (e.g. Claude Code's `AskUserQuestion`, or the equivalent
-   in yours), you MUST use it for the questions below — do not paraphrase them into a prose
-   paragraph. Only if no such tool exists, list the rows in your reply and ask the user to
-   respond to each.
-2. **First question — recommended baseline build, or customize?** Ask exactly one question with
-   two options: the **recommended baseline build** — every Ledger row resolves to its Default:
-   mostly the course's own choices, with a lighter stand-in wherever the course's choice needs
-   setup you may not have (a paid API key, an admin-provisioned service); the step-5 checklist
-   marks exactly where the baseline differs from the course — or **customize** the decisions row
-   by row. If the user chooses the baseline, skip step 3 — go straight to the step-5 checklist
-   and build. If the user chooses customize, continue with step 3.
-3. **Present the Ledger ONE ROW AT A TIME — one question per row.** For each row ask a single
-   question: the **Decision** as the prompt, its **Options** as the choices. Append
-   "(course default)" to the option the course actually used — on a substitution row that is
-   the course-faithful Options entry, not the Ledger Default. Append "(Recommended)" to the
-   row's Default — the option the recommended baseline build takes, chosen when this spec was
-   written as the most efficient way to build the course's pattern; say once, before presenting
-   the first Ledger row, that it does not reflect this person's setup. When the Default IS the course's
-   actual choice, merge the labels into "(Recommended - course default)". "(Recommended)" never
-   removes or moves the "(course default)" label, and no option is ever
-   labeled with a bare "(default)" — these two labels and their merged form are the only
-   option labels. Use the answers already given (project, data, goal, …) to frame
-   later questions and describe options in the person's own terms — but never drop or alter an
-   Option or move the "(course default)" label because of an earlier answer, and never skip a row
-   because an earlier answer seems to make it irrelevant. The only skip: a row whose Decision
-   says "Applies only when `<row>` is `<id>`" is skipped when the answer on that row is none of
-   those ids, or that row was itself skipped. Say so in one line (e.g. "<row> is skipped: it applies
-   only when <row> is <id>; <row> = <answer>") and go on to the next row — a skip resolves that row
-   only. If the person changes an earlier answer, re-check every condition that names it. Put
-   any realizations beyond the tool's option slots (or the free-form case) under the tool's
-   "Other"/free-text. Ask about every row that is not skipped this way. A per-call item limit is NEVER a reason to drop,
-   skip, merge, or silently default a row — make as many separate calls as there are rows.
-4. **Presenting any of these questions ENDS YOUR TURN — stop here; write no code, create or edit
-   no file, take no other build action.** Keep asking, one row at a time, until **every** row is
-   resolved — answered (a chosen option, an explicit "use the course default", or the step-2
-   baseline answer, which answers every row at once) or skipped by its own condition (step 3). Answers to *some* rows do NOT release the build; "no reply
-   yet" is not an answer — wait for the user.
-5. **Before the first line of code, print a resolved-decision checklist and write it to
-   `resolved-decisions.md`** — every Ledger row with its final value (the chosen option's id and
-   text — the user's choice, or its Ledger default), each line carrying a deviation mark: `= course choice`, or
-   `≠ course choice (course used: <option>)`, or `no course choice` on a row where the course
-   made no choice (the scope boundary), or — on a row skipped by its condition, with no value —
-   `not applicable (applies only when <row> is <id>; <row> = <answer>)`. If the build calls a language model, add one line per
-   model role the chosen options use, naming the current model you will use from the Default
-   provider — one you know that provider serves; if you cannot tell, say so and ask the person
-   to name one, and if they do not, use the course's own model id from this spec for that role
-   and say it may need changing. A missing model name never blocks confirming the checklist.
-   For every chosen option that is not its row's Default, copy its line from §7's "Tests by
-   option" table into the checklist, so the criteria and Ledger cells this build retires or
-   changes are recorded before the first line of code. The file records what this build was built from;
-   nothing reads it back — a later build re-runs this gate. If the baseline path was chosen,
-   walk the person through every `≠` row — the course's actual choice, and why this build's
-   default substitutes it (the row's Trade-off/branch note says why) — before building. Begin
-   implementation ONLY after this checklist is shown, written, and confirmed by the person; if
-   any row is unresolved you are not done — return to step 3. A `not applicable` line whose
-   quoted condition is not false is unresolved. Build on the checklist's values. Leave out
-   every part of this spec that exists only for a rule a chosen option retires — its commands,
-   flags, settings, schema fields, fixtures and permission items. Where a chosen option changes
-   a criterion and its §7 line does not fully state the new form, adapt the criterion to the
-   chosen options and list it, with what you changed, under *Adapted* in the checklist and in
-   your final report.
-
-Model roles this build uses (for the step-5 model lines): **agent** (the tool-calling loop), **summarizer** (summary, retry and label requests), **entity extractor**, **tool augmenter** (description rewrite and example-query generation). The course ran the agent role on `gpt-5-mini` and the other roles on `gpt-5` in its end-to-end code (CTX-D).
-
-## Decision Ledger (§0 above requires the build agent to present these before building)
-
-These are the points where this build could diverge. Every row has a course-derived default, so the spec is buildable and evaluatable as-is; change a row only when applying to a real project or when you have reason to prefer another option.
-
-| # | Category | Decision | Invariant (must hold; blank unless the pattern imposes a capability requirement) | Default (course-derived) | Options | Trade-off | Owner |
-|---|---|---|---|---|---|---|---|
-| L1 | learner | **Project** — what you are building. The default is the course's example realization (its research-assistant use case), expected to be swapped when your project differs. | | L1a. Branch: the course's example scenario shape, re-expressed on facts authored in this spec. | L1a — a command-line research assistant agent that remembers its conversations across sessions and works with research papers (Recommended - course default); L1b — an assistant for your own domain on the same memory pattern: your tools, your seed data, the same memory core and agent loop | Swapping the project re-points the tools, the seed data and the role line of the system prompt; the memory pattern itself is unchanged. The course frames every lab as an "agentic research assistant" over arXiv papers (Lessons 3–6). | learner |
-| L2 | learner | **Data / inputs** — what the agent's knowledge base starts with. | | L2a. Branch: the learner data row defaults to the synthetic corpus so the build runs offline on facts authored here; the course's dataset stays an option. | L2a — the synthetic fixture paper corpus in §5 (five invented paper records), ingested into the knowledge base by the `seed` command (Recommended); L2b — the first 100 records streamed from the public Hugging Face dataset `nick007x/arxiv-papers` (course default — needs a network download through the datasets library; no key); L2c — your own document records, one record per document | The course seeded its knowledge base with 100 streamed arXiv records (title, subjects, abstract, submission date; Lesson 3). Changing seed data after ingestion means re-seeding. | learner |
-| L3 | learner | **Goal** — what "working" means. | | L3a | L3a — in one thread you can ask a follow-up that depends on an earlier turn, stop and restart the program, and still get answers that use the earlier turns, including details recovered from summarized conversation (Recommended - course default); L3b — a goal you state at the gate (what retrieval must find, what answers must guarantee); the build adds criteria for it and keeps the rest | L3a is the course's closing demo (Lesson 6: fetch a paper, save it, ask for takeaways, summarize, ask "what was my first question?"). | learner |
-| L4 | learner | **Model / provider** for live use of the agent. | A chat model with native tool calling: it returns structured tool-call requests and accepts tool results in the next request. | L4a | L4a — OpenAI Chat Completions with tool calling (Recommended - course default — needs an OpenAI API key for live use); L4b — Anthropic Messages API with tool use (needs an Anthropic API key); L4c — a local open-weights model behind an OpenAI-compatible endpoint with tool calling (heavy setup: a local model server and hardware able to run it) | The course used OpenAI's client for every model role (Lessons 4–6). Another provider changes the tool-call message format, not the memory pattern. The offline suite never calls a live model (row RR3). | course+learner |
-| L5 | learner | **Environment** — where it runs. | Memory survives process restarts: a new process opened on the same data location sees everything earlier processes wrote. | L5a | L5a — a local command-line program on your machine with a file-backed database (Recommended); L5b — Jupyter notebook cells that call the agent once per question, as the course ran it (course default) | The course ran in hosted notebooks and dropped its tables at the start of each lesson; persistence across sessions is the course's stated purpose (Lessons 1, 2, 6), so this spec keeps data between runs. | course+learner |
-| L6 | learner | **Scope boundary** — present the full "Not Included" list from §1 inside this question, item by item with its handling tag, then ask whether to keep it as-is or bring something back. | | L6a | L6a — keep every §1 exclusion as written (Recommended); L6b — bring one or more §1 items back: name them in free text, and each is handled by its tag in §1 | The course made no choice here; each §1 item says whether it is restorable, buildable without criteria, owned by another row, or unavailable. | learner |
-| D1 | design-argued | **Memory-core topology** — which memory stores the agent keeps in its database. | Memory lives in a database outside the model; conversation history is stored per thread with timestamps and read back in time order. | D1a | D1a — seven stores: conversational and tool-log tables, plus knowledge-base, workflow, toolbox, entity and summary vector stores (Recommended - course default); D1b — conversational memory only: the thread's interaction history in the database, and every registered tool offered on every turn (shown in the course; no code shipped) | Lesson 2 shows a memory-augmented agent with conversational memory alone completing a follow-up the stateless agent could not ("book the first one on the list"), then argues it is a naive form: conversation windows are finite, valuable information spans conversations, and agents need structured, queryable knowledge and workflow outcomes, not just chat logs. Litmus: shown working and weighed (the working branch), so a row. Lesson 3 builds the seven stores. | course+learner |
-| D2 | design-argued | **Tool-description augmentation** — whether a tool's stored description is rewritten by the model at registration. Applies only when `D1` is `D1a`. | Each tool is found by similarity between the turn's question and the tool's stored retrieval text; registering a tool name twice stores it once. | D2a. The current-time tool is plain, following the end-to-end agent's registration (value branch 2); the Lesson 4 notebook augmented it. | D2a — per tool, as the course's end-to-end agent registers them: the summarize, summary-expansion and toolbox-search tools augmented; each of the course's tools, or of those row L1's answer brings, augmented or plain as the §5 toolbox criteria mark it (Recommended - course default); D2b — every tool augmented; D2c — no tool augmented: each tool's retrieval text is its name, its own docstring and its signature | Lesson 4: augmentation (the "memory unit augmentation") gives better separability between tools in embedding space, higher recall and "high-signal embedding text", at the cost of two model calls per tool at registration; plain registration is shown working (the arXiv candidate-search tool, registered plain, is retrieved and called in the Lesson 6 demo). Litmus: both sides shown working, so a row. Contradiction carried here: Lesson 4's narration and notebook say the enriched text is what gets embedded, while the course's registration code stores the vector of the name + original docstring + signature and keeps the enriched text only as the description; this spec follows the narration. Changing the choice after tools exist means clearing the toolbox store, because registration skips names already stored. | course+learner |
-| D3 | design-argued | **Memory-operation trigger split** — which memory operations the harness runs on every turn and which the model calls as tools. Applies only when `D1` is `D1a`. | Bootstrap reads of memory and the writing of each turn's messages run on every turn without the model choosing them. | D3a | D3a — the course's split: on every turn the harness reads conversation, knowledge-base, workflow, entity and summary-list memory, selects tools, offloads at the context threshold, and writes the turn's messages, its workflow and the entities it extracts; the model calls summarization, summary expansion, toolbox search and the paper tools (Recommended - course default); D3b — as D3a, except entity writing becomes a tool the model calls instead of a per-turn extraction (the course's operation table classifies it this way; the course never built it, and this spec supplies no parameters and no acceptance criteria for it); D3c — as D3a, except summarization runs only when the model calls its tool: no automatic offload at the context threshold | Lesson 3 (narration and notebook) argues deterministic operations for predictability, reliability, completeness and less model bookkeeping, and agent-triggered ones for relevance, cost and latency control and judgment. Bake-ins (tie-breaker 1, a warned failure): bootstrap reads — without them "the agent behaves stateless", and it "can't choose to look up what it doesn't know exists" — and conversation and workflow writes — the agent may "forget to save". D3c: Lesson 6 shows the agent calling its summarize tool successfully, and calls summarization "both a deterministic and an agent-triggered memory operation" (working branch). D3b: argued, never built, and it moves an operation's owner (structural), so it is an option that says so. Contradiction carried here: the operation table marks entity writing agent-triggered and toolbox search both; the end-to-end agent extracts entities every turn and registers no toolbox-search tool, which the Lesson 4 notebook does register; D3a takes the code's entity extraction and Lesson 4's toolbox-search tool. | course+learner |
-| D4 | design-structural | **Context-reduction guarantee** — whether reduced conversation stays recoverable. Applies only when `D1` is `D1a`. | Context reduction replaces only conversation content; the current question and the other memory segments pass through unchanged. | D4a | D4a — recoverable compaction: a summary with an ID and short label replaces the conversation in context, the original messages stay in the database linked to that ID, and the model can expand them on demand (Recommended - course default); D4b — lossy summarization: the summary text replaces the conversation and the originals are not kept retrievable (the course described this and never built it; this spec supplies no parameters and no acceptance criteria for it) | Lesson 5 argues context summarization "will always be a lossy technique", while context compaction moves content into the database under an ID with a description so the model can pull the detail back. The lossy side was never shown working; the subject changes a guarantee (reversibility), so it is a row with a never-built option (the never-shown branch on a structural subject). | course+learner |
-| RR1 | realization | **Memory-core database** — which database realizes the stores. | One persistent database holds every store D1's answer keeps. Its relational stores support exact match on thread id and time ordering, and updating each row's summary link where the answers on rows D1 and D4 keep one. Each vector store D1's answer keeps holds text, JSON metadata and an embedding per record, and returns the top k records by similarity with metadata filters (equality and greater-than). Contents survive process restarts. | RR1a. Branch: substitution — the course teaches the memory-core pattern ("the agent memory core would be your database", Lesson 2) that its database realizes; the course is not about that product. Lightest tier that meets the invariant: tier 1 (ships with Python) — exact in-process similarity over fixture-scale data meets the contract, so no index is needed; indexed realizations stay in Options. | RR1a — an embedded SQLite database file through Python's standard-library `sqlite3`, each vector store D1's answer keeps holding its embeddings beside text and metadata, similarity computed exactly in-process (Recommended); RR1b — Oracle AI Database 26ai Free with LangChain's Oracle vector-store integration and an IVF vector index for each vector store D1's answer keeps (course default — heavy setup: a local database container, an admin account to create a database user with an ASSM default tablespace, and the `oracledb` driver); RR1c — PostgreSQL with the pgvector extension, run locally (heavy setup: a database server you install and administer) | The course ran Oracle AI Database 26ai in a local container, with SQL tables for conversation and tool logs and one Oracle vector table per vector store, plus IVF indexes (target accuracy 95) because its helper reports that HNSW indexes fail on some Oracle Free versions (ORA-00600, ORA-51928, ORA-51962). Moving stores after data exists is a migration. | course+learner |
-| RR2 | realization | **Web-search tool** — whether the agent has a keyed web-search tool. Applies only when `D1` is `D1a`. | Any search tool writes each result it returns into the knowledge base with its source metadata, so later turns can retrieve it without searching again. | RR2a. Branch: the keyed-tool rule — the keyed tool is not the only carrier of a taught behavior (the keyless paper-fetch tool also writes what it finds into the knowledge base), so it is left out by default. | RR2a — no web-search tool; the keyless tools — the course's tools, or those row L1's answer brings — carry search-and-store (Recommended); RR2b — Tavily web search writing each result into the knowledge base (course default — heavy setup: a Tavily API key; registered in the Lesson 4 notebook, absent from the course's end-to-end agent); RR2c — a local stand-in, named and described as a fake web search, returning two fixed results and writing them into the knowledge base | Lesson 4 teaches search-and-store with Tavily: results are persisted so "future queries can retrieve this information without searching again". The course's end-to-end agent (Lesson 6) registers only the arXiv, time and summary tools. | course+learner |
-| RR3 | realization | **Acceptance-suite model** — which model the offline acceptance suite runs against. | The suite drives the real pipeline end to end — every stage the chosen rows keep — and only the model's responses are scripted. | RR3a. Branch: the model is the keyed dependency, so the suite runs the real pipeline against a scripted stand-in; criteria that need a real model are tagged `live`. | RR3a — the scripted stand-in model declared in §5, named and described as a fake (Recommended); RR3b — the course's live OpenAI models (course default — heavy setup: an OpenAI API key and paid usage on every run) | A scripted model makes every asserted outcome replayable offline; a live model makes text outcomes vary run to run, so its criteria can assert shape only. | course+learner |
-| C1 | contradicted | **Summary scoping** — whether a summary belongs to the thread it came from. Applies only when `D1` is `D1a`. | One scoping rule applies to both writing and listing summaries. | C1a. The course set this both ways; the stakes test passes because the two sides return different summary lists for the same read. | C1a — thread-scoped: a summary made from a thread's messages records that thread, and the summary list shown to the model holds only the active thread's summaries (Recommended - course default); C1b — unscoped: summaries record no thread, and every thread's summary list shows all of them (the Lesson 5 notebook's code) | Course-contradicted: the Lesson 5 notebook writes summaries without a thread; the end-to-end agent's helper code (Lesson 6) writes the thread and filters the list by it, and its system prompt says "prefer summaries for the active thread_id". | course |
-
-## 1. Objective
-
-A command-line research assistant agent that remembers its conversations across sessions and works with research papers: for each question in a thread it builds a partitioned context window from database-backed memory, selects tools by semantic search, runs a bounded tool-calling loop, and writes back what happened — guaranteeing that a thread's history survives restarts and that summarized conversation stays recoverable on demand. (pattern: CTX-A)
-
-### Not Included            ★
-
-Each item carries its handling tag for the scope-boundary row (L6):
-
-1. **Hybrid (lexical + vector) search over the knowledge base** — *named by the course but never built* (the course created a hybrid-search preference it never used): buildable, but this spec supplies no parameters and no acceptance criteria for it.
-2. **A reranking model between retrieval and the answer** — *named by the course but never built* (Lesson 2's retrieval pipeline): buildable, no parameters and no acceptance criteria supplied.
-3. **A semantic cache that reuses earlier responses for similar queries** — *named by the course but never built* (Lesson 2): buildable, no parameters and no acceptance criteria supplied.
-4. **Graph-traversal retrieval and relationship mapping between memories** — *named by the course but never built* (Lesson 3): buildable, no parameters and no acceptance criteria supplied.
-5. **Strengthening, merging, decaying, or resolving contradictions between stored memories** — *named by the course but never built* (Lessons 1 and 3): buildable, no parameters and no acceptance criteria supplied.
-6. **Fine-tuning the embedding model** — *named by the course but never built* (Lesson 3): buildable, no parameters and no acceptance criteria supplied.
-7. **An agent-callable tool that reads a full tool-log entry back by its log id** — *restorable* (additive, owned by no other row); the build adds its own criteria if restored.
-8. **A web or graphical interface** — *owned by row L5*; decided there (L5 decides where and how the program runs, and none of its options is a web or graphical interface).
-9. **Multiple users and authentication** — *restorable* (additive, owned by no other row); the build adds its own criteria if restored.
-10. **A keyed web-search tool** — *owned by row RR2*; decided there.
-11. **Grafting this pattern onto an existing codebase** — *unavailable* (outside the delivered build mode: this spec builds a standalone project).
-
-## 2. Tech Stack & Versions
-
-| Component | Pinned choice | Note |
-|---|---|---|
-| Language | Python ≥ 3.11 | The course states no Python version; its `requirements.txt` lists every package **unpinned** (no versions anywhere), so each library below is a current release chosen at build time. Era-specific class, module and model names are perishable search keywords — see CTX-D. |
-| Memory-core database | Row RR1's Default: standard-library `sqlite3`, one database file | Learners change this in Ledger row RR1, not here. |
-| Embedding model | `sentence-transformers/paraphrase-mpnet-base-v2` (768-dimensional vectors) through `langchain-huggingface`'s HuggingFaceEmbeddings over `sentence-transformers` | The course's embedder in every lesson (CTX-D). Keyless; downloads the model on first use. The offline suite uses the fixture embedder from §5 instead. |
-| Model provider | Row L4's Default: the `openai` SDK, Chat Completions with tool calling | Model names are chosen in the §0 checklist, never here. |
-| Paper tools | `langchain-community` (ArxivRetriever, ArxivLoader) with `arxiv` and `pymupdf`; `langchain-text-splitters` (RecursiveCharacterTextSplitter) | Keyless public arXiv access; criteria that need it are `live`. |
-| Seed data (row L2) | Row L2's Default: the fixture module in §5; `datasets` only under L2b | |
-| Configuration | `python-dotenv` reads a `.env` file; environment variables override | Secrets come only from the environment: `OPENAI_API_KEY` (live model use), `TAVILY_API_KEY` (only under RR2b), database credentials (only under RR1b or RR1c). The course's notebooks hard-code database passwords; this spec never does. |
-| Tests | `pytest`, marker `live` for criteria that need a key or network | |
-
-## 3. Input/Output Contracts            ★
-
-### 3.1 Command-line surface and configuration
-
-| Command | Behavior |
-|---|---|
-| `python -m memory_agent init` | Opens or creates the memory core at the data location, then registers the course tools (idempotent). |
-| `python -m memory_agent seed` | Ingests row L2's seed data into the knowledge base. |
-| `python -m memory_agent ask --thread <id> "<question>"` | Runs one agent turn and prints the final answer on stdout. |
-| `python -m memory_agent chat --thread <id>` | Reads one question per line and runs a turn for each; `/exit` quits. |
-
-Every command performs the startup sequence first: open or create the memory core, verify the stored embedder settings (R4), register the course tools (R8).
-
-| Variable | Values | Default |
-|---|---|---|
-| `AGENT_MEMORY_DB` | path of the database file | `./agent_memory.db` |
-| `AGENT_MODEL_BACKEND` | `openai` (live) or `scripted` (the §5 stand-in) | `openai` |
-| `AGENT_MODEL` | model name used for the agent role and for the context-limit lookup | the name in the §0 checklist (`scripted-model` under `scripted`) |
-| `AGENT_EMBEDDER` | `course` (the §2 embedder), `fixture` (the §5 `FIXTURE_EMBEDDER`) or `fixture-alt` (the §5 `ALT_EMBEDDER`, used only by AC7) | `course` |
-| `SCRIPTED_MODEL_SCRIPT` | `default`, `empty`, `generic-label`, `bad-entities` | `default` |
-| `SCRIPTED_MODEL_LOG` | path of the stand-in's request log (JSON lines) | unset (no log) |
-
-### 3.2 Persistent structures
-
-Store names are binding (they are the course's own names, CTX-E): relational stores `CONVERSATIONAL_MEMORY` and `TOOL_LOG_MEMORY`; vector stores `SEMANTIC_MEMORY` (knowledge base), `WORKFLOW_MEMORY`, `TOOLBOX_MEMORY`, `ENTITY_MEMORY`, `SUMMARY_MEMORY`; plus one `store_settings` record per vector store.
-
-```json
-{
-  "$id": "ConversationMessage",
-  "type": "object",
-  "required": ["id", "thread_id", "role", "content", "timestamp", "metadata", "created_at", "summary_id"],
-  "properties": {
-    "id": {"type": "string", "minLength": 1},
-    "thread_id": {"type": "string", "minLength": 1},
-    "role": {"enum": ["user", "assistant"]},
-    "content": {"type": "string"},
-    "timestamp": {"type": "string", "format": "date-time"},
-    "metadata": {"type": "string", "description": "JSON text; '{}' when empty"},
-    "created_at": {"type": "string", "format": "date-time"},
-    "summary_id": {"type": ["string", "null"], "pattern": "^[0-9a-f]{8}$",
-                   "description": "null until the row is summarized; then the summary's id"}
-  }
-}
-```
-
-```json
-{
-  "$id": "ToolLogEntry",
-  "type": "object",
-  "required": ["id", "thread_id", "tool_call_id", "tool_name", "tool_args", "result", "result_preview", "status", "error_message", "metadata", "timestamp", "created_at"],
-  "properties": {
-    "id": {"type": "string", "minLength": 1},
-    "thread_id": {"type": "string"},
-    "tool_call_id": {"type": ["string", "null"]},
-    "tool_name": {"type": "string", "minLength": 1},
-    "tool_args": {"type": "string", "description": "JSON text of the call's arguments"},
-    "result": {"type": "string", "description": "full, untruncated tool output"},
-    "result_preview": {"type": "string", "maxLength": 2000, "description": "first 2000 UTF-8 bytes of result"},
-    "status": {"enum": ["success", "failed"]},
-    "error_message": {"type": ["string", "null"]},
-    "metadata": {"type": "string", "description": "JSON text, e.g. {\"iteration\": 1}"},
-    "timestamp": {"type": "string", "format": "date-time"},
-    "created_at": {"type": "string", "format": "date-time"}
-  },
-  "if": {"properties": {"status": {"const": "failed"}}},
-  "then": {"properties": {"error_message": {"type": "string", "minLength": 1}}}
-}
-```
-
-```json
-{
-  "$id": "VectorRecord",
-  "type": "object",
-  "required": ["id", "text", "metadata", "embedding"],
-  "properties": {
-    "id": {"type": "string"},
-    "text": {"type": "string", "description": "the text that was embedded"},
-    "metadata": {"type": "object"},
-    "embedding": {"type": "array", "items": {"type": "number"}}
-  }
-}
-```
-
-```json
-{
-  "$id": "StoreSettings",
-  "type": "object",
-  "required": ["store", "embedder_id", "dimension", "distance"],
-  "properties": {
-    "store": {"enum": ["SEMANTIC_MEMORY", "WORKFLOW_MEMORY", "TOOLBOX_MEMORY", "ENTITY_MEMORY", "SUMMARY_MEMORY"]},
-    "embedder_id": {"type": "string"},
-    "dimension": {"type": "integer", "minimum": 1},
-    "distance": {"const": "cosine"}
-  }
-}
-```
-
-Metadata shapes per vector store:
-
-```json
-{
-  "KnowledgeSeedMeta": {"type": "object", "required": ["arxiv_id", "title", "subjects", "abstract", "submission_date"]},
-  "PaperChunkMeta": {"type": "object",
-    "required": ["source", "arxiv_id", "title", "entry_id", "published", "authors", "chunk_id", "num_chunks", "ingested_ts_utc"],
-    "properties": {"source": {"const": "arxiv"}, "chunk_id": {"type": "integer", "minimum": 0}, "num_chunks": {"type": "integer", "minimum": 1}}},
-  "WorkflowMeta": {"type": "object", "required": ["query", "success", "num_steps", "timestamp"],
-    "properties": {"success": {"type": "boolean"}, "num_steps": {"type": "integer", "minimum": 1}}},
-  "ToolboxMeta": {"type": "object", "required": ["name", "description", "signature", "parameters", "return_type", "augmented"],
-    "properties": {"augmented": {"type": "boolean"},
-      "queries": {"type": "array", "items": {"type": "string"}, "description": "present when augmented"}},
-    "if": {"properties": {"augmented": {"const": true}}}, "then": {"required": ["queries"]}},
-  "EntityMeta": {"type": "object", "required": ["name", "type", "description"],
-    "properties": {"name": {"type": "string", "minLength": 1}, "type": {"enum": ["PERSON", "PLACE", "SYSTEM", "UNKNOWN"]}}},
-  "SummaryMeta": {"type": "object", "required": ["id", "full_content", "summary", "description"],
-    "properties": {
-      "id": {"type": "string", "pattern": "^[0-9a-f]{8}$"},
-      "description": {"type": "string", "minLength": 1,
-        "not": {"enum": ["conversation summary", "summary", "chat summary", "thread summary", "Conversation summary", "Summary", "Chat summary", "Thread summary"]},
-        "description": "lists common casings of the generic labels; R13 replaces any generic label (compared case-insensitively, surrounding quotes removed) before the record is written"},
-      "thread_id": {"type": "string", "description": "present on thread summaries under C1a"}}}
-}
-```
-
-### 3.3 Model-facing objects
-
-```json
-{
-  "$id": "ToolSchema",
-  "type": "object",
-  "required": ["type", "function"],
-  "properties": {
-    "type": {"const": "function"},
-    "function": {
-      "type": "object",
-      "required": ["name", "description", "parameters"],
-      "properties": {
-        "name": {"type": "string"},
-        "description": {"type": "string"},
-        "parameters": {
-          "type": "object",
-          "required": ["type", "properties", "required"],
-          "properties": {
-            "type": {"const": "object"},
-            "properties": {"type": "object", "additionalProperties": {
-              "type": "object", "required": ["type"],
-              "properties": {"type": {"enum": ["string", "integer", "number", "boolean"]}}}},
-            "required": {"type": "array", "items": {"type": "string"},
-                         "description": "exactly the parameters without a default value"}
-          }
-        }
-      }
-    }
-  }
-}
-```
-
-```json
-{
-  "$id": "ContextUsage",
-  "type": "object",
-  "required": ["tokens", "max", "percent", "status"],
-  "properties": {
-    "tokens": {"type": "integer", "minimum": 0, "description": "floor(characters / 4)"},
-    "max": {"type": "integer", "minimum": 1},
-    "percent": {"type": "number", "description": "tokens / max * 100, rounded to one decimal"},
-    "status": {"enum": ["ok", "warning", "critical"]}
-  },
-  "allOf": [
-    {"if": {"properties": {"percent": {"exclusiveMaximum": 50}}}, "then": {"properties": {"status": {"const": "ok"}}}},
-    {"if": {"properties": {"percent": {"minimum": 50, "exclusiveMaximum": 80}}}, "then": {"properties": {"status": {"const": "warning"}}}},
-    {"if": {"properties": {"percent": {"minimum": 80}}}, "then": {"properties": {"status": {"const": "critical"}}}}
-  ]
-}
-```
-
-```json
-{
-  "$id": "SummaryResult",
-  "oneOf": [
-    {"type": "object", "required": ["status"], "properties": {"status": {"const": "nothing_to_summarize"}}, "additionalProperties": false},
-    {"type": "object", "required": ["id", "description", "summary"],
-     "properties": {
-       "id": {"type": "string", "pattern": "^[0-9a-f]{8}$"},
-       "description": {"type": "string", "minLength": 1},
-       "summary": {"type": "string", "allOf": [
-         {"pattern": "### Technical Information"}, {"pattern": "### Emotional Context"},
-         {"pattern": "### Entities & References"}, {"pattern": "### Action Items & Decisions"}]},
-       "num_messages_summarized": {"type": "integer", "minimum": 1}}}
-  ]
-}
-```
-
-### 3.4 The context window sent to the model
-
-Every agent request carries exactly: one system message (the memory-aware system prompt, R7) and one user message laid out as below, then the loop's assistant and tool messages. Placeholder lines appear when a segment retrieves nothing.
-
-```text
-# Question
-<the question, verbatim>
-
-## Conversation Memory
-### What this memory is
-### How you should leverage it
-### Retrieved messages
-[HH:MM:SS] [<role>] <content>            (placeholder: (No unsummarized messages found for this thread.))
-
-## Knowledge Base Memory
-### What this memory is
-### How you should leverage it
-### Retrieved passages                    (placeholder: (No relevant knowledge base passages found.))
-
-## Workflow Memory
-### What this memory is
-### How you should leverage it
-### Retrieved workflows                   (placeholder: (No relevant workflows found.))
-
-## Entity Memory
-### What this memory is
-### How you should leverage it
-### Retrieved entities
-• <name>: <description>                   (placeholder: (No entities found.))
-
-## Summary Memory
-### What this memory is
-### How you should leverage it
-### Available summaries
-  • [ID: <8 hex>] <label>                 (placeholder: (No summaries available for thread <thread id>.))
-```
-
-Each "What this memory is" / "How you should leverage it" subsection carries one or more sentences, written by the builder, stating the store's content and how the model should use it (CTX-A).
-
-## 4. Business Rules
-
-Labels: *course-demonstrated* (traceable to the course, with a CTX anchor) or *project hardening* (added by this spec; the course did not demonstrate it).
-
-**R1 — Memory core with declared structure, created idempotently.** On first start the program creates every store and field declared in §3.2 for the stores D1's answer keeps, and one `store_settings` record per vector store. Starting again on the same data location keeps every existing row and creates nothing twice. *Course-demonstrated* store set and fields (CTX-A, CTX-E); *project hardening* for keeping data: the course's notebooks drop every table at the start of each lesson (CTX-C). → AC1, AC2
-
-**R2 — Memory survives restarts.** A new process opened on the same data location reads everything earlier processes wrote. *Course-demonstrated* purpose ("persists across sessions", Lessons 1, 2, 6; CTX-B1). → AC3
-
-**R3 — Conversational memory is exact, per thread, and time-ordered.** Before the loop — after the turn's memory segments are built (R6), so the turn's own question is not in its Conversation Memory segment — the harness writes the user's question as a `user` row; after the loop, it writes the final answer as an `assistant` row, both under the turn's thread id. The Conversation Memory segment holds only the active thread's rows whose `summary_id` is null, in time order, at most 10 rows (value: the end-to-end agent's read limit; the Lesson 5 test read 100). When more than 10 such rows exist, the segment holds the 10 most recent (*project hardening*: the course's query returns the earliest 10, CTX-C). Rows with equal timestamps keep insertion order (*project hardening*). Conversation is read by exact thread match, never by similarity (*course-demonstrated*, CTX-B1, CTX-C). → AC3, AC4, AC5, AC6
-
-**R4 — One embedder and one distance strategy across all vector stores.** Every vector store embeds writes and queries with the same embedder and ranks by cosine similarity; each store's `store_settings` records the embedder id, dimension and distance, and startup fails with an error naming the store and both embedder ids when the configured embedder's id or dimension differs from what is recorded. Equal similarities are returned in insertion order. Cosine is a **post-build lever** — course-contradicted: cosine in the Lesson 3 and Lesson 4 code, Euclidean in the Lesson 5 and Lesson 6 code and in the Lesson 3 notebook's text; chosen by value branch 1 (Lesson 3's narration says "cosine"). The same-embedder rule is *course-demonstrated* (Lesson 2: the query embedder "would be the same we use during the ingestion"); the startup check and tie order are *project hardening*. → AC7
-
-**R5 — Knowledge-base memory.** A write takes one text with one metadata object, or a list of texts with a list of metadata of equal length; unequal lengths raise an error naming the length mismatch and write nothing. A read returns the top 3 passages by similarity (value: the course's only setting) in the Knowledge Base Memory segment, or its placeholder. *Course-demonstrated* (CTX-A). → AC8, AC9, AC10
-
-**R6 — Partitioned context window, built deterministically.** On every turn, before the model is called, the harness builds the user message of §3.4: the `# Question` section first, then the five segments in the order Conversation, Knowledge Base, Workflow, Entity, Summary, each with its subsections or placeholder, whether or not the model would have asked for them. The question is never summarized or offloaded. *Course-demonstrated* (Lessons 3 and 6; CTX-B13). → AC11, AC20
-
-**R7 — Memory-aware system prompt.** The system message states: the role (a memory-aware research assistant with tools); that the user input is a partitioned context window with a `# Question` section and the five segments, naming each heading; each segment's purpose; the summary-expansion policy (when a critical detail is only in Summary Memory or is ambiguous, call `expand_summary` before relying on it); and these operating rules — start from the memory segments before using tools; resolve conflicts with exactly this priority line: "current `# Question` > latest Conversation Memory > Knowledge Base evidence > older summaries/workflows"; use only the tools provided this turn and the fewest calls needed; when memory is insufficient, say what is missing and then use a tool; for conversation compaction, call `summarize_and_store` with `thread_id`. *Course-demonstrated* (Lesson 6). → AC12
-
-**R8 — Toolbox: tools as retrievable memory.** Registering a tool stores one toolbox record with name, description, signature, parameters (name, type, default when present), return type and the augmentation flag. Registration is idempotent by name: a name already stored is not written again and triggers no model call. A toolbox read returns tool schemas (§3.3) for the top-k records by similarity, one per distinct name; parameter types map str→string, int→integer, float→number, bool→boolean, anything else→string; `required` lists exactly the parameters without a default. At startup the harness registers the course tools: `arxiv_search_candidates`, `fetch_and_save_paper_to_kb_db`, `get_current_time`, `expand_summary`, `summarize_and_store`, `read_toolbox`. *Course-demonstrated* (Lesson 4; CTX-B10). → AC13, AC14, AC15, AC44
-
-**R9 — Tool-description augmentation (row D2).** For an augmented tool, registration asks the tool augmenter for a richer description (a one-line summary, what the tool does step by step, when an agent should call it, caveats) from the original docstring and the tool's source, then asks for 5 diverse example user queries returned as a JSON array. The stored description is the augmented one; the stored retrieval text is the name, the augmented description, the signature and the queries joined by spaces. A plain tool's retrieval text is its name, docstring and signature. *Course-demonstrated* (Lesson 4; the retrieval text follows the narration, CTX-C). → AC16, AC44
-
-**R10 — Per-turn semantic tool selection.** On every turn the harness retrieves the 5 tools most similar to the question and offers only those to the model. Executing a call resolves any registered tool by name. The `read_toolbox` tool lets the model search the toolbox itself (its own default k is 3). k = 5 is a **post-build lever** — course-contradicted: 5 in the end-to-end agent and in the toolbox-search tool's docstring, 3 in the tool's signature and the memory manager's default, 1 in the Lesson 4 demo; chosen by value branch 2 (the end-to-end agent's value). *Course-demonstrated* (Lesson 4; CTX-B2). → AC13, AC17
-
-**R11 — Context-usage estimate.** Usage of a context string is: tokens = floor(characters / 4); max = the agent model's entry in the context-limit table, or 128,000 for an unlisted model; percent = tokens / max × 100 rounded to one decimal; status `ok` below 50, `warning` from 50 to below 80, `critical` from 80. The table holds the course's `gpt-5` and `gpt-5-mini` at 256,000 tokens, `scripted-model` at 256,000 and `scripted-model-tiny` at 1,000; the build adds an entry for the model named in the §0 checklist with its published context window. The divisor 4 is a **post-build lever** (Lesson 5 says some models' ratio is closer to 2 characters per token). *Course-demonstrated* (Lesson 5). → AC18, AC19
-
-**R12 — Deterministic offload above the threshold (row D3 default).** After building the memory segments and before writing the question, the harness computes usage of the segments; when percent is greater than 80, it summarizes the thread's unsummarized conversation rows (R13, R14), replaces the whole Conversation Memory segment with a stub containing "Older conversation content was summarized to reduce context size." and "Use Summary Memory references + expand_summary(id) for full detail.", appends `[Summary ID: <id>] <label>` to the Summary Memory segment, and leaves every other segment unchanged. The threshold 80 is a **post-build lever** — course-contradicted: Lesson 6's narration says both "exceeded or is equal to 80%" and "greater than 80%"; chosen by value branch 2 (the end-to-end agent's code: greater than). *Course-demonstrated* (Lessons 5 and 6; CTX-B3). → AC20
-
-**R13 — Summarization output.** A summarization takes at most the first 6,000 characters of its input and asks the summarizer for a summary under exactly these headings, in order: `### Technical Information`, `### Emotional Context`, `### Entities & References`, `### Action Items & Decisions` — keeping concrete details, separating confirmed facts from open questions, inventing nothing. If the reply is empty it retries once with a simpler request asking for at most 180 words under the same headings; if that is empty too, the summary is the four headings with the first 500 characters of the input (newlines as spaces) under Technical Information and "Not available from model output." under each other heading. It then asks for an 8–12 word label that is specific and not generic. A reply that is empty or equals "conversation summary", "summary", "chat summary" or "thread summary" (compared case-insensitively, surrounding quotes removed) is replaced by the first line of the summary — skipping heading lines and lines under 4 words, leading "-", "•", "*" removed — cut to its first 12 words with trailing spaces, commas, periods, semicolons and colons removed; if no line qualifies, the label is "Recent thread context, decisions, and open actions". The summary id is the first 8 characters of a random UUID — 8 lowercase hexadecimal characters. The summary record stores id, full input, summary and label, and its thread under C1a. *Course-demonstrated* (Lesson 5 and the end-to-end helper; CTX-B6, CTX-B7). → AC21, AC22, AC23
-
-**R14 — Summarized rows are marked and never re-summarized.** Summarizing a thread reads all of its rows with null `summary_id` in time order, summarizes a transcript of lines `[YYYY-MM-DD HH:MM:SS] [ROLE] content`, then sets exactly those rows' `summary_id` to the new id. With no such rows it returns `nothing_to_summarize` and writes no summary. *Course-demonstrated* (Lesson 5; CTX-B5). → AC24
-
-**R15 — Summaries expand on demand.** The `expand_summary` tool returns, in order: `## Summary Context`, the summary text, `## Expanded Conversations for Summary ID: <id>`, `Total messages: <n>`, then each linked message in time order as `[YYYY-MM-DD HH:MM:SS] [ROLE]` followed by its content. For an unknown id it returns "Summary <id> not found." and "No conversations found for summary_id: <id>". *Course-demonstrated* (Lessons 5 and 6, "just-in-time retrieval"; CTX-B4). → AC25, AC26, AC36
-
-**R16 — The Summary Memory segment lists ids and labels only.** It shows up to 10 summaries as `  • [ID: <id>] <label>` and never their summary text; under C1a it holds only summaries recorded for the active thread. *Course-demonstrated* (Lesson 6). → AC27
-
-**R17 — Bounded tool-calling loop.** The loop calls the agent model with the messages and the offered tools at most 10 times. A reply with tool calls appends the assistant message with its calls, runs each call, and appends one tool message per call; a reply without tool calls is the final answer. A call to an unregistered name produces the result "Error: Tool '<name>' not found" (no tool raised, so its tool-log row and workflow step carry `success`, R18, R19); a tool that raises produces the result "Error: <message>" with status `failed`; neither ends the turn. After 10 model calls without a final answer, the final answer is "I was unable to complete the request within the allowed iterations." *Course-demonstrated* (Lesson 6; CTX-B9). → AC28, AC31, AC32, AC33, AC43
-
-**R18 — Tool outputs are offloaded to the tool log.** Every tool call writes a tool-log row with the thread id, the call id, the tool name, the arguments as JSON, the full result, the first 2,000 UTF-8 bytes as preview, the status, the error message and metadata `{"iteration": <n>}`. When a result is longer than 3,000 characters, the tool message holds its first 3,000 characters followed by "\n\n[Truncated for context. Full output saved in TOOL_LOG_MEMORY as log_id: <id>]"; otherwise it holds the whole result. *Course-demonstrated* ("context offloading", Lesson 6; CTX-B8). → AC33, AC34
-
-**R19 — Workflow memory.** After a turn with at least one tool call, the harness writes one workflow record with text "Query: <question>\nSteps:\nStep 1: <step>\n…\nAnswer: <first 200 characters of the final answer>" and metadata query, success (true), num_steps and timestamp; each step reads `<tool>(<arguments as a JSON object, string values over 50 characters cut to 50 followed by "...">) → success` or `→ failed`. A turn without tool calls writes no workflow. The Workflow Memory segment shows the top 3 workflows by similarity whose num_steps is greater than 0, separated by "\n---\n". *Course-demonstrated* (Lessons 5 and 6; CTX-B11). → AC28, AC29, AC30
-
-**R20 — Entity memory (row D3 default).** On every turn the harness asks the entity extractor for a JSON array of entities (name, type PERSON, PLACE or SYSTEM, short description) from the first 500 characters of the question, and again from the final answer; a text shorter than 5 characters after trimming is skipped without a model call. Each entity with a name is stored as text "<name> (<type>): <description>" with metadata name, type (UNKNOWN when missing) and description. A reply that is not a JSON array yields no entities, and extraction failure never fails the turn. The Entity Memory segment shows the top 5 entities as `• <name>: <description>`. *Course-demonstrated* (Lesson 6 code; CTX-B14). → AC37, AC38, AC39
-
-**R21 — The summarize tool marks the active thread.** `summarize_and_store` with a `thread_id` summarizes that thread (R14) and returns "Stored as [Summary ID: <id>] <label>", or "No unsummarized messages found for thread <id>." when nothing is left; with only non-empty `text` it summarizes that text (R13) and returns "Stored as [Summary ID: <id>] <label>"; with neither it returns a message asking for one of them. When the model calls it without `thread_id`, the harness adds the active thread's id before running it. *Course-demonstrated* (Lesson 6; CTX-B12). → AC21, AC35
-
-**R22 — Paper tools store what they find.** `arxiv_search_candidates(query, k=5)` returns a JSON array of up to k candidates, each with `arxiv_id` (the part of the entry URL after `/abs/`), `entry_id`, `title`, `authors`, `published` and `abstract` (at most 2,500 characters), from a retriever set to load at most 8 documents of at most 4,000 characters without full text. `fetch_and_save_paper_to_kb_db(arxiv_id, chunk_size=1500, chunk_overlap=200)` loads the full paper text, splits it with a recursive character splitter at those sizes, writes the chunks into the knowledge base with `PaperChunkMeta`, and returns "Saved arXiv <id> to SEMANTIC_MEMORY: <n> chunks (title: <title>)."; with no document or empty text it returns a message saying so. The full paper text never passes through the model. *Course-demonstrated* (Lessons 4 and 6; chunk sizes are the tool's defaults). → AC40, AC41, AC43
-
-**R23 — Current-time tool.** `get_current_time(detailed=False)` returns local time as `YYYY-MM-DD HH:MM:SS`, with microseconds appended after a period when `detailed` is true. *Course-demonstrated* (Lesson 4). → AC28
-
-**R24 — Secrets from the environment only.** Keys and credentials are read from the environment or `.env`; none is written into code, fixtures or logs. With the live backend and no `OPENAI_API_KEY`, every command exits with a non-zero status and an error that names `OPENAI_API_KEY`. *Project hardening.* → AC42
-
-**R25 — Seeding the knowledge base.** `seed` writes one knowledge-base record per seed paper with text "<title>\n<subjects>\n<abstract>" and `KnowledgeSeedMeta` metadata, skipping a record whose title, subjects and abstract are all empty. *Course-demonstrated* shape (Lesson 3). → AC45
-
-**R26 — Every model call names its purpose.** Each model request carries one purpose: `agent`, `summarize`, `summarize_retry`, `label`, `extract_entities`, `augment_docstring` or `generate_queries`. Requests for these purposes set no temperature; every purpose except `agent` sets a completion-token cap (4,000 for summaries, 2,000 for the others), and `agent` requests set none. *Project hardening* for the purpose tag (it lets the stand-in answer by role); the caps and the absent temperature are *course-demonstrated* (CTX-D). → AC16, AC21
-
-## 5. Acceptance Criteria                ★  (the oracle)
-
-### 5.1 Fixture corpus (declared first; the build MUST NOT modify fixtures to make a test pass)
-
-All fixture modules live in `tests/fixtures/` and are importable modules: `fixture_embedder.py`, `scripted_model.py`, `fixture_papers.py`, `fixture_tools.py`, `fixture_threads.py`, `fixture_texts.py`. Every fact below is authored by this spec.
-
-**`fixture_embedder.py` — fixture embedders (test stand-ins for the embedding model, honestly labelled).**
-- `FIXTURE_EMBEDDER`: id `fixture-embedder-v1`, dimension 8. Vocabulary, in order: `ferry`, `tide`, `weather`, `time`, `paper`, `invoice`, `garden`, `music`. A text is lower-cased and split into tokens at every character that is not a–z or 0–9; component i is the number of tokens equal to vocabulary word i. Similarity is cosine; when either vector is all zeros, similarity is 0.
-- `ALT_EMBEDDER`: id `fixture-embedder-alt`, dimension 8, same behavior.
-
-**`scripted_model.py` — scripted stand-in model (a fake standing in for the live model; its own description says so).** It accepts every request through the same model interface the app uses, appends `{"purpose", "messages", "tools"}` as one JSON line to `SCRIPTED_MODEL_LOG` when set, and answers by purpose (a script not named under a purpose answers it as `default` does):
-- `augment_docstring`: the original docstring, trimmed, followed by " (augmented)".
-- `generate_queries`: `["example query 1", "example query 2", "example query 3", "example query 4", "example query 5"]`.
-- `summarize`: SUMMARY_TEXT = "### Technical Information\nFixture thread discussed the Lumen Bay ferry schedule.\n\n### Emotional Context\nCalm and practical.\n\n### Entities & References\nLumen Bay (PLACE).\n\n### Action Items & Decisions\nNo open actions." Script `empty`: the empty string.
-- `summarize_retry`: SUMMARY_TEXT; script `empty`: the empty string.
-- `label`: "Lumen Bay ferry timetable questions and the chosen departure time"; script `empty`: "Summary"; script `generic-label`: "Conversation summary".
-- `extract_entities`: if the request contains "Orrin Vale": `[{"name": "Orrin Vale", "type": "PERSON", "description": "harbor master"}, {"name": "Tidewatch", "type": "SYSTEM", "description": "tide alert service"}, {"name": "Gull Pier", "description": "old pier"}]`; else if it contains "Lumen Bay": `[{"name": "Lumen Bay", "type": "PLACE", "description": "fictional harbor town"}]`; else `[]`. Script `bad-entities`: "not json at all" for every request.
-- `agent`: reads the question from the line after `# Question` in the user message and counts the tool messages already present (n). Tool-call ids are `call_<n+1>`. Script by question:
-
-| Question | Replies, in order |
-|---|---|
-| "What time does the Lumen Bay ferry leave on Sundays?" | final "The Sunday ferry leaves Lumen Bay at 09:00." |
-| "Book a seat on that one." | final "Booking noted for the 09:00 Sunday ferry." |
-| "What time is it?" | call `get_current_time` `{}`; final "Here is the time." |
-| "Loop forever" | call `get_current_time` `{}` on every request |
-| "Show the long report" | call `fixture_long_report` `{}`; final "Report received." |
-| "Use a missing tool" | call `no_such_tool` `{}`; final "Done." |
-| "Trigger a failing tool" | call `fixture_failing_tool` `{}`; final "Handled." |
-| "Summarize our conversation" | call `summarize_and_store` `{"text": ""}`; final "Summary stored." |
-| "What was my first question?" | call `expand_summary` `{"summary_id": <the 8 characters after the first "[ID: " in the user message, or "none">}`; final "Answered from the expanded summary." |
-| any other question | final "OK." |
-
-**`fixture_papers.py` — five invented paper records** (fields arxiv_id, title, subjects, abstract, submission_date):
-- P1 `fixture-0001`, "Ferry Routing Under Tide Constraints", "Operations Research", "We schedule a ferry fleet around tide windows.", "2026-01-05"
-- P2 `fixture-0002`, "Weather Signals in Garden Yields", "Agronomy", "Weather records predict garden harvests.", "2026-01-12"
-- P3 `fixture-0003`, "Invoice Fraud Detection at Scale", "Machine Learning", "A paper on invoice anomaly scoring.", "2026-02-02"
-- P4 `fixture-0004`, "Music Recommendation with Listening Time", "Information Retrieval", "Listening time shapes music suggestions.", "2026-02-20"
-- P5 `fixture-0005`, "Tide Gauges and Weather Fronts", "Oceanography", "Tide readings track weather fronts.", "2026-03-01"
-
-**`fixture_tools.py` — test-only tools** (registered plain unless an AC says otherwise; none has parameters unless listed; every one returns a string):
-- `fixture_tool_1` "Returns the ferry timetable."; `fixture_tool_2` "Returns the tide table."; `fixture_tool_3` "Returns the weather report."; `fixture_tool_4` "Returns the local time."; `fixture_tool_5` "Returns a paper abstract."; `fixture_tool_6` "Returns an invoice total."; `fixture_tool_7` "Returns garden tips."; `fixture_tool_8` "Returns a music playlist."
-- `fixture_tool_params(city: str, days: int = 3, exact: bool = False, ratio: float = 0.5)` "Returns a forecast for a city."
-- `fixture_long_report` "Returns a long report." — returns "0123456789" repeated 450 times (4,500 characters).
-- `fixture_failing_tool` "Always fails." — raises an error with message "fixture failure".
-
-**`fixture_threads.py` — planted conversation and workflow state** (rows written in this order through the conversational write, so timestamps are non-decreasing):
-- `FERRY_THREAD` (thread `ferry-thread`): user "When does the first ferry leave Lumen Bay?"; assistant "The first weekday ferry leaves Lumen Bay at 07:15."; user "And on Sundays?"; assistant "On Sundays the first ferry leaves at 09:00."
-- `LONG_THREAD` (thread `long-thread`): 10 user rows; row k (k = 0…9) is the digit k repeated 400 times.
-- `TWELVE_THREAD` (thread `twelve-thread`): 12 user rows "msg-01" … "msg-12".
-- `ZERO_STEP_WORKFLOW`: a workflow record written directly into `WORKFLOW_MEMORY` by the test, bypassing `WorkflowMeta` validation (it plants a record the app never writes, R19), with text "Query: ferry time\nSteps:\nAnswer: none" and metadata num_steps 0, success true.
-
-**`fixture_texts.py`:**
-- `FERRY_NOTE` = "Ferry departs Lumen Bay at 07:15 on weekdays and 09:00 on Sundays."
-- `LONG_TEXT` = "a" repeated 6,000 times, then "ZQXJ", then "b" repeated 996 times (7,000 characters).
-
-Assertions on the stand-in's request log count only the requests made from the start of the AC's When step. Unless an AC says otherwise: `AGENT_MODEL_BACKEND=scripted`, `AGENT_MODEL=scripted-model`, `AGENT_EMBEDDER=fixture`, `SCRIPTED_MODEL_SCRIPT=default`, `SCRIPTED_MODEL_LOG` set to a fresh file (so every AC that asserts on requests, a segment's contents or "no model request" reads them from that log), a fresh data location per AC, and the startup sequence already run (course tools registered).
-
-### 5.2 Criteria
-
-| AC | Given | When | Then |
-|---|---|---|---|
-| AC1 (R1) | An empty data location | `init` runs | The database holds `CONVERSATIONAL_MEMORY` and `TOOL_LOG_MEMORY` with exactly the §3.2 fields, the five vector stores each accepting `VectorRecord` fields, and five `store_settings` records with `distance` = `cosine`, `embedder_id` = `fixture-embedder-v1`, `dimension` = 8; the conversation, tool-log, knowledge-base, workflow, entity and summary stores hold 0 records |
-| AC2 (R1) | AC1's data location plus one conversation row written for thread `t-keep` | `init` runs again | `CONVERSATIONAL_MEMORY` still holds exactly that one row; each store_settings record still exists once |
-| AC3 (R2, R3) | A fresh data location; `SCRIPTED_MODEL_LOG` set | Process 1 runs `ask --thread t-restart "What time does the Lumen Bay ferry leave on Sundays?"`, exits; process 2 runs `ask --thread t-restart "Book a seat on that one."` | Process 1 prints "The Sunday ferry leaves Lumen Bay at 09:00."; the user message of process 2's first `agent` request contains "[user] What time does the Lumen Bay ferry leave on Sundays?" followed later by "[assistant] The Sunday ferry leaves Lumen Bay at 09:00." |
-| AC4 (R3) | AC3's state | A turn "Book a seat on that one." runs in thread `t-other` | Its Conversation Memory segment contains "(No unsummarized messages found for this thread.)" and not "Lumen Bay ferry leave" |
-| AC5 (R3) | A fresh data location | One turn "What time does the Lumen Bay ferry leave on Sundays?" runs in thread `t-sunday` | `CONVERSATIONAL_MEMORY` holds, for `t-sunday`, exactly two rows in time order: (`user`, the question) and (`assistant`, "The Sunday ferry leaves Lumen Bay at 09:00."), both with null `summary_id` |
-| AC6 (R3) | `TWELVE_THREAD` planted | A turn "Hello there" runs in thread `twelve-thread` | Its Conversation Memory segment lists "msg-03" through "msg-12" in that order and does not contain "msg-01" or "msg-02" |
-| AC7 (R4) | AC1's data location (created with `FIXTURE_EMBEDDER`) | The memory core is opened with `AGENT_EMBEDDER=fixture-alt` (`ALT_EMBEDDER`) | Opening fails with an error naming `SEMANTIC_MEMORY` (or another vector store) and both embedder ids; no record is written |
-| AC8 (R5) | `seed` ran with `fixture_papers` | A knowledge-base read for "ferry tide" | The segment's passages are, in order, P1's text, P5's text, P2's text (P1 similarity 1.0, P5 0.5, P2 0 and earliest among the ties) |
-| AC9 (R5) | A fresh data location | A knowledge-base write of texts ["alpha", "beta"] with metadata [{"k": 1}] | An error mentioning the length mismatch is raised; `SEMANTIC_MEMORY` holds 0 records |
-| AC10 (R5) | A fresh data location (nothing seeded) | A knowledge-base read for "ferry" | The segment contains "(No relevant knowledge base passages found.)" |
-| AC11 (R6) | A fresh data location; `SCRIPTED_MODEL_LOG` set | A turn "Hello there" runs in thread `t-fresh` | The first `agent` request's user message starts with "# Question\nHello there\n\n## Conversation Memory"; the headings `## Conversation Memory`, `## Knowledge Base Memory`, `## Workflow Memory`, `## Entity Memory`, `## Summary Memory` appear in that order, each followed by "### What this memory is" and "### How you should leverage it"; it contains the placeholders "(No unsummarized messages found for this thread.)", "(No relevant knowledge base passages found.)", "(No relevant workflows found.)", "(No entities found.)", "(No summaries available for thread t-fresh.)" |
-| AC12 (R7) | AC11's run | Inspect the first `agent` request's system message | It contains each of the five segment headings, "expand_summary", "summarize_and_store", "thread_id", and the line "current `# Question` > latest Conversation Memory > Knowledge Base evidence > older summaries/workflows" |
-| AC13 (R8, R10) | A fresh memory core whose toolbox holds only `fixture_tool_1` … `fixture_tool_8`, registered in that order | A toolbox read for "ferry time" with k = 5 | Tool names returned, in order: `fixture_tool_1`, `fixture_tool_4`, `fixture_tool_2`, `fixture_tool_3`, `fixture_tool_5` |
-| AC14 (R8) | AC13's toolbox | `fixture_tool_1` is registered again | `TOOLBOX_MEMORY` holds 8 records and exactly one named `fixture_tool_1`; no model request was made |
-| AC15 (R8) | A fresh memory core whose toolbox holds only `fixture_tool_params` | A toolbox read for "forecast" with k = 1 | It returns exactly one schema: name `fixture_tool_params`, parameters `{"type": "object", "properties": {"city": {"type": "string"}, "days": {"type": "integer"}, "exact": {"type": "boolean"}, "ratio": {"type": "number"}}, "required": ["city"]}` |
-| AC16 (R9, R26) | A fresh memory core with an empty toolbox; `SCRIPTED_MODEL_LOG` set | `fixture_tool_2` is registered with augmentation | The log shows exactly two requests, purposes `augment_docstring` then `generate_queries`; the record's metadata has description "Returns the tide table. (augmented)", `augmented` true and 5 queries; the record's text contains "(augmented)" and "example query 1" |
-| AC17 (R10) | A fresh data location; `fixture_long_report` and `fixture_failing_tool` registered besides the course tools; `SCRIPTED_MODEL_LOG` set | A turn "What time is it?" runs in thread `t-tools` | The first `agent` request offers exactly 5 tool schemas with 5 distinct names |
-| AC18 (R11) | `AGENT_MODEL=scripted-model-tiny` | Usage is computed for strings of 1,996, 2,000, 3,196 and 3,200 characters | Results: (499, 1000, 49.9, `ok`), (500, 1000, 50.0, `warning`), (799, 1000, 79.9, `warning`), (800, 1000, 80.0, `critical`) as (tokens, max, percent, status) |
-| AC19 (R11) | `AGENT_MODEL=unlisted-model` | Usage is computed for a 512,000-character string | (128000, 128000, 100.0, `critical`) |
-| AC20 (R6, R12) | `LONG_THREAD` planted; `AGENT_MODEL=scripted-model-tiny`; `SCRIPTED_MODEL_LOG` set | A turn "Continue please" runs in thread `long-thread` | The log shows a `summarize` request before the first `agent` request; that `agent` request's user message starts with "# Question\nContinue please", contains "Older conversation content was summarized to reduce context size." and "[Summary ID: <id>] Lumen Bay ferry timetable questions and the chosen departure time" with `<id>` matching `^[0-9a-f]{8}$`, and does not contain "7" repeated 400 times; still contains `## Knowledge Base Memory` with "(No relevant knowledge base passages found.)" and `## Entity Memory` with "(No entities found.)"; all 10 planted rows carry that same `summary_id`; the "Continue please" row's `summary_id` is null |
-| AC21 (R13, R21, R26) | Script `empty`; `SCRIPTED_MODEL_LOG` set | `summarize_and_store` runs with text `FERRY_NOTE` and no thread | Request purposes in order: `summarize`, `summarize_retry`, `label`; the `summarize_retry` request contains "180 words"; the result is "Stored as [Summary ID: <id>] Ferry departs Lumen Bay at 07:15 on weekdays and 09:00 on Sundays" with `<id>` matching `^[0-9a-f]{8}$`; the stored summary contains the four headings in order, `FERRY_NOTE`, and "Not available from model output." three times |
-| AC22 (R13) | Script `generic-label`; `FERRY_THREAD` planted | `summarize_and_store` runs with `thread_id` `ferry-thread` | The stored label is "Fixture thread discussed the Lumen Bay ferry schedule" |
-| AC23 (R13) | `SCRIPTED_MODEL_LOG` set | `summarize_and_store` runs with text `LONG_TEXT` | The `summarize` request contains 6,000 consecutive "a" characters and does not contain "ZQXJ"; the stored full input is 7,000 characters and contains "ZQXJ" |
-| AC24 (R14) | `FERRY_THREAD` planted | `summarize_and_store` runs with `thread_id` `ferry-thread`, then again the same way | First result "Stored as [Summary ID: <id>] Lumen Bay ferry timetable questions and the chosen departure time"; all 4 rows carry `<id>`; a Conversation Memory read for `ferry-thread` shows "(No unsummarized messages found for this thread.)"; the second result is "No unsummarized messages found for thread ferry-thread." and `SUMMARY_MEMORY` still holds 1 record |
-| AC25 (R15) | AC24's state after the first call | `expand_summary` runs with `<id>` | The output contains, in this order: "## Summary Context", "Fixture thread discussed the Lumen Bay ferry schedule.", "## Expanded Conversations for Summary ID: <id>", "Total messages: 4", then the 4 `FERRY_THREAD` contents in their planted order, each preceded by a `[YYYY-MM-DD HH:MM:SS]` timestamp and "[USER]" or "[ASSISTANT]" matching its role |
-| AC26 (R15) | A fresh data location | `expand_summary` runs with `deadbeef` | The output contains "Summary deadbeef not found." and "No conversations found for summary_id: deadbeef" |
-| AC27 (R16) | AC24's state after the first call | Summary Memory segments are built for threads `ferry-thread` and `t-other` | The `ferry-thread` segment contains "[ID: <id>] Lumen Bay ferry timetable questions and the chosen departure time" and not "Calm and practical."; the `t-other` segment contains "(No summaries available for thread t-other.)" |
-| AC28 (R17, R19, R23) | `SCRIPTED_MODEL_LOG` set | A turn "What time is it?" runs in thread `t-time` | Two `agent` requests; the second ends with a tool message whose call id is `call_1` and whose content matches `^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$`; the answer is "Here is the time."; `WORKFLOW_MEMORY` holds one record with text "Query: What time is it?\nSteps:\nStep 1: get_current_time({}) → success\nAnswer: Here is the time." and num_steps 1 |
-| AC29 (R19) | A fresh data location | A turn "What time does the Lumen Bay ferry leave on Sundays?" runs | `WORKFLOW_MEMORY` holds 0 records |
-| AC30 (R19) | AC28's state plus `ZERO_STEP_WORKFLOW` | A turn "What time is it now?" runs in thread `t-time2` | Its Workflow Memory segment contains "Step 1: get_current_time" and does not contain "Answer: none" |
-| AC31 (R17) | `SCRIPTED_MODEL_LOG` set | A turn "Loop forever" runs in thread `t-loop` | Exactly 10 `agent` requests; the answer is "I was unable to complete the request within the allowed iterations."; `TOOL_LOG_MEMORY` holds 10 rows for `t-loop` with call ids `call_1` … `call_10`; the last `t-loop` conversation row is that answer with role `assistant` |
-| AC32 (R17) | `SCRIPTED_MODEL_LOG` set | A turn "Use a missing tool" runs | The second `agent` request's tool message is "Error: Tool 'no_such_tool' not found"; the answer is "Done." |
-| AC33 (R17, R18) | `fixture_failing_tool` registered | A turn "Trigger a failing tool" runs in thread `t-fail` | The tool-log row has status `failed`, error_message "fixture failure" and result "Error: fixture failure"; the workflow record contains "Step 1: fixture_failing_tool({}) → failed"; the answer is "Handled." |
-| AC34 (R18) | `fixture_long_report` registered; `SCRIPTED_MODEL_LOG` set | A turn "Show the long report" runs in thread `t-long` | The second `agent` request's tool message is the report's first 3,000 characters followed by "\n\n[Truncated for context. Full output saved in TOOL_LOG_MEMORY as log_id: <id>]", where `<id>` is the tool-log row's id; that row has result length 4,500, result_preview length 2,000, call id `call_1`, status `success`, metadata `{"iteration": 1}`, thread `t-long` |
-| AC35 (R21) | `FERRY_THREAD` planted; `SCRIPTED_MODEL_LOG` set | A turn "Summarize our conversation" runs in thread `ferry-thread` | The second `agent` request's tool message is "Stored as [Summary ID: <id>] Lumen Bay ferry timetable questions and the chosen departure time"; the 4 planted rows and the "Summarize our conversation" row carry `<id>`; the "Summary stored." row has null `summary_id` |
-| AC36 (R15) | AC35's state | A turn "What was my first question?" runs in thread `ferry-thread` | The first `agent` request's Summary Memory segment contains "[ID: <id>]"; the second request's tool message contains "When does the first ferry leave Lumen Bay?" and "Total messages: 5"; the answer is "Answered from the expanded summary." |
-| AC37 (R20) | A fresh data location | A turn "What time does the Lumen Bay ferry leave on Sundays?" runs in thread `t-ent`, then a turn "Book a seat on that one." in the same thread | After the first turn `ENTITY_MEMORY` holds 2 records named "Lumen Bay" with type PLACE; the second turn's Entity Memory segment contains "• Lumen Bay: fictional harbor town" |
-| AC38 (R20) | `SCRIPTED_MODEL_LOG` set | A turn "Who is Orrin Vale at Gull Pier using Tidewatch?" runs | `ENTITY_MEMORY` holds (Orrin Vale, PERSON), (Tidewatch, SYSTEM), (Gull Pier, UNKNOWN); the turn made exactly one `extract_entities` request (the answer "OK." is skipped) |
-| AC39 (R20) | Script `bad-entities` | A turn "What time does the Lumen Bay ferry leave on Sundays?" runs | The answer is "The Sunday ferry leaves Lumen Bay at 09:00."; `ENTITY_MEMORY` holds 0 records |
-| AC40 (R22) `live` | Network access; `AGENT_EMBEDDER=course` | `fetch_and_save_paper_to_kb_db` runs with `2310.08560` | The result starts "Saved arXiv 2310.08560 to SEMANTIC_MEMORY:" and reports n ≥ 2 chunks; n new knowledge-base records exist, each with `PaperChunkMeta` keys, `chunk_id` 0 … n−1, `num_chunks` n, and text of at most 1,500 characters |
-| AC41 (R22) `live` | Network access | `arxiv_search_candidates` runs with "memory augmented language agents", k = 3 | The result parses as a JSON array of at most 3 objects, each with keys arxiv_id, entry_id, title, authors, published, abstract; each arxiv_id equals the part of entry_id after "/abs/"; each abstract is at most 2,500 characters |
-| AC42 (R24) | `AGENT_MODEL_BACKEND=openai`, `OPENAI_API_KEY` unset, no `.env` in the working directory | `ask --thread t-key "Hello there"` runs | Exit status is non-zero and the error output contains "OPENAI_API_KEY" |
-| AC43 (R17, R22) `live` | `AGENT_MODEL_BACKEND=openai`, `OPENAI_API_KEY` set, `AGENT_EMBEDDER=course` | Turns "Can you find the MemGPT paper on arXiv?" then "Can you save the content of the paper?" run in thread `t-live` | The second turn's first request contains the first question in its Conversation Memory segment; `TOOL_LOG_MEMORY` holds a `success` row for `fetch_and_save_paper_to_kb_db` in `t-live`; `SEMANTIC_MEMORY` holds more records than before the turns |
-| AC44 (R8, R9) | An empty data location; `SCRIPTED_MODEL_LOG` set | `init` runs twice | `TOOLBOX_MEMORY` holds exactly six records: `fetch_and_save_paper_to_kb_db`, `expand_summary`, `summarize_and_store`, `read_toolbox` with `augmented` true; `arxiv_search_candidates`, `get_current_time` with `augmented` false; no record named `search_tavily`; the second `init` made no model request |
-| AC45 (R25) | An empty data location | `seed` runs | `SEMANTIC_MEMORY` holds 5 records; P3's record text is "Invoice Fraud Detection at Scale\nMachine Learning\nA paper on invoice anomaly scoring." and its metadata is arxiv_id `fixture-0003`, title "Invoice Fraud Detection at Scale", subjects "Machine Learning", abstract "A paper on invoice anomaly scoring.", submission_date "2026-02-02"; every other record's metadata likewise equals its paper's five fields |
-
-## 6. Standing Permissions (in force for the entire build)
-
-**Always**
-- Run the offline suite with the scripted backend and the fixture embedder; run `live` criteria only when the person supplies keys.
-- Keep `resolved-decisions.md` as the record of the gate's answers and build on its values.
-- Read secrets from the environment or `.env`; keep `.env` out of version control.
-- Report every criterion with cited evidence (§7).
-- Treat CTX-D names as search keywords against current documentation.
-
-**Ask First** (derived from the course's argued trade-offs in CTX-C; each wrong side forces rework or changes a guarantee without failing a criterion)
-- Changing the embedding model or the distance strategy once any vector store holds data — every vector store must be re-embedded (R4; CTX-C T18).
-- Changing the paper chunk size or overlap after papers are ingested — ingested papers must be re-fetched (R22; CTX-C T24).
-- Moving any operation between harness-run and model-called, e.g. letting the model decide when to read memory or save turns (row D3; CTX-C T4).
-- Changing tool-description augmentation after tools are registered — the toolbox store must be cleared and tools re-registered (row D2; CTX-C T6).
-- Switching recoverable compaction to a lossy summary (row D4; CTX-C T8).
-- Changing summary scoping after summaries exist (row C1; CTX-C T21).
-- Changing the offload threshold of 80 or the 50/80 status bands (R11, R12; CTX-C T9).
-- Changing the token-estimate divisor of 4 (R11; CTX-C T10).
-- Changing the per-turn tool count of 5 (R10; CTX-C T20).
-- Changing the 3,000-character tool-result cut or sending full tool outputs to the model (R18; CTX-C T12).
-- Moving stores to another database after data exists (row RR1; CTX-C T22).
-
-**Never**
-- Invent provenance or citations, or describe a hardening rule as course-taught.
-- Let the agent answer from memory it does not have: when memory is insufficient it states what is missing (R7).
-- Modify fixtures, the scripted model's replies or the fixture embedder to make a test pass.
-- Commit secrets or write keys into code, fixtures or logs.
-- Drop or recreate memory stores at startup.
-- Bake a "current best" model name into code defaults; models come from the §0 checklist.
-
-## 7. Test Plan & Self-Verification
-
-Commands, run from the project root:
-
-```bash
-python -m pip install -e ".[test]"
-python -m pytest tests -m "not live" -q            # offline suite: scripted model + fixture embedder
-OPENAI_API_KEY=... python -m pytest tests -m live -q  # live criteria AC40, AC41, AC43
-python -m memory_agent init && python -m memory_agent seed
-AGENT_MODEL_BACKEND=scripted AGENT_EMBEDDER=fixture python -m memory_agent ask --thread demo "What time is it?"
-```
-
-The build agent MUST report results per acceptance criterion (AC1 … AC45) with cited evidence — the test name and its output, and the file paths that implement the behavior. "Should pass" or "looks correct" counts as a failure: it means the criterion was not run. Live criteria not run for lack of keys are reported as "not run (no key)", never as passed.
-
-**Tests by option** — one line per Options entry that is not its row's Default. A build that chose an option reports the criteria it retires as not applicable, not as failures, and builds the changed ones as changed.
-
-| Option id | Rules and criteria that no longer apply | Rules, criteria and Ledger cells that change (and how) | Offline-suite criteria switched off |
-|---|---|---|---|
-| L1b | — | R7 (role line names your domain); R8, AC44 (the registered tools and their `augmented` flags are your domain's tools plus the memory tools); R22, AC40, AC41, AC43 (your domain's tools and their live checks); R25, AC45 (your seed data's fields) | — |
-| L2b | — | R25 (seed streams the first 100 dataset records, text = title, subjects, abstract joined by newlines; metadata arxiv_id, title, subjects, abstract, submission_date); AC45 (asserts at most 100 records with those keys; becomes `live`) | AC45 |
-| L2c | — | R25 (one record per document of yours, with your metadata); AC45 (asserts your record count and fields) | — |
-| L3b | — | Your stated goal's criteria are added to §5; nothing else changes | — |
-| L4b | — | R17 and R26 (tool calls and results use the provider's tool-use message format); AC42 (names the provider's key variable); AC43 (runs against this provider) | — |
-| L4c | — | R17 and R26 (the local endpoint's tool-calling format); AC42 (checks the endpoint setting instead of a key); AC43 (runs against the local model) | — |
-| L5b | — | AC3 (the two processes become two kernel sessions on the same data location); AC42 (the key check runs in the first cell that builds the model client); AC1, AC2, AC44, AC45 (`init` and `seed` run as notebook cells); §3.1 (notebook cells replace the commands); L1 Options cell L1a (it names a command-line agent) and L2 Options cell L2a (it names the `seed` command) | — |
-| L6b | — | The restored §1 items are built; criteria are supplied only for restorable items, by the build | — |
-| D1b | R4, R5, R8, R9, R10, R11, R12, R13, R14, R15, R16, R19, R20, R21, R25; AC7, AC8, AC9, AC10, AC13, AC14, AC15, AC16, AC17, AC18, AC19, AC20, AC21, AC22, AC23, AC24, AC25, AC26, AC27, AC29, AC30, AC35, AC36, AC37, AC38, AC39, AC40, AC43, AC44, AC45 | R1, AC1, AC2 (only `CONVERSATIONAL_MEMORY` exists); R6, AC11 (user message = `# Question` + Conversation Memory only); R7, AC12 (prompt names only the conversation segment, no summary tools); R17, R18, R22 (no tool log; every registered tool — `arxiv_search_candidates`, `get_current_time` — offered each turn; tool results over 3,000 characters cut with "[Truncated for context.]" and no log pointer); AC28, AC31, AC32, AC33, AC34 (assert on tool messages and answers only, no tool-log or workflow records); L2 Decision cell and Options cell L2a (they name the knowledge base); L3 Options cell L3a (it names summarized conversation); L1 Options cell L1b (it names your seed data, which has no store) | — |
-| D2b | — | R9 (every tool augmented); AC44 (all six records `augmented` true) | — |
-| D2c | R9; AC16 | R8 (retrieval text = name, own docstring, signature for every tool); AC44 (all six `augmented` false; the first `init` makes no model request) | — |
-| D3b | AC37, AC38, AC39 | R20 (no per-turn extraction; an agent-callable entity-writing tool, never built by the course — no parameters or criteria supplied); R7 (prompt mentions the entity tool); AC44 (a seventh toolbox record) | — |
-| D3c | R12; AC20 | R11 (usage is still computed and reported; nothing acts on it automatically) | — |
-| D4b | R15; AC25, AC26, AC36 | R7, AC12 (no summary-expansion policy, no `expand_summary`; the system message does not contain "expand_summary"); R8 (`expand_summary` is not registered); R12, AC20 (the stub is replaced by the summary text itself; no `[Summary ID: …]`); R13, R14, AC24 (summaries keep no link to recoverable originals); R16, AC27 (Summary Memory carries summary text); R21, AC35 (result names no id); AC44 (no `expand_summary` record); L3 Options cell L3a (it names details recovered from summarized conversation); D2 Options cell D2a and D3 Options cell D3a (they name summary expansion) — the course never built this side, so adapt these criteria and list them under *Adapted* | — |
-| RR1b | — | R1, AC1 (Oracle tables and five IVF vector indexes — neighbor partitions, target accuracy 95, distance matching the stores'); R2, AC3 (same database across processes); R4, AC7 (settings kept in a table in the same schema); AC8, AC13 (ties are unordered under an approximate index: assert P1 then P5; `fixture_tool_1` and `fixture_tool_4` first in either order); R24 (database user and password from the environment) | — (the suite needs the database container running) |
-| RR1c | — | R1, AC1 (PostgreSQL tables with a vector column per vector store); R2, AC3; R4, AC7; AC8, AC13 (as RR1b when an approximate index is used); R24 (connection settings from the environment) | — (the suite needs the database server running) |
-| RR2b | — | R22 (adds `search_tavily(query, max_results=5)`, augmented, writing each result as "Title: …\nContent: …\nURL: …" with metadata title, url, score, source_type "tavily_search", query, timestamp — checked live); R24 (`TAVILY_API_KEY`); AC44 (seven records, `search_tavily` augmented true) | — |
-| RR2c | — | R22 (adds a tool described as a fake web search that returns two fixed results and writes them like RR2b); AC44 (seven records) | — |
-| RR3b | — | AC3, AC5, AC16, AC20, AC21, AC22, AC23, AC24, AC25, AC27, AC28, AC29, AC31, AC32, AC33, AC34, AC35, AC36, AC37, AC38, AC39, AC44 (run against the live model; assert shape — headings, id formats, record counts and fields — not scripted text or request sequences); AC4, AC6, AC11, AC12, AC14, AC17, AC30 (the requests and "no model request" are read from a log of the live client's requests in the `SCRIPTED_MODEL_LOG` line format, not from the stand-in's log) | all offline criteria move to the live run |
-| C1b | — | R13 (summaries record no thread); R16, AC27 (every thread's segment lists every summary; the `t-other` segment also shows the summary); AC11 (Summary Memory placeholder is "(No summaries available.)") | — |
-
-Finally, conclude the build by drawing an infra/structure diagram of the app as built — the memory core and its stores, the harness steps around the agent loop, the tools, the model and the CLI — and state exactly: "This is the infra/structure diagram of this app".
-
-## Course Context Pack (embedded — agent-readable)
-
-### CTX-A. The pattern
-
-The course's central buildable pattern — a memory-aware agent over a database memory core:
-
-`memory core (stores) → register tools as memory → build partitioned context → check usage and offload → select tools semantically → bounded tool-calling loop (log tool outputs) → write back (conversation, workflow, entities)`
-
-- **Memory core** — the database is where most of an agent's data traffic flows; memory is external to the model, persistent and structured (Lesson 2). Each memory type gets its own store: conversation and tool logs as relational tables (exact retrieval by thread, time order), knowledge base, workflow, toolbox, entity and summary as vector stores (similarity search) (Lesson 3).
-- **Memory manager** — one abstraction offering read and write operations for every store, hiding queries and vector operations from the agent loop (Lesson 3).
-- **Toolbox** — tools are procedural memory: stored with embeddings, retrieved per query, so the agent sees a focused toolset instead of every definition (Lesson 4).
-- **Partitioned context window** — each store's retrieved content goes into its own Markdown-headed segment with "what this memory is" and "how to use it", making the model aware of its memory (Lessons 3 and 6). Markdown headings work because models learned hierarchical Markdown structure from training data (Lesson 6).
-- **Context-window management** — usage is estimated each turn; above the threshold the conversation is compacted into a summary referenced by ID; the model expands summaries just in time (Lessons 5 and 6).
-- **Agent loop and harness** — assemble context, invoke the model, act (respond, call tools), until a final answer or the iteration limit; memory operations outside the loop (reads at the start, writes at the end) and inside it (tool calls, tool-log offloading) form the harness (Lesson 6).
-- **Write-back** — each turn persists its conversation, the steps it took as a workflow, and the entities it met, so later runs reuse them (Lesson 6).
-
-### CTX-B. Failure-mode catalog
-
-- **B1 Stateless forgetting** — symptom: the agent cannot resolve "book the first one on the list" because it has no record of the previous turn (Lesson 2). Cause: no memory beyond a single turn. Fix: store interaction history per thread outside the model and load it every turn. Enforced by R2, R3, AC3.
-- **B2 Tool overload** — symptom: context bloat and confusion, degraded tool selection, higher latency and cost when every tool definition is placed in the prompt (Lesson 4). Cause: tool definitions crowd the context window. Fix: retrieve only the tools relevant to the query. Enforced by R10, AC13, AC17.
-- **B3 Context overflow** — symptom: long conversations exhaust the token budget and the agent fails or loses history (Lesson 5). Cause: unbounded conversation in context. Fix: monitor usage and offload conversation into a summary above the threshold. Enforced by R11, R12, AC18, AC20.
-- **B4 Summaries lose details** — symptom: an exact earlier detail is gone after summarization (Lesson 5: summarization is lossy; Lesson 6: "what was my first question?"). Cause: the summary replaces the original text. Fix: keep originals linked to the summary id and expand on demand. Enforced by R15, AC25, AC36.
-- **B5 Re-summarizing processed messages** — symptom: the same messages are summarized again on each pass (Lesson 5 notebook). Cause: no marker on summarized rows. Fix: tag each summarized row with its summary id and summarize only untagged rows. Enforced by R14, AC24.
-- **B6 Empty summary output** — symptom: the model returns no summary text, leaving nothing to store (Lesson 5 code). Cause: model output variability. Fix: one simpler retry, then a deterministic fallback summary. Enforced by R13, AC21.
-- **B7 Generic summary labels** — symptom: labels like "Conversation summary" make summary lists useless to the model (end-to-end helper). Cause: weak labeling output. Fix: reject generic labels and derive one from the summary. Enforced by R13, AC22.
-- **B8 Tool-output bloat** — symptom: a large tool result floods the next model request (Lesson 6). Cause: raw outputs passed straight back. Fix: keep the full output in the tool log and pass a bounded cut with a pointer. Enforced by R18, AC34.
-- **B9 Runaway loop** — symptom: the agent keeps calling tools without answering (Lesson 6). Cause: no stop condition besides a final answer. Fix: an iteration limit with a fixed fallback answer. Enforced by R17, AC31.
-- **B10 Duplicate tool records** — symptom: re-running registration stores the same tool again (end-to-end helper). Cause: registration without a name check. Fix: skip names already stored. Enforced by R8, AC14, AC44.
-- **B11 Empty workflows** — symptom: workflow memory fills with trajectories that have no steps (end-to-end helper filter). Cause: writing a workflow for every turn. Fix: write only turns with tool calls; read only workflows with steps. Enforced by R19, AC29, AC30.
-- **B12 Summaries that mark nothing** — symptom: the model calls the summarize tool without a thread, so source rows are never marked (Lesson 6 code). Cause: a missing argument. Fix: the harness adds the active thread id. Enforced by R21, AC35.
-- **B13 The agent cannot look up what it does not know exists** — symptom: an agent left to decide whether to read memory starts from scratch (Lesson 3 notebook). Cause: retrieval left to the model's discretion. Fix: deterministic bootstrap reads every turn. Enforced by R6, AC11.
-- **B14 Entity extraction breaks a turn** — symptom: a malformed extraction reply would raise an error mid-turn (end-to-end helper). Cause: unparseable model output. Fix: treat any non-array reply as no entities and never fail the turn on extraction. Enforced by R20, AC39.
-
-### CTX-C. Decision background
-
-**How to read the provenance notes.** Each argued subject was judged by a three-step litmus: *failure* (the course shows or warns that the alternative breaks → the taught side is a **bake-in**, a business rule, and the alternative is recorded as an anti-pattern — tie-breaker 1: a demonstrated or warned failure wins over earlier demos); *working* (the course shows the alternative producing a correct result → both sides are options of a Ledger **row**); otherwise the alternative is **never shown** — a Ledger option that says the course never built it when the subject changes the system's structure (a component, an owner or a guarantee), or **narrative** (background only, never asked and never built) when it does not, or when it is only a stage of the course's progression that the course does not argue stopping at. A subject whose sides differ only in a number is a **lever** (tie-breaker 2): a body value carrying the argument plus an Ask-First entry; a **post-build lever** is such a value that no gate question asks about. A contradicted value is chosen by **value branches**: (1) the value the narration states in the lesson that introduces it; (2) else the course's end-to-end agent's value; (3) else the most frequent value, earliest-taught on ties. **Stakes**: a contradiction becomes a row only if choosing the other side at the start would change structure, semantics or a guarantee. A Default's **Branch** note names the rule that chose it: *the course's example scenario shape* (the project row takes the course's own example, re-expressed on facts this spec authors); *the learner data row* (the data row defaults to a synthetic corpus so the build runs offline); *substitution* (a substitution row, below); *the keyed-tool rule* (a tool that needs a key is left out by default when a keyless tool also carries the behavior it teaches); *the model is the keyed dependency* (the offline suite runs against a scripted stand-in model, and criteria that need a real model are tagged `live`). A **substitution row** replaces a heavy course dependency with a lighter one that keeps the row's invariant; **heavy** means needing a key, a paid account, admin or container setup, or special hardware (network access alone is not heavy). **Realization tiers**, lightest first: (1) ships with the language; (2) an embedded library; (3) a locally served component. "(course default)" marks what the course used; "(Recommended)" marks the Default.
-
-**Mined trade-off table** (every argued or spoken trade-off, its lesson, and its disposition):
-
-| # | Subject | Lesson | Disposition |
-|---|---|---|---|
-| T1 | Stateless agent vs memory-augmented agent | 2 | bake-in R2, R3 — tie-breaker 1 (the stateless agent fails the follow-up turn) |
-| T2 | Conversational memory only vs multiple memory stores | 2, 3 | row D1 (conversation-only shown working in the walkthrough) |
-| T3 | Memory-augmented vs memory-aware agent | 3 | narrative — a stage of the progression ("we can take things further") the course never argues stopping at |
-| T4 | Deterministic vs agent-triggered memory operations | 3 | row D3; bake-ins R6 (bootstrap reads) and R3, R19 (turn and workflow writes) — tie-breaker 1 (warned: stateless behavior, forgotten saves) |
-| T5 | All tools in the prompt vs semantic tool retrieval | 4 | bake-in R10 — tie-breaker 1 (warned: context confusion, selection degradation) |
-| T6 | Plain vs LLM-augmented tool descriptions | 4 | row D2 (both shown working) |
-| T7 | Local tools vs third-party API tools | 4 | narrative — presented as two kinds of tool, no builder's choice argued |
-| T8 | Lossy summarization vs recoverable compaction | 5 | row D4 (lossy never shown; reversibility is a guarantee) |
-| T9 | When to summarize: the 80% threshold, ≥ vs >, or manually at any time | 5, 6 | lever R12 — tie-breaker 2 (a value); value branch 2 (> 80) |
-| T10 | Token estimate: 4 vs 2 characters per token | 5 | lever R11 — tie-breaker 2 |
-| T11 | Different summarization prompts ("try different prompts") | 5 | narrative — an invitation to experiment, no sides argued |
-| T12 | Full tool outputs in context vs offloaded to the tool log | 6 | bake-in R18 — tie-breaker 1 (warned: tool-output bloat) |
-| T13 | Search-and-store vs search only | 4 | narrative — only the taught side is presented; carried as R22 and the RR2 invariant |
-| T14 | Hybrid search for the knowledge base | 3 | narrative — named and set up, never used, no trade-off argued (§1 item 1) |
-| T15 | Retrieval strategies: lexical, vector, graph, hybrid | 3 | narrative — a taxonomy |
-| T16 | Memory types: semantic cache, working, procedural, semantic, episodic | 2 | narrative — a taxonomy |
-| T17 | Conversation in a relational table vs a vector store | 3 | bake-in R3 — tie-breaker 1 (the course states conversation needs exact thread retrieval that similarity search cannot give) |
-| T18 | Cosine vs Euclidean distance | 3, 4, 5, 6 | lever R4 — contradicted, stakes fail (a value); value branch 1 (cosine, Lesson 3 narration) |
-| T19 | HNSW vs IVF vector index (course database only) | 3 | bake-in for option RR1b — tie-breaker 1 (the helper's index function builds IVF and reports HNSW errors on Oracle Free; the Lesson 3 notebook's text still names HNSW, which loses to the shipped code); not used by RR1a |
-| T20 | Tools per turn: 1, 3 or 5 | 4, 6 | lever R10 — contradicted, stakes fail; value branch 2 (5) |
-| T21 | Summary thread scoping | 5, 6 | row C1 — contradicted, stakes pass |
-| T22 | The course's database vs a lighter local store for the memory core | 2, 3 | row RR1 (realization: the course's database needs container and admin setup) |
-| T23 | Candidate search before full-paper ingestion | 4 | narrative — two tools of the course's toolset, no alternative argued |
-| T24 | Chunking full papers for embedding input limits (1,500 / 200) | 4 | lever R22 — single-valued, argued only as "chunking prevents failures"; changing after ingestion forces re-fetch |
-| T25 | Moving large payloads out of the model context (fetch and store) | 4 | bake-in R22 — the course presents routing the full paper through the model as what the tool avoids |
-
-**Background per row and contradiction.**
-- **D1 (→ Ledger D1).** Lesson 2's progression: stateless agent → memory-augmented with conversational memory → beyond conversational memory. Lesson 3 adds explicit memory types, then memory awareness (store awareness in the system prompt, memory operations as tools, context partitions).
-- **D2 (→ Ledger D2).** The course's registration computes an embedding from the enriched text but writes the record with the original text as the embedded text; Lesson 4 narration ("this enriched text is what gets embedded") is followed here. Lesson 4 code augments `get_current_time`; the end-to-end registration does not (D2a follows the end-to-end agent).
-- **D3 (→ Ledger D3).** The course's operation table: conversation, knowledge-base, workflow and entity reads deterministic; summary-list read agent-triggered (the end-to-end agent nevertheless loads the list every turn); conversation and workflow writes deterministic; entity write agent-triggered; web search, summary expansion and summarization agent-triggered; toolbox read both.
-- **D4 (→ Ledger D4).** Compaction stores content under an ID with a description; the model reads the description and fetches the full content only when needed ("just-in-time retrieval").
-- **RR1 (→ Ledger RR1).** The course's database setup (admin connection, a dedicated user with an ASSM tablespace for JSON columns, a container that takes 30–60 seconds to start) is the setup weight the substitution avoids.
-- **C1 (→ Ledger C1).** Lesson 5's summary writer stores no thread; the end-to-end helper stores it for thread summaries and filters the summary list by thread; text-only summaries record no thread in either.
-- **Conversation window.** The course reads the first 10 unsummarized rows in time order (earliest first); this spec shows the 10 most recent, in time order (hardening, R3).
-- **Clean-slate tables.** Every lesson notebook drops all seven tables before running; this spec never drops data (R1), because persistence across sessions is the course's purpose.
-- **Label fallback.** The Lesson 5 notebook falls back to "Conversation summary"; the end-to-end helper rejects that label as generic (value branch 2, R13).
-- **Summary model.** Lesson 5's notebook summarizes with `gpt-5-mini`; the end-to-end helper's summarizer, entity extractor and tool augmenter use `gpt-5`; the agent loop uses `gpt-5-mini`. Current models are chosen at the gate.
-- **Unknown tools.** The course returns "Error: Tool '<name>' not found" as an ordinary result and records it as a success in the tool log; this spec keeps that status (R17) and asserts only the result text.
-- **Workflow success flag.** The course records success true for every workflow, including turns that hit the iteration limit; this spec keeps that behavior (R19).
-
-### CTX-D. Perishable assumptions
-
-The concepts in CTX-A through CTX-C are durable; only the names below are perishable. Treat them as search keywords against current documentation, not guaranteed imports.
-
-- Installs: the course's `requirements.txt` lists `langchain-oracledb`, `langchain-huggingface`, `sentence-transformers`, `langchain-community`, `langchain-openai`, `datasets`, `langchain`, `tavily-python`, `pydantic`, `oracledb`, `openai`, `dotenv`, `arxiv`, `pymupdf` — all unpinned.
-- Vector store: `langchain_oracledb.vectorstores.OracleVS`; `langchain_oracledb.retrievers.hybrid_search.OracleVectorizerPreference`; `langchain_community.vectorstores.utils.DistanceStrategy` (`COSINE`, `EUCLIDEAN_DISTANCE`, `DOT_PRODUCT`); Oracle `CREATE VECTOR INDEX … ORGANIZATION NEIGHBOR PARTITIONS … WITH TARGET ACCURACY 95`.
-- Database: Oracle AI Database 26ai Free, service `FREEPDB1`, driver `oracledb`.
-- Embeddings: `HuggingFaceEmbeddings` imported from `langchain_huggingface` in Lessons 3 and 5 and from `langchain_community.embeddings` in Lessons 4 and 6; model `sentence-transformers/paraphrase-mpnet-base-v2`.
-- Paper tools: `langchain_community.retrievers.ArxivRetriever` (`load_max_docs`, `get_full_documents`, `doc_content_chars_max`), `langchain_community.document_loaders.ArxivLoader`, `langchain_text_splitters.RecursiveCharacterTextSplitter`; arXiv metadata keys "Entry ID", "Title", "Authors", "Published".
-- Seed dataset: `datasets.load_dataset("nick007x/arxiv-papers", split="train", streaming=True)`.
-- Web search: `tavily.TavilyClient().search(query=…, max_results=…)`.
-- Model API: OpenAI `client.chat.completions.create` with `tools` and `tool_choice="auto"`; tool results as `role="tool"` messages with `tool_call_id`; models `gpt-5` and `gpt-5-mini`.
-- **Request-parameter compatibility:** the course's calls set `max_completion_tokens` (4,000 for summaries; 2,000 for labels, augmentation, query generation and entity extraction) and never set `temperature` or `max_tokens`. Parameter support differs between model families; check the chosen model's accepted parameters before the first keyed run.
-
-### CTX-E. Provenance map
-
-Lesson titles in transcript numbering. Nothing in this spec requires course-platform access.
-
-| Lesson | Title | Contributes |
-|---|---|---|
-| 1 | Introduction | CTX-A (memory engineering framing); §1 item 5 |
-| 2 | Why AI Agents Need Memory | CTX-A (memory core, agent memory definition); CTX-B1; CTX-C T1, T2, T16, T22; §1 items 2–3 |
-| 3 | Constructing The Memory Manager | CTX-A (stores, memory manager, memory-aware steps); CTX-B13; CTX-C T2, T3, T4, T14, T15, T17, T18, T19, T22; §1 items 1, 4–6 |
-| 4 | Scaling Agent Tool Use with Semantic Tool Memory | CTX-A (toolbox); CTX-B2, B10; CTX-C T5, T6, T7, T13, T18, T20, T23–T25 |
-| 5 | Memory Operations: Extraction, Consolidation, and Self-Updating Memory | CTX-A (context management); CTX-B3–B7; CTX-C T8–T11, T18, T21 |
-| 6 | Memory Aware Agent | CTX-A (agent loop, harness, write-back); CTX-B8, B9, B11, B12, B14; CTX-C T9, T12, T18, T20, T21 |
-| 7 | Conclusion | CTX-A (patterns summary) |
-
-- **Notebook-to-lesson mapping.** The notebook dump's own lesson map pairs L2 with Lesson 4, L3 with Lesson 5 and L4 with Lesson 6, but each notebook's title and content match the transcripts one lesson earlier: L2 "Constructing the Memory Manager" = Lesson 3, L3 "Scaling Agent Tool Use with Semantic Tool Memory" = Lesson 4, L4 "Memory Operations" = Lesson 5, L5 "Memory Aware Agent" = Lesson 6. The narration itself also drifts ("you've completed lesson 4" at the end of Lesson 5; "end of lesson 5" at the end of Lesson 6). Transcript headers win throughout this spec.
-- **Code-side evidence** comes from the notebooks and the shared helper module (memory manager, store manager, toolbox, summarization, common tools), including its docstrings (the IVF-over-HNSW reason, chunking for embedding input limits).
-- **Slides:** the course folder holds slide images only, with no slide-descriptions file; no slide was read or weighted.
-- **Name map to the course's terms:** stores `CONVERSATIONAL_MEMORY`, `SEMANTIC_MEMORY`, `WORKFLOW_MEMORY`, `TOOLBOX_MEMORY`, `ENTITY_MEMORY`, `SUMMARY_MEMORY`, `TOOL_LOG_MEMORY` (binding here); the course's classes `MemoryManager`, `StoreManager`, `Toolbox`, `ToolMetadata`; its loop `call_agent` with `AGENT_SYSTEM_PROMPT`; its functions `calculate_context_usage`, `monitor_context_window`, `summarise_context_window`, `summarize_conversation`, `offload_to_summary`; its tools `read_toolbox`, `search_tavily`, `get_current_time`, `arxiv_search_candidates`, `fetch_and_save_paper_to_kb_db`, `expand_summary`, `summarize_and_store` (tool names binding here). The course's research assistant was called "ArxivScout" in Lesson 3.
-- **Declared drops (presentation-only constants):** print-display cuts (70 and 200 characters), the 0.05-second delay between seeded messages (replaced by the insertion-order rule), connection program name, DSN and passwords, index names `*_vs_ivf`, the hybrid-search preference name, demo thread ids ("50000", "test_summary_<time>"), and the sample conversation's stated length (30 in code, 32 in narration).
+You are the build agent. Before writing ANY code, you MUST ask the person you are building for
+the questions in the next section. Do not skip this because the recommended answers look
+complete: they exist so the build is reproducible, not because they fit this person's project.
+
+1. **Use a structured question tool if you have one** (e.g. Claude Code's `AskUserQuestion`);
+   otherwise list the question in your reply and ask.
+2. **First question — recommended build, or choose?** Two options: the **recommended build**
+   (every question takes its "(Recommended)" option — mostly the course's own choices, with a
+   lighter stand-in wherever the course's choice needs setup the person may not have; the
+   checklist in step 5 marks each place it differs from the course), or **choose** question by
+   question. Recommended → go to step 5. Choose → step 3.
+3. **Ask ONE question at a time.** Show the question, its options with their "pick this when …"
+   and setup cost, and the labels "(course default)" / "(Recommended)" /
+   "(Recommended - course default)" exactly as written — no other labels. Say once, before the
+   first question, that "(Recommended)" was fixed when this spec was written and does not
+   reflect this person's setup. Use earlier answers to explain later options in the person's
+   own terms, but never drop or change an option because of them. Skip a question only when its
+   own "Ask only when …" condition is false, and say so in one line. A per-call limit of your
+   question tool is never a reason to skip, merge or default a question.
+4. **Asking ends your turn.** Write no code and touch no file until the person answers. Keep
+   asking until every question is answered or skipped by its condition. Answers to some
+   questions do not release the build; no reply is not an answer.
+5. **Before the first line of code, print a checklist and write it to `resolved-decisions.md`:**
+   every question with the chosen option's id and text, each marked `= course choice`,
+   `≠ course choice (course used: <option>)`, `no course choice`, or `not asked (<condition>)`.
+   Add one line per model role naming the current model you will use from the chosen provider;
+   if you cannot tell, ask, and otherwise use the course's own model id and say it may need
+   changing. For every chosen option that is not recommended, copy its "what to check" sentence
+   into the checklist. On the recommended path, walk the person through every `≠` line and its
+   reason. Start building only after the checklist is shown, written and confirmed. Leave out
+   every part of the spec that exists only for an option not chosen.
 
 ---
-v1 · Agent Memory: Building Memory-Aware Agents · learner project: [project] (default: memory-aware research assistant agent, row L1) · Living document: when the build agent produces something unexpected, add the missing constraint here and re-run.
+
+## Questions
+
+Context questions first, then the program's stages in order (open the memory stores → register tools → assemble context → shrink context → run the loop).
+
+### C1. What should the agent help with?
+- **C1a. A research assistant for papers (Recommended - course default).** It finds papers, saves their full text into its knowledge base and answers from what it saved. Pick this when you want the course's assistant working on your machine. Setup cost: none beyond the build.
+- **C1b. Your own subject.** You name the subject (e.g. "remember my reading notes and the decisions in my project"), its tools and its starting documents; the paper tools and sample papers are replaced by yours. Pick this when you want the same memory-aware agent for your own work. Setup cost: you describe or write your own tools. *What to check:* your own tools are registered in the toolbox and found by tool search, and a fact you give in one session is used in an answer in a new session of the same thread.
+
+### C2. What does the knowledge base hold at first start?
+- **C2a. The sample facts in this spec (Recommended).** Six short paper records (section "Sample data", S1). Pick this when you want a quick, reproducible start. Setup cost: none.
+- **C2b. A public stream of arXiv paper records (course default).** At first start, read the first 100 records of a public arXiv-paper dataset, skip records with no title, abstract and subjects, and store title + subjects + abstract as one record with arXiv id, title, subjects, abstract and submission date as metadata. Pick this when you want a realistically sized library to test retrieval. Setup cost: network access and a dataset library. *What to check:* after first start the knowledge base holds one record per non-empty paper record (at most 100), each with its arXiv id, and a second start does not load them again.
+- **C2c. Your own documents.** Every text file in a folder you name becomes one or more knowledge-base records. Pick this when the agent must know your own material. Setup cost: you prepare the folder. *What to check:* every file is stored as one or more records that keep the file name, and a question about a sentence in one file gets that sentence in its Knowledge Base Memory section.
+
+### C3. Which model provider answers?
+- **C3a. OpenAI (Recommended - course default).** Pick this when you have or can get an OpenAI key. Setup cost: an OpenAI API key (paid account).
+- **C3b. Another hosted provider whose models support tool calling.** Pick this when you already pay for or must use another provider. Setup cost: that provider's API key. *What to check:* one live question is answered through the chosen provider, with one tool call executed and logged in the tool log.
+- **C3c. A local model served on your machine that supports tool calling.** Pick this when conversations must not leave your machine. Setup cost: a model download and hardware able to run it; smaller local models may call tools less reliably (this note is an addition, not the course's). *What to check:* the live question is answered through the local endpoint with a tool call executed, and no request goes to a hosted model API.
+
+### C4. How do you talk to the agent?
+- **C4a. Command-line chat with a thread id (Recommended).** Pick this when you use it yourself from a terminal. Setup cost: none.
+- **C4b. A small local HTTP service.** One endpoint takes a thread id and a question and returns the answer. Pick this when another app or a web page will call the agent. Setup cost: one web-framework dependency. *What to check:* two requests on the same thread id — the second answer uses the first exchange — and the data is still there after the service restarts.
+
+### C5. Where does memory live?
+- **C5a. A single SQLite database file, with vector similarity computed by the program (Recommended).** Stand-in for the course's Oracle AI Database: same seven stores, same reads and writes, stored in a local file using the language's standard library. Pick this when you run on one machine with up to tens of thousands of memories. Setup cost: none.
+- **C5b. Oracle AI Database with built-in vector search (course default).** Pick this when you need many users, much larger memory, built-in vector indexes and hybrid search, or you already run Oracle. Setup cost: a database container, an admin account to create the application user, and a vector memory allocation. *What to check:* the seven stores are created in Oracle on first start, are not dropped on restart, and every offline test passes against it.
+- **C5c. Another database you already run that offers vector search.** Pick this when your team already operates one. Setup cost: access to that database. *What to check:* the seven stores are created there on first start, are not dropped on restart, and every offline test passes against it.
+
+### C6. How is text turned into vectors for search?
+- **C6a. A word-count embedder written in the program (Recommended).** Stand-in for the course's sentence-embedding model: each text becomes a hashed count of its words (exact rule in "Input/output contracts"). It finds memory that shares words with the query. Pick this when your questions use the same words as your stored memory, or you cannot download a model. Setup cost: none.
+- **C6b. The sentence-embedding model `sentence-transformers/paraphrase-mpnet-base-v2`, run locally (course default).** Pick this when people phrase questions differently from how the memory is written. Setup cost: a model download and the libraries to run it. *What to check:* a stored passage is retrieved by a query that shares no words with it but means the same (e.g. stored "automobile repair costs", query "how much to fix a car").
+- **C6c. A hosted embedding API.** Pick this when you want meaning-based search but cannot download a model. Setup cost: that provider's API key; your memory text is sent to it. *What to check:* the same no-shared-words retrieval passes, and stored vectors all have the provider's dimension.
+
+### C7. Which outside-information tools does the agent get?
+*Ask only when `C1` is `C1a`.*
+- **C7a. Paper search, fetch-and-save paper, and current time (Recommended - course default).** Pick this when your questions are about research papers. Setup cost: network access for live use.
+- **C7b. The same plus a web search tool that saves every result into the knowledge base.** Pick this when users ask about things papers do not cover (news, product docs). Setup cost: a web-search API key (the course used Tavily). *What to check:* each web result is written to the knowledge base with title, URL, score, query and timestamp, and a later question retrieves it from memory without searching again.
+- **C7c. No outside tools; memory only.** Pick this when the agent must not reach the internet and should answer only from what is stored. Setup cost: none. *What to check:* no tool reaches the network, and a question about a stored fact is still answered.
+
+### C8. How are tools chosen for each turn?
+- **C8a. Search the toolbox with the question and offer the 5 best-matching tools (Recommended - course default).** Pick this when you have, or expect, many tools. Setup cost: none.
+- **C8b. Offer every registered tool on every turn.** Pick this when you have about ten tools or fewer. Setup cost: none; the course's cost: every tool definition takes context space, and tool choice gets worse and slower as the count grows. *What to check:* every registered tool is offered to the model on every turn and the toolbox is not searched in the loop.
+- **C8c. Search for the 5 best, and also let the agent search the toolbox mid-run.** The toolbox search is itself offered as a tool. Pick this when tasks often need a tool the question did not hint at. Setup cost: none. *What to check:* when the agent calls the toolbox-search tool, the tools it finds are offered on the next model call of the same turn.
+
+### C9. How are tool descriptions prepared for search?
+*Ask only when `C8` is `C8a` or `C8c`.*
+- **C9a. A model rewrites the description of selected tools and adds 5 example requests (Recommended - course default).** Which tools get this is fixed per tool (R13). Pick this when tools have short descriptions that look alike. Setup cost: model calls at first registration (scripted offline).
+- **C9b. Plain descriptions only.** Pick this when your tool descriptions are already detailed, or registration must make no model calls. Setup cost: none; the course's cost: tools are harder to tell apart in search. *What to check:* each tool's searchable text is its name, its plain description and its parameters, and registration makes no model call.
+
+### C10. Which memory goes into the context before each answer?
+- **C10a. Conversation, knowledge base, workflows, entities and summaries (Recommended - course default).** Pick this when the agent should reuse facts, past step sequences and named things across conversations. Setup cost: one extra model call per turn to extract entities.
+- **C10b. Conversation, knowledge base and summaries only.** Pick this when you do not need past step sequences or named-entity tracking and want fewer model calls. Setup cost: none. *What to check:* the Workflow and Entity Memory sections and their stores do not exist, and a knowledge-base fact still reaches the context.
+- **C10c. Conversation and summaries only.** The simplest memory-augmented agent: it only carries the chat across turns and sessions; tools that write to the knowledge base are left out. Pick this when the agent only needs to continue conversations (e.g. a support chat with no documents). Setup cost: none; the course's cost: facts outside the chat log are not kept. *What to check:* the context holds only Question, Conversation Memory and Summary Memory, and a fact from an earlier session of the same thread reaches the answer.
+
+### C11. Which memory actions does the program run, and which does the agent decide?
+- **C11a. The course's split (Recommended - course default).** The program always: reads memory before the loop, selects tools, writes every message, writes workflows, extracts entities, logs tool calls, and summarizes when the context passes 80%. The agent decides: expanding a summary, summarizing on request, and calling outside tools. Pick this when you want reliable memory with the agent judging only what needs judgment. Setup cost: none.
+- **C11b. The program does everything.** No memory tool is offered to the model; Summary Memory shows each summary's full text instead of just its id; summarizing happens only by the 80% rule. Pick this when your model's tool calling is weak or every run must be predictable for audit. Setup cost: none; the course's cost: the agent cannot fetch detail a summary dropped, and full summary text uses more context. *What to check:* no memory tool is ever offered to the model, and after an automatic summary the next turn's context carries the summary text.
+- **C11c. The agent reads most memory on demand.** The program loads Conversation and Summary Memory automatically; reads of the other stores kept by `C10` (knowledge base, and workflow and entity when kept) become tools the agent calls before answering; under `C10c` this option behaves like `C11a`. Pick this when your stores are large and most questions do not need them. Setup cost: none; the course's cost: the agent cannot choose to look up what it does not know exists. *What to check:* for a question needing a stored knowledge-base fact, the agent calls the knowledge-base read tool before its final answer and the fact is in the answer.
+
+### C12. How is memory searched?
+*Ask only when `C10` is `C10a` or `C10b`.*
+- **C12a. Vector similarity (Recommended - course default).** Pick this when questions and memory are plain prose. Setup cost: none.
+- **C12b. Hybrid: keyword search and vector similarity combined, for the knowledge base.** Pick this when your documents contain exact codes, ids or names that similarity search misses. Setup cost: a keyword index next to the vectors. *What to check:* a query made only of an exact identifier (e.g. "2401.00001v1") returns the record holding it first.
+- **C12c. Vector similarity plus graph traversal over entity relationships.** Entities are stored with their relationships, and a read follows links from the entities the question names. Pick this when questions follow links between people, projects or systems ("who worked with the author of that paper?"). Setup cost: storing relationships and a traversal step. *What to check:* after "Ines Varga co-wrote Tidal Memory Networks with Tomas Reyes", the question "who wrote with Ines Varga?" gets Tomas Reyes in Entity Memory.
+
+### C13. Re-rank retrieved memory?
+*Ask only when `C10` is `C10a` or `C10b`.*
+- **C13a. No re-ranking (Recommended - course default).** Pick this when the top results by similarity are usually right. Setup cost: none.
+- **C13b. Fetch more candidates and re-order them with a re-ranking model, then keep the usual count.** Pick this when your memory has many near-duplicate passages. Setup cost: a re-ranking model download or API key. *What to check:* each read fetches more candidates than its count, re-orders them with the re-ranker, and keeps the configured count.
+
+### C14. What happens when the conversation gets too long?
+- **C14a. Summarize, keep the originals, expand on demand (Recommended - course default).** Old messages get a summary with an id; the originals stay stored and marked; the agent can expand a summary back into the original messages. Pick this when exact earlier details may matter later. Setup cost: model calls when summarizing.
+- **C14b. Summarize and keep only the summary.** Pick this when you must not keep raw chat (retention rules) or storage is tight. Setup cost: model calls when summarizing; the course's cost: summarizing always loses some information, and nothing can bring it back. *What to check:* after summarizing, the source messages are deleted, the summary appears in Summary Memory in a new session, and no expand tool exists.
+- **C14c. No shrinking.** Pick this when conversations stay short and your model's context window is large. Setup cost: none; the course's cost: long conversations fill the context window. *What to check:* no summary store or summary tools exist, and a 12-message thread still answers.
+
+### C15. What happens to large tool outputs?
+- **C15a. Save every full output in the tool log; give the model at most 3,000 characters (Recommended - course default).** Pick this when tools can return long text (papers, search results) or you want an audit trail. Setup cost: none.
+- **C15b. Give the model the full output; keep no tool log.** Pick this when your tools return short outputs and you need no audit trail. Setup cost: none; the course's cost: large outputs crowd the context. *What to check:* tool results reach the model in full and no tool-log store exists.
+
+---
+
+## Departures from the course
+
+| # | Where | Recommended build | Course | Why |
+|---|---|---|---|---|
+| D1 | Memory database (C5) | SQLite file, similarity computed by the program — **stand-in** | Oracle AI Database 26ai in a container, vector store integration | Course choice needs container and admin setup (4.4). |
+| D2 | Embedder (C6) | Hashed word-count embedder — **stand-in** | `sentence-transformers/paraphrase-mpnet-base-v2` (768 dims) | Large model download (4.4). |
+| D3 | Model in tests | Scripted model — **stand-in** — offline; real provider when a key is present | OpenAI models | Needs a key (4.6). |
+| D4 | Startup | Stores are created if missing and **never dropped at startup**; an explicit `reset` command clears them | Every lesson drops all seven tables before starting | Pattern card item 1: memory must survive the session. The drop exists so each lesson starts clean. |
+| D5 | Knowledge base content | Six sample records written for this spec | First 100 records streamed from a public arXiv-paper dataset | Sample data must be self-written and reproducible (4.5). |
+| D6 | Paper tools in tests | Scripted paper source — **stand-in**; real arXiv in `live` tests | Live arXiv API | Offline tests (7.3). |
+| D7 | Web search tool | Left out (offered as C7b) | Built in Lesson 4 with Tavily; not registered in the final agent | Needs a key, and the final agent did not use it (4.1, 4.4). |
+| D8 | Vector distance | Cosine | Cosine when introduced (Lesson 3); Euclidean in the Lesson 5 and Lesson 6 notebooks | Value rule 4.2 (1): the instructor states cosine when introducing it. |
+| D9 | Summary length limit | The stored summary is at most 6,000 characters; the summarizer receives the whole transcript | Code sends only the first 6,000 characters of the transcript to the summarizer | 4.1: the instructor says the limit is on the final summary. |
+| D10 | Tool search text | Searchable text = name + model-written description + parameters + 5 example requests | Code computes that text but stores the original description as the searched text | 4.1: the instructor and notebook say the enriched text is what gets embedded. |
+| D11 | Vector index | None; exact similarity over all rows | IVF vector index, target accuracy 95 (HNSW described, IVF used to avoid database errors) | Not needed at sample scale with SQLite. |
+| D12 | Interface | Command-line program | Functions called from notebook cells | A notebook is never the build (guide 3.4). |
+| D13 | Context budget | One setting, 256,000 tokens, for whichever agent model is chosen | A table keyed by model name (256,000 for its two models), 128,000 for any other name | The build agent picks a current model name the table would not know. |
+
+---
+
+## Objective
+
+Build an agent that keeps every kind of memory in persistent storage outside the model, puts the memory relevant to each request into the model's context before it answers, and writes back what each turn produced, so it carries on across turns and sessions.
+
+## Tech stack and versions
+
+- **Language:** Python 3 (current release; the course did not pin a Python version).
+- **Recommended build dependencies:** standard library only for storage (`sqlite3`), hashing, JSON and ids; the `openai` client for live model calls; the `arxiv` package and a PDF-to-text library (the course installed `arxiv` and `pymupdf`) for live paper tools; `pytest` for tests (addition). The course left every package unpinned; use current releases and do not invent pins.
+- **Package layout:** an importable package named `memory_agent`, run as `python -m memory_agent`.
+- **Secrets:** read `OPENAI_API_KEY` (or the chosen provider's key) from the environment or a `.env` file; never write keys to the database, logs or repository.
+- **Environment switches (addition):** `MEMORY_AGENT_DB` (database file path; default `memory_agent.db`), `MEMORY_AGENT_MODEL=scripted` (use the scripted model and scripted paper source; tests set it).
+
+## Input/output contracts
+
+### Command line (C4a)
+- `python -m memory_agent ask --thread <id> "<question>"` → prints the final answer on the last line of output; exit code 0.
+- `python -m memory_agent chat --thread <id>` → reads questions line by line until `exit`; prints each answer.
+- `python -m memory_agent reset` → asks for confirmation, then empties all seven stores (addition: the course had no reset command; see D4).
+- Each `ask` is a new process: all memory comes from the database file.
+
+### Stores (names are binding; they appear in model-visible text)
+| Store | Kind | Contents |
+|---|---|---|
+| `CONVERSATIONAL_MEMORY` | table | one row per message |
+| `TOOL_LOG_MEMORY` | table | one row per tool call |
+| `SEMANTIC_MEMORY` | vector store | knowledge base records |
+| `WORKFLOW_MEMORY` | vector store | completed task step sequences |
+| `TOOLBOX_MEMORY` | vector store | tool definitions |
+| `ENTITY_MEMORY` | vector store | named people, places, systems |
+| `SUMMARY_MEMORY` | vector store | summaries with their originals |
+
+A vector-store record is `{id, text, embedding, metadata}`; the embedding is computed from `text`. Vector reads always return up to `k` nearest records by cosine similarity, with no score threshold, ties broken by earlier insertion; an optional metadata filter is applied before ranking.
+
+Conversation row:
+```json
+{"type":"object","required":["id","thread_id","role","content","timestamp","summary_id"],
+ "properties":{"id":{"type":"string"},"thread_id":{"type":"string","maxLength":100},
+ "role":{"enum":["user","assistant"]},"content":{"type":"string","minLength":0},
+ "timestamp":{"type":"string","format":"date-time","description":"microsecond precision; ties ordered by insertion"},
+ "metadata":{"type":"string","default":"{}"},"created_at":{"type":"string","format":"date-time"},
+ "summary_id":{"type":["string","null"],"pattern":"^[0-9a-f]{8}$","default":null}}}
+```
+
+Tool-log row:
+```json
+{"type":"object","required":["id","thread_id","tool_name","status","timestamp"],
+ "properties":{"id":{"type":"string"},"thread_id":{"type":"string"},"tool_call_id":{"type":["string","null"]},
+ "tool_name":{"type":"string"},"tool_args":{"type":"string","description":"JSON text"},
+ "result":{"type":"string","description":"full output"},
+ "result_preview":{"type":"string","description":"result cut to at most 2000 UTF-8 bytes, never splitting a character"},
+ "status":{"enum":["success","failed"]},"error_message":{"type":["string","null"]},
+ "metadata":{"type":"string","description":"JSON text holding {\"iteration\": n}"},"timestamp":{"type":"string","format":"date-time"}}}
+```
+
+Vector-store metadata:
+- Knowledge base: free metadata per source (sample: `arxiv_id`, `title`, `subjects`; saved paper chunk: `source`="arxiv", `arxiv_id`, `title`, `entry_id`, `published`, `authors`, `chunk_id` 0..N-1, `num_chunks` N, `ingested_ts_utc`).
+- Workflow: text `Query: <query>\nSteps:\nStep 1: <step>\n…\nAnswer: <first 200 characters of the final answer>`; metadata `{query, success, num_steps, timestamp}`.
+- Toolbox: text = the searchable text (R13); metadata `{name, description, signature, parameters, return_type, augmented, queries?}` where `parameters` maps each parameter name to `{name, type?, default?}`.
+- Entity: text `<name> (<TYPE>): <description>`; metadata `{name, type, description}`; TYPE is one of PERSON, PLACE, SYSTEM (or UNKNOWN when the extractor gives none).
+- Summary: text `<summary_id>: <description>`; metadata `{id, full_content, summary, description, thread_id?}`.
+
+Tool schema offered to the model:
+```json
+{"type":"function","function":{"name":"<tool name>","description":"<stored description>",
+ "parameters":{"type":"object","properties":{"<param>":{"type":"string|integer|number|boolean"}},"required":["<params without a default>"]}}}
+```
+Parameter type mapping: text → string, whole number → integer, decimal → number, true/false → boolean, anything else or missing → string.
+
+### Embedder stand-in (C6a)
+Lowercase the text; take runs of `[a-z0-9]`; keep tokens of 3+ characters that are not in this stop list: `the and for with that this are was you your from what which can use used how does into its has have about`. Each token adds 1 to dimension `int(first 8 hex digits of MD5(token), 16) mod 512`. Normalize to length 1 (an empty text gives the zero vector, similarity 0). This is a **stand-in** for the course's sentence-embedding model.
+
+### Memory section text (binding headings; the offload step and the system prompt rely on them)
+The context sent to the model is `# Question\n<question>\n\n` followed by these sections in this order, separated by blank lines. Each section has a heading, `### What this memory is`, `### How you should leverage it` (2–4 short guidance lines in the spirit given), and its retrieved content:
+1. `## Conversation Memory` — chronological unsummarized messages of this thread; guidance: keep continuity, resolve references like "the paper above", prefer the latest user direction. Lines `[HH:MM:SS] [<role>] <content>`. Empty: `(No unsummarized messages found for this thread.)`
+2. `## Knowledge Base Memory` — retrieved passages, one per line block; guidance: ground factual claims, state uncertainty when evidence is missing. Empty: `(No relevant knowledge base passages found.)`
+3. `## Workflow Memory` — past step sequences joined by `\n---\n`; guidance: reuse and adapt, do not copy blindly. Empty: `(No relevant workflows found.)`
+4. `## Entity Memory` — lines `• <name>: <description>`; guidance: disambiguate, keep naming consistent. Empty: `(No entities found.)`
+5. `## Summary Memory` — when summaries exist: `Use expand_summary(id) to retrieve the detailed underlying conversation.`, `Scope: thread_id = <id>`, then lines `  • [ID: <summary_id>] <description>`; guidance: call expand_summary(id) before relying on exact details. Empty: `(No summaries available for thread <id>.)`
+
+### Model roles
+| Role | What it does | Course model |
+|---|---|---|
+| agent | reasons, calls tools, answers | `gpt-5-mini` |
+| summarizer | writes a conversation summary | `gpt-5` (final agent); `gpt-5-mini` (Lesson 5 notebook) |
+| labeller | writes an 8–12 word label for a summary | same as summarizer |
+| entity_extractor | lists people, places, systems in a text | `gpt-5` |
+| tool_describer | rewrites a tool description; writes 5 example requests | `gpt-5` |
+
+### Settings
+| Setting | Value | Source | Change this when … |
+|---|---|---|---|
+| Conversation messages read per turn | 10 (oldest unsummarized first) | final agent default; Lesson 5 test used 100 | you want a longer visible history |
+| Knowledge base passages per read | 3 | memory manager default | answers need more passages |
+| Workflows per read | 3, only those with ≥1 step | memory manager | — |
+| Entities per read | 5 | memory manager | — |
+| Summaries listed per read | 10, this thread only | memory manager | — |
+| Tools offered per turn (C8a) | 5 | final agent loop | your tasks need more tools per turn |
+| Context budget | 256,000 tokens | final agent and Lesson 5 (both models 256,000) | your model's window differs |
+| Token estimate | characters ÷ 4, rounded down | Lesson 5 ("we're going to use this estimation as four characters per token") | your provider gives a token counter |
+| Summarize when usage is | above 80% (strictly greater) | Lesson 5/6 transcripts and code | — |
+| Max loop iterations | 10 | final agent | long multi-tool tasks |
+| Tool result given to the model | first 3,000 characters + truncation note | final agent | — |
+| Tool-log preview | 2,000 UTF-8 bytes | tool-log store | — |
+| Summary length cap | 6,000 characters | Lesson 5 transcript (D9) | — |
+| Retry prompt length | ≤ 180 words | summarizer | — |
+| Fallback excerpt | first 500 characters | summarizer | — |
+| Label length | 8–12 words; fallback first 12 words | summarizer | — |
+| Summary id | first 8 characters of a random UUID: `^[0-9a-f]{8}$` | summarizer | — |
+| Entity extraction input | first 500 characters; skip texts under 5 characters | memory manager | — |
+| Workflow answer excerpt | 200 characters | memory manager | — |
+| Step argument display | string values over 50 characters cut to 50 + `...` | final agent | — |
+| Paper search | at most 8 fetched, 4,000 characters each (live source only), `k` default 5, abstract cut to 2,500 | Lesson 4 / common tools | — |
+| Paper chunking | 1,500 characters, 200 overlap | Lesson 4 / common tools | your embedder's input limit differs |
+| Example requests per augmented tool | 5 | toolbox | — |
+| Vector distance | cosine | Lesson 3 transcript (D8) | — |
+| Max output tokens per call (live only; the scripted model ignores it) | summarizer 4,000; retry 4,000; labeller 2,000; entity 2,000; tool_describer 2,000; agent unset | course code | your provider's limits differ |
+
+---
+
+## Business rules
+
+### What must stay true (pattern card, owner-confirmed)
+**The one kind of program:** a tool-using agent whose memory lives outside the model, so it carries on across turns and sessions.
+
+1. **Memory lives outside the model and survives the session.** What the agent learns in one turn or session is stored in persistent storage and is available to later turns and new sessions; nothing depends on the model or the process remembering it. (L1: "treating long-term memory as first-class infrastructure, external to the model, persistent and structured." L2: "Turn 1 and 2 in a Memory-Augmented Agent would have been stored in an external memory source such as a database.") → R2, tests T02, T03, T36.
+2. **Before the model answers, the memory relevant to the request reaches its context.** (L6: "At a start condition, when we are about to enter the Agent Loop, we typically would have memory operations that read from memory. This is because we're assembling context for our LLMs.") → R6, test T10.
+
+Every option above keeps both items.
+
+### Rules
+- **R1. Stores on a fresh start.** Starting the program on a new database file creates all seven stores, empty. → T01
+- **R2. Memory persists.** Startup creates missing stores and never drops or empties existing ones; only `reset` empties them. Everything written in one process is readable by the next. → T02, T03, T36
+- **R3. Conversation memory.** Every user and assistant message is stored with thread id, role, content, timestamp and an empty summary id. A read returns this thread's messages whose summary id is empty, oldest first, and keeps the first 10 (course behavior — see the note below). → T04, T05
+- **R4. Context assembly.** Before the loop, the program builds the five sections in order (Conversation, Knowledge Base, Workflow, Entity, Summary), using the question as the search query for the vector reads and this thread for the conversation and summary reads; the question is prepended under `# Question` and is never summarized. The user's message is stored only after the context is built, then entities are extracted from the question. → T06, T34
+- **R5. Vector reads.** Knowledge base k=3, workflow k=3 limited to workflows with at least one step, entity k=5, summary list k=10 limited to this thread, cosine similarity over the embedder in "Input/output contracts". → T07, T08, T09, T29, T30
+- **R6. Relevant memory reaches the model.** The model's first call in a turn receives the assembled context; an answer that depends on a stored fact can only come from that context or a tool result. → T10, L1
+- **R7. Context budget.** Usage = (characters of the memory sections ÷ 4, rounded down) ÷ 256,000 × 100, rounded to one decimal. If usage is above 80, the program summarizes this thread's unsummarized messages (R8), replaces the whole Conversation Memory section with the stub `## Conversation Memory` / `Older conversation content was summarized to reduce context size.` / `Use Summary Memory references + expand_summary(id) for full detail.`, keeps the other sections, and appends `[Summary ID: <id>] <description>` at the end (adding a `## Summary Memory` section with `Use expand_summary(id) to retrieve full underlying content.` if none exists). → T11
+- **R8. Summarizing a thread.** Read this thread's unsummarized messages oldest first, build a transcript of lines `[YYYY-MM-DD HH:MM:SS] [ROLE] <content>`, summarize it (R9) with the thread id, then set the summary id on exactly those messages and no others. With no unsummarized messages, the result is "nothing to summarize" and nothing is written. → T12, T13
+- **R9. Summary generation.** The summarizer is asked for a summary under exactly the headings `### Technical Information`, `### Emotional Context`, `### Entities & References`, `### Action Items & Decisions`, keeping concrete details (names, dates, APIs, errors, decisions), separating confirmed facts from open questions, inventing nothing, concise. If its reply is empty, ask once more for at most 180 words under the same headings; if still empty, use a fixed summary: the first 500 characters of the transcript (newlines as spaces) under Technical Information and `Not available from model output.` under the other three. The stored summary is cut to 6,000 characters. The labeller is asked for a specific 8–12 word label, not a generic one; if it returns empty or one of "conversation summary", "summary", "chat summary", "thread summary" (any case), the label is the first 12 words of the first summary line that is not a heading and has at least 4 words (bullet marks and trailing `,.;:` removed), else `Recent thread context, decisions, and open actions`. The summary is stored with a new id, the full original text, the summary, the label and the thread id. → T14, T15, T16, T17
+- **R10. Expanding a summary.** `expand_summary(summary_id, thread_id?)` returns `## Summary Context`, the stored summary text, then `## Expanded Conversations for Summary ID: <id>`, `Total messages: <n>`, and each original message as `[YYYY-MM-DD HH:MM:SS] [ROLE]` followed by its content, oldest first. Unknown id: `Summary <id> not found.` (or `… not found for thread <t>.` when a thread is given) and `No conversations found for summary_id: <id>`. → T18, T34
+- **R11. Summarize tool.** `summarize_and_store(text="", thread_id=None)`: in the loop the program fills in the current thread id when the model omits it. With a thread id: summarize the thread (R8) and return `Stored as [Summary ID: <id>] <label>`, or `No unsummarized messages found for thread <id>.`. Without a thread id and with text: summarize the text (no thread id stored) and return the same `Stored as …` form. With neither: `Provide `thread_id` (preferred) or non-empty `text` to summarize.` → T19, T20, T34
+- **R12. Toolbox registration.** Registering a tool stores its name, description, signature, parameters (with type and default when given) and return type. If a tool of that name is already stored, nothing new is written but the tool stays callable. Reading returns tool schemas (contract above), one per tool name; parameters without a default are required. → T21, T22
+- **R13. Tool search text.** Augmented tools (`fetch_and_save_paper_to_kb_db`, `expand_summary`, `summarize_and_store`) get a description rewritten by the tool_describer (one-line summary, steps, when to call, caveats) and 5 example requests; their searchable text is `<name> <rewritten description> (<signature>) <the 5 requests joined by spaces>` and their stored description is the rewritten one. Plain tools (`arxiv_search_candidates`, `get_current_time`) have searchable text `<name> <description> (<signature>)`. Each turn, the program offers the model the 5 tools whose searchable text best matches the question. → T23, T24
+- **R14. The loop.** Up to 10 model calls per turn. If the reply has tool calls, each is executed in order and its result is sent back as a tool message; then the model is called again. If the reply has no tool call, its text is the final answer. After 10 calls without a final answer, the answer is `I was unable to complete the request within the allowed iterations.` An unknown tool returns `Error: Tool '<name>' not found` (status success — course behavior, see note). A tool that raises gives `Error: <message>` with status failed. An empty tool result becomes `Done`. Each executed call adds a step `<tool>(<args>) → success|failed`, where `<args>` is the arguments as JSON with `, ` and `: ` separators, keys in the order given, string values over 50 characters cut to 50 characters plus `...`. → T25, T26, T27, L1
+- **R15. Tool log and truncation.** Every executed tool call is logged with thread id, call id, tool name, arguments, full result, preview, status, error message and `{"iteration": n}`. If the result is over 3,000 characters, the model gets its first 3,000 characters followed by `\n\n[Truncated for context. Full output saved in TOOL_LOG_MEMORY as log_id: <log id>]`; otherwise the full result. → T28
+- **R16. Write-back after the loop.** If the turn had at least one step, store a workflow (format above) with success true and the number of steps; extract and store entities from the final answer; store the final answer as an assistant message. → T29, T30, T34
+- **R17. Entity extraction.** Texts under 5 characters are skipped. The extractor sees the first 500 characters and must return a JSON list of `{name, type, description}`; the program takes the outermost `[...]` in the reply, keeps items with a name, and stores each. Any extraction error stores nothing and never stops the turn. → T31
+- **R18. Paper tools.** `arxiv_search_candidates(query, k=5)` returns a JSON list of at most k candidates `{arxiv_id, entry_id, title, authors, published, abstract}` with the abstract cut to 2,500 characters and `arxiv_id` taken from the entry id after `/abs/`. `fetch_and_save_paper_to_kb_db(arxiv_id, chunk_size=1500, chunk_overlap=200)` loads the full text, splits it into chunks of at most 1,500 characters (split on paragraph breaks, then line breaks, then spaces; each chunk starts with up to 200 characters of the previous chunk's end), stores each chunk in the knowledge base with the chunk metadata above, and returns `Saved arXiv <id> to SEMANTIC_MEMORY: <n> chunks (title: <title>).`; no paper: `No documents found for arXiv id: <id>`; empty text: `Loaded arXiv <id> but extracted empty text (PDF parsing issue).` `get_current_time(detailed=False)` returns `YYYY-MM-DD HH:MM:SS` (with microseconds when detailed). → T32, T33, L2, L3
+- **R19. Continuity across turns.** Within one thread, later turns use earlier ones: references like "the paper" resolve from Conversation Memory, past steps appear in Workflow Memory, and after a summary the agent expands it to answer about summarized turns. → T34
+- **R20. System prompt.** The model's system message says: it is a memory-aware research assistant with tools; the user message is a partitioned context with a `# Question` and the five named sections, each a distinct memory store with the purposes above; if a needed detail is only in Summary Memory or is ambiguous, call `expand_summary(summary_id)` first; start from the memory sections before using tools; on conflict prefer `# Question` > latest Conversation Memory > Knowledge Base evidence > older summaries/workflows; use only the tools offered this turn, with the fewest calls; if memory is insufficient, say what is missing, then use a tool; for compaction use `summarize_and_store` with the thread id. → T35
+- **R21. Command line.** The commands in "Input/output contracts" behave as stated; each `ask` is a fresh process. → T36
+
+**Note for the build agent (course behavior kept, 4.1):** the course's conversation read sorts oldest first and keeps the first 10, so in a thread with more than 10 unsummarized messages the newest ones are not shown, even though its guidance text calls them "recent". The course's unknown-tool path returns an error text without raising, so it is logged as success. Workflows are always stored with success true. Keep all three; they are tested as written.
+
+---
+
+## Tests
+
+### Sample data (define before any test)
+All sample data lives in `tests/sample_data/`. It is written for this spec; none of it is course data.
+
+- **S1 `knowledge_base.json`** — six records `{text, metadata}`, loaded at first start under C2a, in this order:
+  - K1 `Title: Tidal Memory Networks\nSubjects: cs.LG\nAbstract: Tidal Memory Networks store agent episodes in a ring buffer of 512 slots and replay them during planning.` — `{arxiv_id: "2401.00001v1", title: "Tidal Memory Networks", subjects: "cs.LG"}`
+  - K2 `Title: Lantern Retrieval for Long Documents\nSubjects: cs.IR\nAbstract: Lantern retrieval splits long documents into overlapping windows and ranks windows with a lexical prefilter.`
+  - K3 `Title: Orchard Planning with Sparse Rewards\nSubjects: cs.AI\nAbstract: Orchard planners grow a search tree whose branches are pruned when rewards stay below a threshold of 0.2.`
+  - K4 `Title: Glacier Embeddings for Slow-Changing Text\nSubjects: cs.CL\nAbstract: Glacier embeddings are refreshed monthly and reduce index rebuilds by 40 percent.`
+  - K5 `Title: Kestrel Scheduling of Tool Calls\nSubjects: cs.DC\nAbstract: Kestrel batches tool calls from many agents and cuts median latency to 85 milliseconds.`
+  - K6 `Title: Meadow Benchmarks for Dialogue Recall\nSubjects: cs.CL\nAbstract: Meadow measures whether a dialogue system recalls user facts after 20 turns.`
+  (K2–K6 metadata: their title and subjects, arxiv_id `2401.0000Nv1` for N = 2..6 — note K2's id `2401.00002v1` is also the empty-text paper in S2.)
+- **S2 `paper_source.json` — scripted paper source (stand-in for arXiv).** Search returns, in listed order, every paper whose title or abstract shares an embedder token with the query, at most k. Fetch returns the paper's full text by arxiv id.
+  - P1 `2401.00001v1`, entry id `http://arxiv.org/abs/2401.00001v1`, title `Tidal Memory Networks`, authors `Ines Varga, Tomas Reyes`, published `2024-01-02`, abstract = K1's abstract sentence. Full text: 30 lines joined by `\n`, line i (01..30) = `Line {i:02d}: Tidal Memory Networks section {i:02d} discusses ring buffer replay and recall in long agent episodes.` (105 characters each; 3,179 in total).
+  - S-1 `2402.00011v1` `A Survey of Agent Recall Stores`; S-2 `2402.00012v1` `A Survey of Context Compaction`; S-3 `2402.00013v1` `A Survey of Tool Retrieval`; authors `Mara Quist`, published `2024-02-01`. Abstract = `<title> abstract. ` followed by `This survey filler sentence repeats to pad the abstract. ` repeated, cut to 2,000 characters for S-1 and S-2 and 3,000 for S-3. Not fetchable.
+  - `2401.00002v1` fetch returns empty full text. `0000.00000v0` fetch raises an error with message `network unavailable`. Any other id: no paper.
+- **S3 `scripted_model.json` — scripted model (stand-in for every model role).** The program's model calls go to it when `MEMORY_AGENT_MODEL=scripted`. Per role:
+  - **agent** — looks at the `# Question` text (case-insensitive) and the messages so far; "after a tool" means the last message is a tool result. First matching rule wins:
+    1. contains `loop forever` → always call `get_current_time` with `{}`.
+    2. contains `find the paper on tidal memory networks` → before a tool: call `arxiv_search_candidates` `{"query":"tidal memory networks"}`; after: answer `I found Tidal Memory Networks (arXiv 2401.00001v1) by Ines Varga and Tomas Reyes.`
+    3. contains `save the content of the paper` → if Conversation Memory contains `arXiv <id>` (id like `2401.00001v1`): before a tool call `fetch_and_save_paper_to_kb_db` `{"arxiv_id":"<id>"}`, after answer `Saved arXiv <id> to the knowledge base.`; if no id: answer `Which paper do you mean?`
+    4. contains `summarize the conversation` → before a tool: call `summarize_and_store` with `{}`; after: answer `Stored the summary.`
+    5. contains `what was my first question` → if Summary Memory contains `[ID: <8 hex>]`: before a tool call `expand_summary` `{"summary_id":"<first id>"}`, after answer `Your first question was: <the line after the first line ending in [USER] in the tool result>`; else if Conversation Memory has a `[user]` line answer `Your first question was: <its content>`; else `I don't know based on my memory.`
+    6. contains `list survey papers` → before: `arxiv_search_candidates` `{"query":"survey","k":5}`; after: answer `Found 3 survey papers: A Survey of Agent Recall Stores (2402.00011v1), A Survey of Context Compaction (2402.00012v1), and A Survey of Tool Retrieval (2402.00013v1). Each covers a different part of memory-aware agents and is worth reading in that order.` (252 characters).
+    7. contains `search with a long query` → before: `arxiv_search_candidates` `{"query":"<q repeated 60 times>"}`; after: answer `No results.`
+    8. contains `fetch the broken paper` → before: `fetch_and_save_paper_to_kb_db` `{"arxiv_id":"0000.00000v0"}`; after: `The fetch failed.`
+    9. contains `call a missing tool` → before: call `teleport` `{}`; after: `Done.`
+    10. contains `ring buffer` → if Knowledge Base Memory contains `ring buffer of <n> slots`: answer `Tidal Memory Networks use a ring buffer of <n> slots.`; else `I don't know based on my memory.`
+    11. contains `what do i study` → if Conversation Memory contains `I study <x>.`: answer `You study <x>.`; else `I don't know based on my memory.`
+    12. contains `my name is` → answer `Noted.`
+    13. otherwise → `I don't know based on my memory.`
+  - **summarizer** — mode `standard` (used unless a test sets another mode) replies:
+    `### Technical Information\nDiscussed Tidal Memory Networks (arXiv 2401.00001v1) and saved it to the knowledge base.\n\n### Emotional Context\nNeutral, task-focused.\n\n### Entities & References\nTidal Memory Networks; Ines Varga; Tomas Reyes.\n\n### Action Items & Decisions\nRead the saved paper.`
+    Mode `long`: 7,000 `a` characters. Mode `empty`: empty every time. Mode `empty-once`: empty, then the standard reply.
+  - **labeller** — mode `standard`: `Tidal Memory Networks paper search and saving session` (8 words). Mode `generic`: `Conversation summary`.
+  - **entity_extractor** — replies a JSON list containing `{"name":"Tidal Memory Networks","type":"SYSTEM","description":"memory architecture from a research paper"}` when the text contains `tidal memory networks` (any case) and `{"name":"Ines Varga","type":"PERSON","description":"paper author"}` when it contains `Ines Varga`; otherwise `[]`. Mode `garbage`: `not json`. It records the text it received.
+  - **tool_describer** — description request: `AUGMENTED <original description> Use when: <tool name with underscores as spaces>.`; example-request request: a JSON list of 5 strings `please <tool name with spaces> (1)` … `(5)`.
+- **S4 tool descriptions (binding plain descriptions and signatures).** `arxiv_search_candidates` "Search arXiv and return a JSON list of candidate papers with IDs and metadata." `(query: str, k: int = 5)`; `fetch_and_save_paper_to_kb_db` "Fetch full arXiv paper text and store it into the knowledge base as chunked records." `(arxiv_id: str, chunk_size: int = 1500, chunk_overlap: int = 200)`; `get_current_time` "Returns the current time." `(detailed: bool = False)`; `expand_summary` "Expand a summary reference to retrieve the original conversations." `(summary_id: str, thread_id: str = None)`; `summarize_and_store` "Summarize content and store it in Summary Memory." `(text: str = '', thread_id: str = None)`. Registered in that order.
+- **S5 decoy tools** (registered only in T24, plain): `convert_celsius_to_fahrenheit` "Convert a temperature from Celsius to Fahrenheit." `(celsius: float)`; `count_words` "Count the words in a piece of text." `(text: str)`; `roll_dice` "Roll a six-sided die and return the result." `()`; `reverse_string` "Reverse the characters of a string." `(text: str)`; `add_numbers` "Add two numbers together." `(a: float, b: float)`; `random_color` "Pick a random color name." `()`.
+- **S6 session script (planted failure: a stateless agent forgets between sessions).** Process A, thread `t-200`: `My name is Ines and I study glacier embeddings.` Process B (new process, same database file): `What do I study?`. A stateless agent answers `I don't know based on my memory.`; this build must answer `You study glacier embeddings.`
+- **S7 overflow thread.** Thread `t-300` with 10 stored messages, roles alternating user/assistant, each the text `overflow filler ` repeated and cut to 90,000 characters.
+
+Every test runs with `MEMORY_AGENT_MODEL=scripted`, a fresh temporary database file (unless the test says otherwise), the sample knowledge base S1 loaded, the S4 tools registered, and all settings at their defaults.
+
+### Test table
+| Test | Rules | Given / When / Then |
+|---|---|---|
+| T01 | R1 | Given a new database file. When the program starts. Then the seven stores named in the contract exist; all are empty except `SEMANTIC_MEMORY` (6 records from S1) and `TOOLBOX_MEMORY` (5 tools). |
+| T02 | R2 | Given a database with one conversation message and one summary. When the program starts again (new process). Then both are still there and no store was emptied; after `reset` (confirmed) all seven stores are empty. |
+| T03 | R2 | Given S6. When process A runs its question and process B runs its question. Then A answers `Noted.` and B answers `You study glacier embeddings.`; the same question on thread `t-201` answers `I don't know based on my memory.` |
+| T04 | R3 | Given thread `t-1` with messages m01..m03 written in order. When conversation memory is read for `t-1`. Then the section lists m01, m02, m03 in order as `[HH:MM:SS] [user|assistant] <content>`; for thread `t-2` it shows `(No unsummarized messages found for this thread.)` |
+| T05 | R3 | Given thread `t-3` with 12 messages m01..m12. When conversation memory is read. Then exactly m01..m10 appear (course behavior, see note). |
+| T06 | R4 | Given an empty thread `t-4`. When `ask` "Hello" runs. Then the context sent to the model starts with `# Question\nHello`, then the five section headings in order, the Conversation section shows the empty text (the question is not in it), and after the turn the thread holds the user message then the assistant message. |
+| T07 | R5 | Given the embedder stand-in. When it embeds the same text twice, and an empty text. Then the vectors are equal, of length 512 and unit length; the empty text gives similarity 0 with anything. |
+| T08 | R5 | Given S1. When the knowledge base is read with `glacier embeddings refresh`. Then 3 passages are returned and the first is K4. |
+| T09 | R5 | Given 12 summaries stored for thread `t-5` and 1 for `t-6`. When the summary list is read for `t-5`. Then exactly 10 `[ID: …]` lines appear, `Scope: thread_id = t-5` is shown, and the `t-6` summary is absent; for an unused thread it shows `(No summaries available for thread <id>.)` |
+| T10 | R6 | Given S1. When `ask` thread `t-400` "What ring buffer size do tidal memory networks use?". Then the first model call's context has K1 first in Knowledge Base Memory and the answer is `Tidal Memory Networks use a ring buffer of 512 slots.` Given an empty knowledge base, the same question answers `I don't know based on my memory.` |
+| T11 | R7 | Given S7. When `ask` thread `t-300` "Hello after the long chat". Then usage before shrinking is above 80 (about 88), all 10 stored messages get one summary id, the summarizer received a transcript of at least 900,000 characters, the context sent to the model contains `Older conversation content was summarized to reduce context size.` and `[Summary ID: <id>] Tidal Memory Networks paper search and saving session`, contains no `overflow filler`, usage after shrinking is below 5, and the answer is `I don't know based on my memory.` |
+| T12 | R8 | Given thread `t-7` with 3 messages and thread `t-8` with 2. When thread `t-7` is summarized. Then the 3 `t-7` rows carry one id matching `^[0-9a-f]{8}$`, the `t-8` rows have none, and the summary store holds that id with thread `t-7`. |
+| T13 | R8 | Given T12's end state. When `t-7` is summarized again. Then the result is "nothing to summarize", no summary is added, and conversation memory for `t-7` shows `(No unsummarized messages found for this thread.)` |
+| T14 | R9 | Given T12. Then the summarizer's prompt names the four headings, the stored summary equals the standard reply, the stored full content equals the transcript, and the labeller's prompt asks for an 8-12 word label. |
+| T15 | R9 | Given summarizer mode `long`. When a thread is summarized. Then the stored summary is exactly 6,000 characters. |
+| T16 | R9 | Given summarizer mode `empty-once`, then mode `empty`. When a thread is summarized each time. Then the first makes 2 summarizer calls, the second prompt contains `180 words`, and the standard summary is stored; the second stores a summary starting `### Technical Information\n` followed by the transcript's first 500 characters (newlines as spaces) and containing `Not available from model output.` three times. |
+| T17 | R9 | Given labeller mode `generic`. When a thread is summarized. Then the label is `Discussed Tidal Memory Networks (arXiv 2401.00001v1) and saved it to the knowledge`. |
+| T18 | R10 | Given T12. When `expand_summary(<id>)` runs. Then the output starts `## Summary Context`, contains the standard summary, `## Expanded Conversations for Summary ID: <id>`, `Total messages: 3`, and the three messages oldest first each under `[YYYY-MM-DD HH:MM:SS] [USER]` or `[ASSISTANT]`. `expand_summary("abcd1234")` contains `Summary abcd1234 not found.` and `No conversations found for summary_id: abcd1234`. |
+| T19 | R11 | Given thread `t-700` holding one stored user message `Earlier note.`. When `ask` thread `t-700` "Summarize the conversation so far using your tool". Then the model calls `summarize_and_store` with `{}`, the program runs it for `t-700`, exactly 2 messages (the earlier note and this question) get the new summary id, the summary is stored with thread `t-700`, and the answer is `Stored the summary.` |
+| T20 | R11 | When `summarize_and_store()` is called with no arguments, then with `text="Some notes about glacier embeddings."`, then with `thread_id="t-999"` (empty thread). Then the results are `Provide `thread_id` (preferred) or non-empty `text` to summarize.`, `Stored as [Summary ID: <id>] Tidal Memory Networks paper search and saving session` with no thread id stored, and `No unsummarized messages found for thread t-999.` |
+| T21 | R12 | Given S4 registered. When the toolbox is read with any query and k=5. Then 5 distinct schemas return; `fetch_and_save_paper_to_kb_db` has properties `arxiv_id` string, `chunk_size` integer, `chunk_overlap` integer and required `["arxiv_id"]`; `get_current_time` has `detailed` boolean and required `[]`; `expand_summary` requires `["summary_id"]`; `summarize_and_store` requires `[]`. |
+| T22 | R12 | Given T21. When the program restarts and registers S4 again. Then `TOOLBOX_MEMORY` still holds 5 records and all 5 tools still execute. |
+| T23 | R13 | Given S4 registered on a fresh database. Then the tool_describer was called for exactly the 3 augmented tools; their stored descriptions start `AUGMENTED ` and their metadata holds 5 example requests. Toolbox reads with k=1 return: `fetch and save the full paper text` → `fetch_and_save_paper_to_kb_db`; `expand a summary reference` → `expand_summary`; `what is the current time` → `get_current_time`; `search arxiv for candidate papers` → `arxiv_search_candidates`; `summarize the conversation and store it` → `summarize_and_store`. |
+| T24 | R13 | Given S4 and S5 registered (11 tools). When `ask` "fetch and save the full paper text" runs. Then the model is offered exactly 5 tools, `fetch_and_save_paper_to_kb_db` first and `count_words` among them. |
+| T25 | R14 | When `ask` thread `t-500` "loop forever". Then the model is called 10 times, `get_current_time` runs 10 times, the answer is `I was unable to complete the request within the allowed iterations.`, the tool log holds 10 rows for `t-500` with iterations 1..10, and one workflow with 10 steps is stored. |
+| T26 | R14 | When `ask` "call a missing tool". Then the tool message is `Error: Tool 'teleport' not found`, the log row has status `success`, and the answer is `Done.` |
+| T27 | R14 | When `ask` "fetch the broken paper". Then the tool message is `Error: network unavailable`, the log row has status `failed` and error message `network unavailable`, the workflow step ends `→ failed`, and the answer is `The fetch failed.` |
+| T28 | R15 | When `ask` "list survey papers". Then the logged result is the full JSON (over 3,000 characters, three candidates, S-3's abstract 2,500 characters), its preview is at most 2,000 bytes, and the tool message is the first 3,000 characters plus `\n\n[Truncated for context. Full output saved in TOOL_LOG_MEMORY as log_id: <that row's id>]`. |
+| T29 | R16, R5 | Given T28. Then one workflow is stored: `Query: list survey papers\nSteps:\nStep 1: arxiv_search_candidates({"query": "survey", "k": 5}) → success\nAnswer: ` + the first 200 characters of the answer, metadata num_steps 1, success true. `ask` "Hello" stores no workflow. `ask` "search with a long query" stores a step whose query shows 50 `q` then `...`. A 0-step workflow written directly never appears in Workflow Memory. Given 4 workflows with steps stored, a workflow read returns exactly 3, separated by `---`. |
+| T30 | R16, R5 | Given T34 turn 1. Then `ENTITY_MEMORY` holds 3 records (Tidal Memory Networks from the question; Tidal Memory Networks and Ines Varga from the answer). Given 7 entities stored, an entity read returns 5 lines. |
+| T31 | R17 | When entities are extracted from an 800-character text, from `hi`, and with extractor mode `garbage`. Then the extractor received at most the first 500 characters; for `hi` it was not called; with `garbage` nothing is stored and no error surfaces. |
+| T32 | R18 | When `arxiv_search_candidates("tidal memory networks")` and `("survey", k=2)` run. Then the first returns a JSON list of 1 item with arxiv_id `2401.00001v1`, entry_id, title, authors `Ines Varga, Tomas Reyes`, published `2024-01-02`, abstract; the second returns 2 items, S-1 and S-2. |
+| T33 | R18 | When `fetch_and_save_paper_to_kb_db("2401.00001v1")` runs. Then N ≥ 3 chunks are stored, each at most 1,500 characters, every one of the 30 lines appears whole in some chunk, each chunk after the first begins with at most 200 characters repeated from the end of the previous chunk, chunk metadata has `source` "arxiv", chunk_id 0..N-1 and num_chunks N, and it returns `Saved arXiv 2401.00001v1 to SEMANTIC_MEMORY: <N> chunks (title: Tidal Memory Networks).` `9999.99999v9` returns `No documents found for arXiv id: 9999.99999v9`; `2401.00002v1` returns `Loaded arXiv 2401.00002v1 but extracted empty text (PDF parsing issue).` |
+| T34 | R4, R10, R11, R16, R19 | Thread `t-100`, four `ask` runs, each a new process. Turn 1 "Can you find the paper on tidal memory networks?" → Knowledge Base Memory lists K1 first; answer `I found Tidal Memory Networks (arXiv 2401.00001v1) by Ines Varga and Tomas Reyes.` Turn 2 "Can you save the content of the paper?" → context Conversation Memory holds turn 1, Workflow Memory contains `Step 1: arxiv_search_candidates`, Entity Memory contains `• Ines Varga: paper author`; the paper is saved; answer `Saved arXiv 2401.00001v1 to the knowledge base.` Turn 3 "Summarize the conversation so far using your tool" → `summarize_and_store` runs for `t-100`, marks exactly 5 messages; answer `Stored the summary.` Turn 4 "What was my first question?" → Conversation Memory shows only `Stored the summary.`, Summary Memory lists one id with label `Tidal Memory Networks paper search and saving session`, Workflow Memory shows the 3 workflows of turns 1–3; the model calls `expand_summary`; answer `Your first question was: Can you find the paper on tidal memory networks?` |
+| T35 | R20 | When any turn runs. Then the system message names all five section headings, the `expand_summary` policy, the priority order `# Question` > latest Conversation Memory > Knowledge Base evidence > older summaries/workflows, and `summarize_and_store` with the thread id. |
+| T36 | R21, R2 | With `MEMORY_AGENT_DB` set to a temporary file: `python -m memory_agent ask --thread t-600 "My name is Ines and I study glacier embeddings."` prints `Noted.`; a second invocation with "What do I study?" prints `You study glacier embeddings.`; both exit 0. |
+| L1 `live` | R14, R6 | With a provider key: `ask` "What ring buffer size do tidal memory networks use?" returns an answer containing `512`, and the conversation store holds both messages. |
+| L2 `live` | R18 | With network: `arxiv_search_candidates("retrieval augmented generation", k=3)` returns 1–3 candidates with non-empty arxiv ids. |
+| L3 `live` | R18 | With network: fetching the first L2 candidate stores ≥ 1 chunk, each at most 1,500 characters. |
+
+---
+
+## Standing permissions
+
+- **Always:** run the offline tests after every change; keep every stand-in labelled as a stand-in in code comments and docs; read secrets from the environment.
+- **Ask first:** changing an answered question or a setting once the build has stored data; anything that sends data to a third party (including a hosted model or embedding API beyond the chosen provider).
+- **Never:** invent provenance; answer when the program should say it does not know; change sample data to make a test pass; commit secrets; drop stores at startup.
+
+---
+
+## Test plan
+
+1. Offline: `MEMORY_AGENT_MODEL=scripted python -m pytest -m "not live"` — must pass with no key and no network.
+2. Live (only when a key and network are present): `python -m pytest -m live`.
+3. Report one result per test (T01–T36, L1–L3) with evidence: the test output line and any file paths it created. "Should pass" counts as not run.
+4. Adjust the recommended tests for the chosen options: drop tests that exist only for an option not chosen (e.g. T28 under C15b, T11–T20 under C14c), and for each chosen non-recommended option turn its "what to check" sentence into a test and report it.
+5. The build is finished when the adjusted recommended tests pass and each chosen option's check passes.
+6. Finish with a diagram of the built app introduced by the sentence "This is the infra/structure diagram of this app".
+
+---
+
+## Background notes
+
+### The program and its stages
+A tool-using agent whose memory lives outside the model.
+`open stores → register tools → assemble context → shrink context → select tools → store question → reason and act → write back`
+- **Open stores** — memory must be outside the model and survive the process (card item 1).
+- **Register tools** — tools are kept as searchable memory so only relevant ones reach the model (Lesson 4).
+- **Assemble context** — the relevant memory must reach the model before it answers (card item 2); sections are labelled so the model knows each store's purpose (Lesson 3 "memory aware" steps, Lesson 6).
+- **Shrink context** — keeps the window from filling while keeping a way back to detail (Lesson 5).
+- **Select tools** — fewer, relevant tools per turn (Lesson 4).
+- **Store question** — the user message becomes conversation memory; entities are pulled out of it.
+- **Reason and act** — the agent loop: call the model, run tools, return results, stop on a final answer or the iteration cap (Lesson 6).
+- **Write back** — conversation, workflow and entities are saved so later turns reuse them (Lesson 6).
+
+### Failures
+- **F1. The stateless agent forgets (demonstrated, Lesson 2 transcript and slides).** You see: in a later turn the agent says it has no recollection of the list it gave and asks you to specify. Why: nothing outside the model holds earlier turns. Prevention: every message is stored and read back each turn, and stores are never dropped at startup. Enforced by R2, R3; planted in S6; tested by T03, T36.
+- **F2. Re-summarizing already summarized messages (warned, Lesson 5 notebook).** You see: the same messages summarized again and again. Why: messages are not marked after summarizing. Prevention: exactly the summarized rows get the summary id; reads and summaries skip marked rows. R8; T12, T13.
+- **F3. Context overflow (warned, Lesson 5).** You see: the request fails or detail is crowded out as history grows. Prevention: usage check above 80% triggers summarizing. R7; T11.
+- **F4. Too many tools in the prompt (warned, Lesson 4).** You see: context confusion and bloat, worse tool choice, more tokens and latency. Prevention: tools retrieved by search, 5 per turn. R13; T24.
+- **F5. Large tool outputs in the prompt (warned, Lesson 6).** Prevention: full output to the tool log, 3,000 characters to the model. R15; T28.
+
+### Why the questions and settings are what they are
+- **C5 storage / C6 embedder:** the course's agent memory core is a database ("this is where you're going to see the most traffic of data", Lesson 2); any database that stores and searches the seven stores keeps the pattern. The stand-ins avoid container setup and a model download.
+- **C8 tools:** the course argues stuffing all tools fails at scale; the notebook says providers recommend limiting tools (often 10–20), the slides say ~5–20 — recorded disagreement; neither is used as a value. Lesson 4 also exposed toolbox search as an agent tool ("allows the agent to autonomously query for tools mid-execution"); the final agent did not — hence C8c.
+- **C9 augmentation:** "this is a great idea, but it might not be enough" — the course adds model-written descriptions for higher separability and recall (Lesson 4).
+- **C10 memory kinds:** the course goes from a naive agent with conversation memory to the full set ("conversation windows are finite… agents need structured, queryable knowledge, not just chat logs", Lesson 2) — a cost, not a failure, so the simpler builds are offered.
+- **C11 who triggers:** the course's table and arguments (Lesson 3 notebook): deterministic reads because "the agent can't choose to look up what it doesn't know exists"; deterministic writes for reliability and completeness; agent-triggered actions for relevance and cost. The table marks `write_entity` agent-triggered and `read_toolbox` both; the final agent runs entity writes automatically and does not offer toolbox search — the final version decides (4.1). The Lesson 6 slide also shows reads inside the loop as agent operations, supporting C11c.
+- **C12 retrieval:** Lesson 3 lists "text or lexical, vector, Graph Traversal, or hybrid" strategies; the course set up a hybrid-search preference for the knowledge base but never used it.
+- **C13 re-ranking:** the Lesson 2 RAG pipeline passes retrieved rows through a re-ranking model; the course's agent never re-ranks.
+- **C14 shrinking:** summarization "will always be a lossy technique"; compaction offloads to the database with an id and description and expands on demand (Lesson 5). The course's code combines both; C14b is the lossy side alone.
+- **C15 tool outputs:** "move some of the tool logs outside of the agent loop and into the database. This is context offloading" (Lesson 6).
+- **Not questions:** the context-usage status labels (ok under 50%, warning under 80%, critical otherwise) are a display tool, not a stage. Semantic cache, working memory, persona memory and the procedural/semantic/episodic taxonomy are other memory forms the course names but this program does not build; persona memory appears only on one slide. Database admin setup, retry on connection failure and vector-memory cleanup helpers are course infrastructure. The test model is never asked (tests always run on the scripted model).
+- **Values and how they were picked (4.2):** distance — cosine (Lesson 3 transcript, rule 1) over Euclidean (final notebooks). Summary model — `gpt-5` (final agent's helper, rule 2) over `gpt-5-mini` (Lesson 5 notebook). Summary 6,000 limit — on the summary (Lesson 5 transcript, rule 1) over input truncation (code). Toolbox k — 5 in the final loop; the toolbox read's own default is 3 and its tool description says 5. Conversation read — 10 (final loop) over 100 (Lesson 5 test). Token budget — 256,000 for both course models; 128,000 for unknown names (D13). The course drops all stores at each lesson start; the final helper's table creation reuses existing tables (D4).
+- **Course's own run (for orientation, not tests):** its Lesson 6 demo summarized seven messages; its Lesson 5 test thread had 30 messages (the transcript says 32) and measured about 2,000 tokens, under 1%.
+
+### Names that go stale
+Treat these as search keywords against current docs, not guaranteed imports: `OracleVS`, `langchain_oracledb`, `OracleVectorizerPreference`, `DistanceStrategy`, `HuggingFaceEmbeddings` (imported from both `langchain_huggingface` and `langchain_community`), `sentence-transformers/paraphrase-mpnet-base-v2`, `ArxivRetriever`, `ArxivLoader`, `RecursiveCharacterTextSplitter`, `TavilyClient`, `datasets.load_dataset` (streaming), OpenAI Chat Completions with `tools` and `tool_choice="auto"`, models `gpt-5` and `gpt-5-mini`, Oracle AI Database 26ai / Oracle Free. Request limits implied by the era: the course passes `max_completion_tokens` (not `max_tokens`) and never sets `temperature`; assume these model families may reject a non-default temperature and check current docs (this caution is an addition).
+
+### Course names
+| Course name | Spec term |
+|---|---|
+| `CONVERSATIONAL_MEMORY`, `SEMANTIC_MEMORY`, `WORKFLOW_MEMORY`, `TOOLBOX_MEMORY`, `ENTITY_MEMORY`, `SUMMARY_MEMORY`, `TOOL_LOG_MEMORY` | the seven stores (binding) |
+| MemoryManager / StoreManager | the program's memory read/write layer (no class design required) |
+| Toolbox, `register_tool(augment=…)` | tool registration (R12, R13) |
+| `call_agent(query, thread_id, max_iterations)` | one `ask` turn |
+| `summarize_conversation`, `summarise_context_window`, `offload_to_summary`, `summarize_and_store`, `expand_summary` | R8, R9, R7, R11, R10 (tool names binding) |
+| `arxiv_search_candidates`, `fetch_and_save_paper_to_kb_db`, `get_current_time` | paper and time tools (names binding) |
+| `## Conversation Memory` … `## Summary Memory`, `# Question`, `[Summary ID: …]` | binding context text |
+| ArxivScout, agentic research assistant | the sample instance |
+
+### Lesson map
+Transcript numbering decides (W2). The notebooks are named one number lower than their lesson.
+- **L1 Introduction** — the problem (stateless agents), memory as external, persistent infrastructure; card item 1.
+- **L2 Why AI Agents Need Memory** — stateless vs memory-augmented agents (F1), conversational memory and its limits (C10), memory forms, RAG pipeline with re-ranking (C13), agent memory core. Wide slide deck (talked through) read with this lesson; its last slide is a leftover template about base vs instruction-tuned models and was ignored.
+- **L3 Constructing the Memory Manager** (notebook "L2") — stores and their schemas, cosine distance (D8), deterministic vs agent-triggered table (C11), memory-aware agent steps, retrieval strategies (C12), knowledge-base ingest from an arXiv dataset (C2b, D5). Tall-deck slides for this lesson read; the "Common Memory Operations" slide adds a Persona store found nowhere else — slide-only, it loses.
+- **L4 Scaling Agent Tool Use with Semantic Tool Memory** (notebook "L3") — tool retrieval (C8), augmentation (C9, D10), Tavily search-and-store (C7b, D7), paper tools (R18). Tall-deck slides read; "~5–20 tools" disagrees with the notebook's "10–20" (recorded, unused).
+- **L5 Memory Operations: Extraction, Consolidation, and Self-Updating Memory** (notebook "L4") — context usage, summarize/compact/expand (C14, R7–R11), workflow memory. Tall-deck slides read; a slide shows a workflow table with a JSON document column — the code stores workflows as vector-store text, and code wins. The transcript ends "lesson 4" (internal miscount).
+- **L6 Memory Aware Agent** (notebook "L5") — the final end-to-end agent loop (R4, R14–R16, R20), in/out-of-loop operations, the four-turn demo that T34 mirrors with sample data. Tall-deck slides read. The transcript ends "lesson 5" (internal miscount).
+- **L7 Conclusion** — recap only.
+
+Nothing in this spec requires access to the course.
+
+---
+
+*Spec v2-draft · Agent Memory: Building Memory-Aware Agents · spec-build-lab · When the build agent does something unexpected, add the missing constraint here and re-run.*
