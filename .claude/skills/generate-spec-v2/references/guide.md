@@ -202,7 +202,7 @@ The spec ends with background notes. No code (W5). Background notes and the sett
 ## 10. Spec layout and self-check
 
 **Layout, in order:**
-1. Opening note (under 320 words): **"What you're building:"** — one sentence naming the recommended build in plain words and what you see it do, addressed to the reader as "you"; the fastest path (answer "recommended build"; the build is finished when the offline tests pass, which needs no key because stand-ins replace the real parts, so `live` tests skipped for lack of a key are expected, not failures); what the recommended build needs to run for real (the model provider's key if it needs one, and any network access or download its parts use); the file is self-contained; one provenance line (course, materials used, date, guide version).
+1. Opening note (under 320 words): **"What you're building:"** — one sentence naming the kind of program in plain words (3.1), with the course's example as its default, and what you see it do, addressed to the reader as "you"; the fastest path (answer "recommended build"; the build is finished when the offline tests pass, which needs no key because stand-ins replace the real parts, so `live` tests skipped for lack of a key are expected, not failures); what the recommended build needs to run for real (the model provider's key if it needs one, and any network access or download its parts use); the file is self-contained; one provenance line (course, materials used, date, guide version).
 2. `## 0. Before you build` (section 8).
 3. **Questions** (section 5), then the **departures list** (4.8).
 4. Objective (one sentence).
