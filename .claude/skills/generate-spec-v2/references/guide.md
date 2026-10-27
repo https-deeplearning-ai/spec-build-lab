@@ -1,6 +1,6 @@
 # Spec Generation Guide — v2 (draft)
 
-*Guide v2.7, 2026-10-27. Every rule names the purpose clause (P1–P8) it serves. Owner decisions O1–O3 (settings never asked; the alternatives list is a working note; the test-suite model is not asked) were accepted on 2026-10-23.*
+*Guide v2.8, 2026-10-27. Every rule names the purpose clause (P1–P8) it serves. Owner decisions O1–O3 (settings never asked; the alternatives list is a working note; the test-suite model is not asked) were accepted on 2026-10-23.*
 
 ---
 
@@ -202,7 +202,13 @@ The spec ends with background notes. No code (W5). Background notes and the sett
 ## 10. Spec layout and self-check
 
 **Layout, in order:**
-1. Opening note (under 320 words): **"What you're building:"** — one sentence naming the kind of program in plain words (3.1), with the course's example as its default, and what you see it do, addressed to the reader as "you"; the fastest path (answer "recommended build"; the build is finished when the offline tests pass, which needs no key because stand-ins replace the real parts, so `live` tests skipped for lack of a key are expected, not failures); what the recommended build needs to run for real (the model provider's key if it needs one, and any network access or download its parts use); the file is self-contained; one provenance line (course, materials used, date, guide version).
+1. Opening note (under 320 words): **"What you're building:"** — one sentence naming the kind of program in plain words (3.1), with the course's example as its default, and what you see it do, addressed to the reader as "you"; then the two lines below, filled in for the course and copied otherwise word for word (for a build that uses no key, leave out the last sentence of the second line); the file is self-contained; one provenance line (course, materials used, date, guide version). Never write that the build, the app or its tests need no key unless the recommended build uses none.
+
+   ```markdown
+   **What the recommended build needs to run:** <each key, account, network access and download its parts use; or "no key, account or download">.
+
+   **Fastest path:** answer "recommended build" at the first question. The build is finished when the offline tests pass. The `live` tests run once <the key> is set and are skipped until then; that is not a failure.
+   ```
 2. `## 0. Before you build` (section 8).
 3. **Questions** (section 5), then the **departures list** (4.8).
 4. Objective (one sentence).
