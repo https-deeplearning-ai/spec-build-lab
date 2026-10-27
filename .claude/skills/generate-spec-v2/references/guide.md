@@ -1,6 +1,6 @@
 # Spec Generation Guide — v2 (draft)
 
-*Guide v2.6, 2026-10-27. Every rule names the purpose clause (P1–P8) it serves. Owner decisions O1–O3 (settings never asked; the alternatives list is a working note; the test-suite model is not asked) were accepted on 2026-10-23.*
+*Guide v2.7, 2026-10-27. Every rule names the purpose clause (P1–P8) it serves. Owner decisions O1–O3 (settings never asked; the alternatives list is a working note; the test-suite model is not asked) were accepted on 2026-10-23.*
 
 ---
 
@@ -85,7 +85,7 @@ If notebooks or transcripts are missing, stop: no spec. If the pattern card is m
 
 **4.6 Models.** Name the course's own models as facts about the course. Never write "the best current model": names go stale. The build agent picks a current model when it writes the checklist (section 8). If the model needs a key, the offline tests use a scripted stand-in model (section 7) and the finished app uses the real provider when a key is present.
 
-**4.7 Versions.** Where the course pinned a version in its install lines or a lock file, pin that version. Otherwise use a current release and say the course left it unpinned. Never invent a pin.
+**4.7 Versions.** Use current releases. Where the course pinned a version, name it as a fact about the course and list the change as a departure (4.8): course-era versions often no longer install or work with current models. Never invent a pin.
 
 **4.8 Departures.** List every place the recommended build differs from the course (stand-ins, left-out tools, picked values), each with its reason. The gate shows this list (section 8).
 
@@ -160,7 +160,8 @@ complete: they exist so the build is reproducible, not because they fit this per
 2. **First question — recommended build, or choose?** Two options: the **recommended build**
    (every question takes its "(Recommended)" option — mostly the course's own choices, with a
    lighter stand-in wherever the course's choice needs setup the person may not have; the
-   checklist in step 5 marks each place it differs from the course), or **choose** question by
+   checklist in step 5 marks each place it differs from the course; to run for real it needs
+   <what the opening note says it needs>), or **choose** question by
    question. Recommended → go to step 5. Choose → step 3.
 3. **Ask ONE question at a time.** Show the question, its options with their "pick this when …"
    and setup cost, and the labels "(course default)" / "(Recommended)" /
@@ -201,7 +202,7 @@ The spec ends with background notes. No code (W5). Background notes and the sett
 ## 10. Spec layout and self-check
 
 **Layout, in order:**
-1. Opening note (under 320 words): **"What you're building:"** — one sentence naming the recommended build in plain words and what you see it do, addressed to the reader as "you"; the fastest path (answer "recommended build", the build is done when the offline tests pass, a key only unlocks the `live` tests); the file is self-contained; one provenance line (course, materials used, date, guide version).
+1. Opening note (under 320 words): **"What you're building:"** — one sentence naming the kind of program in plain words (3.1), with the course's example as its default, and what you see it do, addressed to the reader as "you"; the fastest path (answer "recommended build"; the build is finished when the offline tests pass, which needs no key because stand-ins replace the real parts, so `live` tests skipped for lack of a key are expected, not failures); what the recommended build needs to run for real (the model provider's key if it needs one, and any network access or download its parts use); the file is self-contained; one provenance line (course, materials used, date, guide version).
 2. `## 0. Before you build` (section 8).
 3. **Questions** (section 5), then the **departures list** (4.8).
 4. Objective (one sentence).
