@@ -85,7 +85,7 @@ If notebooks or transcripts are missing, stop: no spec. If the pattern card is m
 
 **4.6 Models.** Name the course's own models as facts about the course. Never write "the best current model": names go stale. The build agent picks a current model when it writes the checklist (section 8). If the model needs a key, the offline tests use a scripted stand-in model (section 7) and the finished app uses the real provider when a key is present.
 
-**4.7 Versions.** Where the course pinned a version in its install lines or a lock file, pin that version. Otherwise use a current release and say the course left it unpinned. Never invent a pin.
+**4.7 Versions.** Use current releases. Where the course pinned a version, name it as a fact about the course and list the change as a departure (4.8): course-era versions often no longer install or work with current models. Never invent a pin.
 
 **4.8 Departures.** List every place the recommended build differs from the course (stand-ins, left-out tools, picked values), each with its reason. The gate shows this list (section 8).
 
