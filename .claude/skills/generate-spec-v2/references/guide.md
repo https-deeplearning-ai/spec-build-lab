@@ -1,6 +1,6 @@
 # Spec Generation Guide — v2 (draft)
 
-*Guide v2.8, 2026-10-27. Every rule names the purpose clause (P1–P8) it serves. Owner decisions O1–O3 (settings never asked; the alternatives list is a working note; the test-suite model is not asked) were accepted on 2026-10-23.*
+*Guide v2.9, 2026-10-31. Every rule names the purpose clause (P1–P8) it serves. Owner decisions O1–O3 (settings never asked; the alternatives list is a working note; the test-suite model is not asked) were accepted on 2026-10-23.*
 
 ---
 
@@ -85,7 +85,7 @@ If notebooks or transcripts are missing, stop: no spec. If the pattern card is m
 
 **4.6 Models.** Name the course's own models as facts about the course. Never write "the best current model": names go stale. The build agent picks a current model when it writes the checklist (section 8). If the model needs a key, the offline tests use a scripted stand-in model (section 7) and the finished app uses the real provider when a key is present.
 
-**4.7 Versions.** Use current releases. Where the course pinned a version, name it as a fact about the course and list the change as a departure (4.8): course-era versions often no longer install or work with current models. Never invent a pin.
+**4.7 Versions and framework behaviour.** Use current releases. Where the course pinned a version, name it as a fact about the course and list the change as a departure (4.8): course-era versions often no longer install or work with current models. Never invent a pin. Where the course leaves a behaviour to its framework (how the agent loop ends, retries, caching, delegation, passing earlier results), the recommended build keeps the current release's behaviour, and the build agent notes in the checklist (section 8) how the release provides it.
 
 **4.8 Departures.** List every place the recommended build differs from the course (stand-ins, left-out tools, picked values), each with its reason. The gate shows this list (section 8).
 
@@ -136,7 +136,7 @@ If notebooks or transcripts are missing, stop: no spec. If the pattern card is m
 - Every schema constraint that encodes behavior has a test; every value a rule can produce is reached by some test.
 - Replay every asserted outcome against the sample data and the scripted replies before finishing, with every unset default in force. An outcome the samples cannot produce is a defect in the sample or the test.
 
-**7.5 Failures.** A failure the course demonstrated appears in four places: a rule, a planted sample, a test, and a background note. A failure the course only warned about gets a rule, a test and a background note.
+**7.5 Failures.** A failure the course demonstrated appears in four places: a rule, a planted sample, a test, and a background note. A failure the course only warned about gets a rule, a test and a background note. When the course says its framework already prevents a warned failure, the rule states the outcome the program needs and sets no number, message or format for it; the test checks that outcome through the program's inputs, outputs and the stand-in model, never through a line the framework must produce.
 
 **7.6 Other options.** Each non-recommended option gets one plain "what to check" sentence (e.g. "each piece remembers which document it came from, and the pieces of one document together hold the whole document"). No sample data or exact outcome is written for it. The build agent turns the sentence into a test and reports it.
 
@@ -237,4 +237,4 @@ The spec ends with background notes. No code (W5). Background notes and the sett
 - Every rule has a test and every test a rule; every planted failure appears in four places; every asserted outcome was replayed against the samples; every non-recommended option has a "what to check" sentence (section 7). (P6)
 - The gate text matches section 8. (P7)
 - No copied code; nothing points to the course (W5, W6). (P8)
-- Could an agent rebuild the same behavior from this file alone? If two builds would differ, find the missing constraint.
+- Could an agent rebuild the same behavior from this file alone? If two builds would differ in what the program does, find the missing constraint. How the framework does it may differ.
