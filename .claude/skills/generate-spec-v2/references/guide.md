@@ -101,12 +101,25 @@ If notebooks or transcripts are missing, stop: no spec. If the pattern card is m
 
 **5.4 Options beyond what the course built.** Within a question, an option is any path a learner situation needs: one the course built, one it named but never built, or, for a context subject, one it never mentioned. Every option reads simply as one possible path for the build, with no note about whether the course built it. Each non-recommended option gets a "what to check" sentence (section 7).
 
-**5.5 What each question shows.**
-- the question, in plain words;
-- options with ids (`C1a`, `C1b`, …), each with "pick this when …" and its setup cost (key, account, download) written inside the option;
-- exactly one recommended option. Labels, and only these: "(course default)" on the option the course used; "(Recommended)" on the recommended option; "(Recommended - course default)" when they are the same. Never a bare "(default)".
+**5.5 What each question shows, in this exact shape.** The questions section is written as below. Placeholders in angle brackets are filled in; everything else is copied as written. Nothing else appears inside a question: no notes, no prose between options, no other part names.
 
-**5.6 One idea, one question.** When the course argues one idea across many operations (e.g. which memory actions run automatically and which the agent decides), ask one question about the idea, with a few complete builds as options. Never ask per operation, and never offer "mix and match" as an option. If one answer makes a later question pointless, the later question says "Ask only when `C<n>` is `C<n>x`", naming only earlier questions. Two choices a learner can make independently are two questions. Never merge one into the other's options (e.g. which files to read, and whether to split them).
+```markdown
+## 1. Questions
+<one line saying which questions are context and which are the program's stages>
+
+### C1. <The question, in plain words>
+*Ask only when C<n> is C<n>x.*
+- **C1a (Recommended - course default): <Option title>.** <What you get, one or two sentences.> *Pick this when* <the learner situation, with the costs the course gave>. *Setup:* <key, account, download; or "none">.
+- **C1b: <Option title>.** <What you get.> *Pick this when* <situation and costs>. *Setup:* <…>.
+  - *What to check:* <one plain sentence (7.6)>.
+```
+
+- the "Ask only when" line appears only when the question has a condition (5.6);
+- every option has an id (`C1a`, `C1b`, …), a title, what you get, "Pick this when" and "Setup", in that order. The course's arguments against an option are its costs inside "Pick this when" (P3), never a separate part;
+- exactly one recommended option. Labels, and only these, inside the bold after the id: "(course default)" on the option the course used; "(Recommended)" on the recommended option; "(Recommended - course default)" when they are the same; no label on the others. Never a bare "(default)";
+- every option that is not recommended has the "What to check" sub-bullet (7.6).
+
+**5.6 One idea, one question.** When the course argues one idea across many operations (e.g. which memory actions run automatically and which the agent decides), ask one question about the idea, with a few complete builds as options. Never ask per operation, and never offer "mix and match" as an option. If one answer makes a later question pointless, the later question carries the "Ask only when" line of 5.5's shape, naming only earlier questions. Two choices a learner can make independently are two questions. Never merge one into the other's options (e.g. which files to read, and whether to split them).
 
 **5.7 Order.** Context questions (project, data, …) first, then the program's stages in order.
 
@@ -138,7 +151,7 @@ If notebooks or transcripts are missing, stop: no spec. If the pattern card is m
 
 **7.5 Failures.** A failure the course demonstrated appears in four places: a rule, a planted sample, a test, and a background note. A failure the course only warned about gets a rule, a test and a background note. When the course says its framework already prevents a warned failure, the rule states the outcome the program needs and sets no number, message or format for it; the test checks that outcome through the program's inputs, outputs and the stand-in model, never through a line the framework must produce.
 
-**7.6 Other options.** Each non-recommended option gets one plain "what to check" sentence (e.g. "each piece remembers which document it came from, and the pieces of one document together hold the whole document"). No sample data or exact outcome is written for it. The build agent turns the sentence into a test and reports it.
+**7.6 Other options.** Each non-recommended option gets one plain "what to check" sentence, written as its "What to check" sub-bullet (5.5) (e.g. "each piece remembers which document it came from, and the pieces of one document together hold the whole document"). No sample data or exact outcome is written for it. The build agent turns the sentence into a test and reports it.
 
 **7.7 Test plan.** Give real commands. The build agent reports a result per test with evidence (test output, file paths); "should pass" counts as not run. The build is finished when the recommended tests, adjusted for the chosen options, pass and each chosen option's check passes. End the test plan by asking the build agent to finish with a diagram of the built app introduced by the sentence "This is the infra/structure diagram of this app".
 
@@ -210,7 +223,7 @@ The spec ends with background notes. No code (W5). Background notes and the sett
    **Fastest path:** answer "recommended build" at the first question. The build is finished when the offline tests pass. The `live` tests run once <the key> is set and are skipped until then; that is not a failure.
    ```
 2. `## 0. Before you build` (section 8).
-3. **Questions** (section 5), then the **departures list** (4.8).
+3. `## 1. Questions` in the shape of 5.5, then `## 2. Departures from the course` (4.8): two sections at the same heading level, the list never nested inside the questions.
 4. Objective (one sentence).
 5. Tech stack and versions (4.7), secrets handling.
 6. Input/output contracts as schemas (JSON Schema or equivalent), with behavior pushed into the schema where possible.
@@ -232,7 +245,7 @@ The spec ends with background notes. No code (W5). Background notes and the sett
 - The program is named in general terms, with stages (section 3). (P1)
 - Every departure from the course is listed with its reason (4.8). (P2)
 - Every question has, for each non-recommended option, a written learner situation; no question exists without one; every option passes 5.2's three tests. (P3)
-- Every question shows its options with "pick this when …", setup cost, and correct labels (5.5). (P4)
+- Every question follows 5.5's shape: options with "Pick this when", "Setup" and correct labels, and nothing else inside the question. (P4)
 - Every option keeps every must-stay-true item, and each item has a test (section 6). (P5)
 - Every rule has a test and every test a rule; every planted failure appears in four places; every asserted outcome was replayed against the samples; every non-recommended option has a "what to check" sentence (section 7). (P6)
 - The gate text matches section 8. (P7)
