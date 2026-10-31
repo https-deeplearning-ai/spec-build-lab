@@ -517,8 +517,15 @@ def questions(args) -> None:
         over.append(f"| {cell(title)} | {len(q['options'])} | {rec(q)} | {course(q)} | {cell(q['ask'])} |")
     if args.pr_body:
         body = Path(args.pr_body).read_text()
+        # A heading "… open points …" with the text under it, or a bullet / bold line
+        # "Known open points …:" followed by the points on the same line and any indented lines after it.
         m = re.search(r"^#+\s*([^\n]*open (?:point|question)s?[^\n]*)\n(.*?)(?=^#+\s|\Z)", body, re.I | re.M | re.S)
-        over += ["", f"### {m.group(1).strip()} (from the PR description)", m.group(2).strip()] if m else \
+        if m:
+            title, text = m.group(1).strip(), m.group(2).strip()
+        else:
+            b = re.search(r"^[ \t]*(?:[-*]\s+)?\*{0,2}([^\n:]*open (?:point|question)s?[^\n:]*):?\*{0,2}:?\s*([^\n]*)((?:\n[ \t]+\S[^\n]*)*)", body, re.I | re.M)
+            title, text = (b.group(1).strip(), (b.group(2) + b.group(3)).strip()) if b else ("", "")
+        over += ["", f"### {title} (from the PR description)", text] if text else \
                 ["", "### Known open points", "None listed in this PR's description."]
     over += ["", "*Reviewers: reply in the thread on each question's lines (for example under C1); use this thread for the review as a whole.*"]
     overview = "\n".join(over)
