@@ -1,6 +1,6 @@
 ---
 name: ledger-review
-description: Posts a plain-language review on a spec pull request, one thread per Decision Ledger decision on its row, listing every option so a curriculum product manager can review them. Run only when the user types /ledger-review <PR number>.
+description: Posts a review on a spec pull request, one thread per decision (a Decision Ledger row, or a guide-v2 question) on its lines, listing every option so a curriculum product manager can review them. Run only when the user types /ledger-review <PR number>.
 disable-model-invocation: true
 argument-hint: <PR number>
 allowed-tools: [Read, Write, Edit, Bash]
@@ -15,7 +15,14 @@ own thread; a header comment on the table's header lines carries the legend and 
 When part of the Ledger is not in the PR's diff, GitHub cannot take a comment there, and the whole
 review goes up as one comment on the file instead.
 
-The comment has two kinds of content, and they are produced differently:
+**Two spec formats.** Specs from `/generate-spec` (the old guide, and every `--env` spec) have a
+Decision Ledger table; specs from `/generate-spec-v2` have a `## 1. Questions` section instead, with
+one `### Cn.` heading per question. A v2 spec is already written for the learner, so its review is
+made by the script alone, in the spec's own words: one overview comment on the `## 1. Questions`
+line, then one comment per question on its lines, each a table of its options. Step 2 says which
+path to take.
+
+For a Ledger spec, the comment has two kinds of content, and they are produced differently:
 - **Fixed and factual parts** — the header, legend, headings and their links, the table columns,
   every option id, the Labels column, "Asked only if…", the test counts and skipped questions, the
   footer. `scripts/ledger_review.py skeleton` renders these from the spec. **Never type or edit them.**
@@ -34,6 +41,12 @@ fresh scratch folder (`W=$(mktemp -d)`); write nothing into the repo.
    stop. Do steps 2–7 once per file, then step 8 once.
 2. **Get the spec at the PR's head commit.** `git fetch origin pull/<N>/head` then
    `git show <headRefOid>:<path> > "$W/<path's file name>"` (keep the file name: the header shows it).
+   **If the spec has a `## 1. Questions` section** (guide v2), skip steps 3–7 and run instead:
+   `gh pr view <N> --json body -q .body > "$W/body.md"`, then
+   `python3 $S questions "$W/<file>" --path <path> --commit <headRefOid> --diff "$W/pr.diff" --out "$W/post" --pr-body "$W/body.md" --name "<name>" --link-base "<as in step 4>"`
+   (`<name>` as in step 4). It writes `post/review.md`, the whole review, and prints `threads` or
+   `file comment` as step 7 does. Read `post/review.md` before step 8: every word in it is the
+   spec's or the script's, so check only that the tables read right. Then go to step 8.
 3. **Previous review.** `python3 $S previous <path> --exclude-pr <N> > "$W/prev.md"` (it finds either
    kind: a review's comments or a single PR comment). If the file is non-empty, sections whose spec
    text is unchanged are copied from it word for word.
