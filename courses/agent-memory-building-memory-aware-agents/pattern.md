@@ -10,16 +10,8 @@
 
 *All dropped items stay rules of the recommended build. Lesson numbers follow the transcripts.*
 
-*Reconfirmed by the owner, 2026-10-26: all items kept unchanged; no "Offered from other lessons" section (none).*
 
-*Reconfirmed by the owner again, 2026-10-26, before the v2.5 regeneration: no changes.*
-
-*Reconfirmed by the owner, 2026-10-27, before the v2.6 regeneration: no changes.*
-
-*Reconfirmed by the owner, 2026-10-27, before the v2.7 regeneration: no changes.*
-
-*Reconfirmed by the owner, 2026-10-27, before the v2.8 regeneration: no changes.*
-
+*Reconfirmed by the owner, 2026-10-31, before the v2.9 regeneration: no changes.*
 **The one kind of program:** a tool-using agent whose memory lives outside the model, so it carries on across turns and sessions.
 
 ## What every build keeps
