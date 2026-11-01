@@ -23,9 +23,15 @@
       on the file.
   verify <PR> <review id> <review.json>
       Fails unless every comment of the review sits as a thread on the lines review.json asked for.
+  questions <spec.md> --path P --commit SHA --diff PR.diff --out DIR [--name NAME] [--link-base URL] [--pr-body FILE]
+      For a guide-v2 spec ("## 1. Questions" with "### Cn." questions): the whole review, written by
+      the script alone in the spec's own words. DIR/review.md is the review to show; it is posted
+      like `split`'s output (DIR/review.json: an overview comment on the "## 1. Questions" line and
+      one comment per question on its lines; or DIR/file-comment-<file>.json when those lines are
+      not all in the diff).
 
 Stdlib only. Parsing follows the spec-generation guide's Decision Ledger and §7 "Tests by option"
-formats; it degrades loudly (exit 2) when a spec does not have them.
+formats, or guide v2's Questions section; it degrades loudly (exit 2) when a spec has neither.
 """
 from __future__ import annotations
 
@@ -383,6 +389,175 @@ def verify(args) -> int:
     return 0 if ok else 1
 
 
+Q_HEAD = re.compile(r"^### (C\d+)\.\s+(.*)$")
+OPT = re.compile(r"^- \*\*(C\d+[a-z])\b")
+ASK = re.compile(r"\s*(?:—\s*)?\*Ask only when (.*?)\*\s*$")
+# Where the spec's own wording of an option starts each part: (column, the spec's words for it)
+PARTS = [("when", r"\*?Pick this when\*?:?"), ("setup", r"\*?Setup(?: cost)?:\*?"), ("cost", r"\*?Cost:\*?"),
+         ("check", r"\*?What to check:\*?")]
+Q_INTRO = """## Questions for review: {name}
+
+The questions the build agent asks the learner before building, copied from this PR's `{file}` in the spec's own words. Each question has its own thread on its lines; reply there.
+
+- ✅ **Recommended**: what the default build uses.
+- 📘 **Course default**: what the course itself did.
+- **What to check**: how the build proves an option other than the recommended one works.
+"""
+
+
+def flat(text: str) -> list[str]:
+    """The words of a piece of spec text, sorted, without punctuation or markdown: to prove no word was dropped."""
+    return sorted(re.findall(r"\w+", text))
+
+
+def parse_questions(spec: Path) -> list[dict]:
+    lines = spec.read_text(encoding="utf-8").splitlines()
+    try:
+        start = next(i for i, l in enumerate(lines) if re.match(r"^## 1\. Questions\b", l))
+    except StopIteration:
+        sys.exit(f"questions: {spec} has no '## 1. Questions' section")
+    qs, cur, opt = [], None, None
+    for i in range(start + 1, len(lines)):
+        l = lines[i]
+        if l.startswith("## ") or l.strip() == "---":
+            break
+        m = Q_HEAD.match(l)
+        if m:
+            ask = ASK.search(m.group(2))
+            cur = {"id": m.group(1), "title": m.group(2)[:ask.start()] if ask else m.group(2), "ask": ask.group(1) if ask else "",
+                   "line": i + 1, "end": i + 1, "options": []}
+            qs.append(cur)
+            opt = None
+            continue
+        if cur is None or not l.strip():
+            continue
+        if OPT.match(l):
+            opt = {"id": OPT.match(l).group(1), "text": l[2:].strip()}
+            cur["options"].append(opt)
+        elif opt is None and ASK.fullmatch(l):
+            cur["ask"] = ASK.fullmatch(l).group(1)
+        elif opt is not None and l.startswith(" "):
+            opt["text"] += " " + re.sub(r"^-\s+", "", l.strip())
+        else:
+            sys.exit(f"questions: line {i + 1} of {spec} is neither an option nor part of one: {l[:80]}")
+        cur["end"] = i + 1
+    if not qs or any(not q["options"] for q in qs):
+        sys.exit(f"questions: no questions, or a question without options, in {spec}")
+    for q in qs:
+        for o in q["options"]:
+            o.update(split_option(o["text"]))
+    return qs
+
+
+def split_option(text: str) -> dict:
+    """An option's own text cut into its parts at the spec's own words ("Pick this when", "Setup:"...).
+    Exits if the parts, put back together, are not exactly the option's words."""
+    m = re.match(r"\*\*(C\d+[a-z])\s*(.*?)\*\*\s*(.*)$", text)
+    oid, bold, rest = m.groups()
+    tags = re.search(r"\(([^)]*(?:Recommended|course default)[^)]*)\)", bold + " " + rest[:80])
+    lab = tags.group(1) if tags else ""
+    labels = (["✅ Recommended"] if "Recommended" in lab else []) + (["📘 Course default"] if "course default" in lab.lower() else [])
+    gist = bold + ("" if re.match(r"[,.;:]", rest) else " ") + rest
+    gist = gist.replace(f"({lab})", "", 1) if tags else gist
+    gist = re.sub(r"^\s*[—:–-]\s*", "", gist.strip())
+    cuts = sorted((mm.start(), mm.end(), col) for col, pat in PARTS for mm in re.finditer(r"(?<![\w(])" + pat, gist))
+    pieces = [("gist", gist[:cuts[0][0]] if cuts else gist)]
+    pieces += [(col, gist[e:cuts[k + 1][0] if k + 1 < len(cuts) else len(gist)]) for k, (_, e, col) in enumerate(cuts)]
+    out = {"labels": labels}
+    for col, piece in pieces:
+        out[col] = (out.get(col, "") + " " + piece.strip()).strip()
+    # Put back together, the parts must be the option's words, minus only its id, labels and the part names
+    words = flat(f"{oid} " + f"({lab}) " * bool(tags) + " ".join(p for _, p in pieces))
+    origin = flat(re.sub(r"(?<![\w(])(?:" + "|".join(p for _, p in PARTS) + ")", "", text))
+    if words != origin:
+        sys.exit(f"questions: could not split option {oid} without losing words:\n  {text}")
+    return out
+
+
+def cell(s: str) -> str:
+    return s.replace("|", "\\|").strip() or "—"
+
+
+def question_body(q: dict, link: str) -> str:
+    head = f"### [{q['id']}. {q['title'].strip()}]({link}#L{q['line']})" if link else f"### {q['id']}. {q['title'].strip()}"
+    out = [f"<!-- ledger-review q={q['id']} -->", head]
+    if q["ask"]:
+        out.append(f"*Asked only when {q['ask']}*")
+    out += ["", "| Option | What you get | Pick this when | Setup and cost | What to check |", "|---|---|---|---|---|"]
+    for o in q["options"]:
+        setup = o.get("setup", "") + (f" Cost: {o['cost']}" if o.get("cost") else "")
+        out.append(f"| **{o['id']}**{'<br>' + '<br>'.join(o['labels']) if o['labels'] else ''} | {cell(o['gist'])} | "
+                   f"{cell(o.get('when', ''))} | {cell(setup)} | {cell(o.get('check', ''))} |")
+    return "\n".join(out)
+
+
+def questions(args) -> None:
+    qs = parse_questions(Path(args.spec))
+    spec = Path(args.spec).read_text(encoding="utf-8").splitlines()
+    qline = next(i + 1 for i, l in enumerate(spec) if re.match(r"^## 1\. Questions\b", l))
+    link = args.link_base or ""
+    name = args.name or Path(args.path).parent.name
+    def rec(q):
+        return ", ".join(o["id"] for o in q["options"] if "✅ Recommended" in o["labels"]) or "—"
+    def course(q):
+        return ", ".join(o["id"] for o in q["options"] if "📘 Course default" in o["labels"]) or "—"
+    over = [f"<!-- ledger-review v2 file={args.path} -->", Q_INTRO.format(name=name, file=Path(args.path).name),
+            f"**{len(qs)} questions**, {sum(1 for q in qs if q['ask'])} of them asked only after a certain earlier answer."]
+    intro = []
+    for l in spec[qline:]:
+        if Q_HEAD.match(l):
+            break
+        intro.append(l)
+    if "".join(intro).strip():
+        over += ["", "From the spec: " + " ".join(l.strip() for l in intro if l.strip())]
+    over += ["",
+            "| Question | Options | ✅ Recommended | 📘 Course default | Asked only when |", "|---|---|---|---|---|"]
+    for q in qs:
+        title = f"[{q['id']}. {q['title'].strip()}]({link}#L{q['line']})" if link else f"{q['id']}. {q['title'].strip()}"
+        over.append(f"| {cell(title)} | {len(q['options'])} | {rec(q)} | {course(q)} | {cell(q['ask'])} |")
+    if args.pr_body:
+        body = Path(args.pr_body).read_text()
+        # A heading "… open points …" with the text under it, or a bullet / bold line
+        # "Known open points …:" followed by the points on the same line and any indented lines after it.
+        m = re.search(r"^#+\s*([^\n]*open (?:point|question)s?[^\n]*)\n(.*?)(?=^#+\s|\Z)", body, re.I | re.M | re.S)
+        if m:
+            title, text = m.group(1).strip(), m.group(2).strip()
+        else:
+            b = re.search(r"^[ \t]*(?:[-*]\s+)?\*{0,2}([^\n:]*open (?:point|question)s?[^\n:]*):?\*{0,2}:?\s*([^\n]*)((?:\n[ \t]+\S[^\n]*)*)", body, re.I | re.M)
+            title, text = (b.group(1).strip(), (b.group(2) + b.group(3)).strip()) if b else ("", "")
+        over += ["", f"### {title} (from the PR description)", text] if text else \
+                ["", "### Known open points", "None listed in this PR's description."]
+    over += ["", "*Reviewers: reply in the thread on each question's lines (for example under C1); use this thread for the review as a whole.*"]
+    overview = "\n".join(over)
+    bodies = [question_body(q, link) for q in qs]
+    o = Path(args.out)
+    o.mkdir(parents=True, exist_ok=True)
+    (o / "review.md").write_text(overview + "\n\n---\n\n" + "\n\n---\n\n".join(bodies) + "\n")
+    shown = diff_lines(Path(args.diff).read_text(), args.path)
+    need = [qline] + [n for q in qs for n in range(q["line"], q["end"] + 1)]
+    missing = [n for n in need if n not in shown]
+    if missing:
+        body = overview.replace(over[-1], '*Reviewers: reply in this thread, starting with the question (for example "C1: …").*') + \
+            "\n\n---\n\n" + "\n\n---\n\n".join(bodies)
+        out = o / f"file-comment-{Path(args.path).name}.json"
+        out.write_text(json.dumps({"body": body, "commit_id": args.commit, "path": args.path, "subject_type": "file"}))
+        print(f"questions: file comment ({len(missing)} question lines not in the diff, e.g. line {missing[0]}) -> {out}")
+        return
+    comments = [{"path": args.path, "line": qline, "side": "RIGHT", "body": overview}]
+    for q, b in zip(qs, bodies):
+        c = {"path": args.path, "line": q["end"], "side": "RIGHT", "body": b}
+        if q["end"] > q["line"]:
+            c.update(start_line=q["line"], start_side="RIGHT")
+        comments.append(c)
+    out = o / "review.json"
+    review = json.loads(out.read_text()) if out.exists() else {"commit_id": args.commit, "comments": []}
+    if review["commit_id"] != args.commit:
+        sys.exit(f"questions: {out} is for commit {review['commit_id']}, not {args.commit}")
+    review["comments"] += comments
+    out.write_text(json.dumps(review))
+    print(f"questions: threads, {len(comments)} comments for {args.path} ({len(qs)} questions, lines {qline}-{qs[-1]['end']}) -> {out}")
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -393,7 +568,13 @@ def main() -> int:
     d = sub.add_parser("split"); d.add_argument("draft"); d.add_argument("spec"); d.add_argument("--path", required=True)
     d.add_argument("--commit", required=True); d.add_argument("--diff", required=True); d.add_argument("--out", required=True)
     e = sub.add_parser("verify"); e.add_argument("pr", type=int); e.add_argument("review", type=int); e.add_argument("plan")
+    f = sub.add_parser("questions"); f.add_argument("spec"); f.add_argument("--path", required=True)
+    f.add_argument("--commit", required=True); f.add_argument("--diff", required=True); f.add_argument("--out", required=True)
+    f.add_argument("--name"); f.add_argument("--link-base"); f.add_argument("--pr-body")
     args = ap.parse_args()
+    if args.cmd == "questions":
+        questions(args)
+        return 0
     if args.cmd == "skeleton":
         skeleton(args)
         return 0

@@ -16,7 +16,7 @@ allowed-tools: [Read, Write, Glob, Grep, Bash, Agent, AskUserQuestion]
 
 # generate-spec-v2
 
-Writes `courses/<name>/spec.md` from the course materials with guide v2.8
+Writes `courses/<name>/spec.md` from the course materials with guide v2.9
 (`references/guide.md`). It is the same process the guide was validated with
 (clean-room generation, then builds, on three courses, 2026-10-23/24):
 1. the pattern card, confirmed by the owner;
