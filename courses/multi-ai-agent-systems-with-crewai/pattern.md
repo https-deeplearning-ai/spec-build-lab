@@ -14,6 +14,8 @@
 
 *Reconfirmed by the owner, 2026-10-27, before the v2.8 regeneration: no changes.*
 
+
+*Reconfirmed by the owner, 2026-10-31, before the v2.9 regeneration: no changes.*
 **The one kind of program:** A program that takes a few named inputs for one job, runs a team of specialised AI agents through a set of defined tasks, passes each task's result on to the tasks that depend on it, and returns the finished results.
 
 ## What every build keeps
