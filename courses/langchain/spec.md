@@ -1,14 +1,14 @@
-# Spec: Ask Your Documents (question answering over a document collection)
+# Spec: Ask your documents (question answering over a document collection)
 
-**What you're building:** a program that answers your plain-language questions about a collection of documents by finding the few pieces of the collection closest in meaning to your question and having a language model write the answer from them; by default the collection is a small outdoor-clothing catalog, and you will see it answer questions like "Do the Cedar Trail Pants have side pockets?", say "I don't know" when the catalog has no answer, and grade itself against a set of example questions.
+**What you're building:** a program that answers your plain-language questions about your own collection of documents, using the few pieces of the collection most similar in meaning to each question. By default it answers questions about a small sample outdoor-clothing product catalog. You ask "Please suggest a shirt with sunblocking". It finds the four catalog entries closest in meaning, writes an answer from only those entries, and says it doesn't know when they lack the answer. It can also grade itself on a set of example questions, and it has a switch that shows you what happened inside one answer.
 
-**What the recommended build needs to run:** an OpenAI API key (answers, embeddings, evaluation) and network access to OpenAI; no account or large download beyond the Python packages.
+**What the recommended build needs to run:** an OpenAI API key (for the answering model and for the embeddings) and network access to OpenAI.
 
 **Fastest path:** answer "recommended build" at the first question. The build is finished when the offline tests pass. The `live` tests run once `OPENAI_API_KEY` is set and are skipped until then; that is not a failure.
 
-This file is self-contained: everything the build needs is here.
+This file is self-contained: everything the build needs is in it.
 
-*Provenance: course "LangChain for LLM Application Development"; materials used: lesson transcripts (8 lessons), the course notebooks (6), 13 slide images; pattern card confirmed by the owner; written 2026-11-01 with guide v2.9 (2026-10-31).*
+*Provenance: from the course "LangChain for LLM Application Development" (materials used: lesson transcripts 1–8, the course notebooks, 13 slide images, and the owner-confirmed pattern card). Generated 2026-11-03 with guide v2.9 (2026-10-31).*
 
 ---
 
@@ -50,377 +50,358 @@ complete: they exist so the build is reproducible, not because they fit this per
 ---
 
 ## 1. Questions
-C1–C4 are context questions (your documents, your model provider, how people use the program); C5–C10 follow the program's stages in order (split, embed, store, combine, evaluate) and end with how you watch it work.
+C1–C4 are context questions (your collection, its file format, your model provider, how you use the program); C5–C10 follow the program's stages in order (split, embed, store, combine and answer, evaluate, see inside).
 
-### C1. Which documents should the program answer questions about?
-- **C1a (Recommended - course default): The sample outdoor-clothing catalog.** The program indexes the 8-item catalog defined in section 7 and answers questions about it. *Pick this when* you want to build what the course built and see every test pass before pointing it at your own documents. *Setup:* none.
-- **C1b: Your own collection.** The program indexes documents you supply (your notes, manuals, policies, product list); the offline tests still run on the sample catalog. *Pick this when* you already have a collection you want to ask about, e.g. "ask my English notes". *Setup:* put the files in one folder the program reads.
-  - *What to check:* after indexing your folder, a question whose answer is written in one of your documents gets an answer that states that fact, and the trace (C10) shows the retrieved pieces came from your files.
+### C1. Which collection of documents should the program answer questions about?
+- **C1a (Recommended - course default): The sample product catalog.** A small outdoor-clothing catalog, written for this spec, with one entry per product; every test runs against it. *Pick this when* you want a working copy of the course's program first and can point it at your own documents later. *Setup:* none.
+- **C1b: Your own collection.** The program indexes the documents you name (a folder or a file) instead of the sample catalog; the sample catalog stays for the tests. *Pick this when* you already have a set of documents you want answers from, such as your notes, a manual or a team's internal pages. *Setup:* none beyond having the files.
+  - *What to check:* each of your documents shows up as at least one stored piece that names its source file, and a question about a fact found in only one document gets that document among the four retrieved pieces.
 
 ### C2. What form are your documents in?
 *Ask only when C1 is C1b.*
-- **C2a (Recommended - course default): A table file (CSV), one row per item.** Each row becomes one document. *Pick this when* your collection is a list of records, such as products, contacts or entries, kept as a spreadsheet. *Setup:* none.
-- **C2b: A folder of plain-text or Markdown files.** Each file becomes one document. *Pick this when* your collection is notes or write-ups kept as separate text files. *Setup:* none.
-  - *What to check:* every text or Markdown file in the folder becomes exactly one document that records its file name, and no other file types are read.
-- **C2c: PDF files.** The text of each PDF becomes one document. *Pick this when* your collection is reports, papers or manuals kept as PDFs. *Setup:* a PDF text-extraction package (no key).
-  - *What to check:* each PDF in the folder becomes one document that records its file name and holds that PDF's extracted text, and a PDF that yields no text is reported by name instead of being indexed empty.
+- **C2a (Recommended - course default): A table file, one row per document.** Each row of a CSV file becomes one document whose text is every column written as "column: value". *Pick this when* your collection is a list of similar records, such as products, contacts or tickets. *Setup:* none.
+- **C2b: Plain-text or Markdown files.** Each file in a folder becomes one document. *Pick this when* your collection is notes or pages you wrote yourself. *Setup:* none.
+  - *What to check:* every .txt or .md file in the folder becomes a document whose text equals the file's text and whose source is the file name.
+- **C2c: PDF files.** The text of each PDF in a folder is extracted and becomes one document. *Pick this when* your collection is reports, papers or manuals you received as PDFs. *Setup:* a PDF text-extraction package.
+  - *What to check:* every PDF in the folder becomes a document whose text contains a sentence you copy from that PDF and whose source is the file name.
 
-### C3. Which provider's language model writes the answers (and runs the evaluation)?
-- **C3a (Recommended - course default): An OpenAI chat model.** Answers, generated examples and grades all come from an OpenAI chat model. *Pick this when* you have an OpenAI key or are willing to get one; each question costs one paid call. *Setup:* OpenAI API key.
-- **C3b: Another hosted provider's chat model.** The same program calls a different provider. *Pick this when* you already pay for another provider or your organisation requires one; you will likely also need C6b or that provider's own embeddings. *Setup:* that provider's API key.
-  - *What to check:* with that provider's key set and no OpenAI key, a `live` question about the sample catalog is answered from the retrieved pieces, and the trace shows the call went to the chosen provider.
-- **C3c: A model running on your own machine.** A locally served model writes the answers. *Pick this when* your documents must not leave your machine or you have no paid key; costs: a model download of several GB, slower answers, and answers that may be weaker. *Setup:* a local model server and a model download.
-  - *What to check:* with the network to hosted providers blocked, a question about the sample catalog is still answered from the retrieved pieces by the local model.
+### C3. Which provider's language model writes the answers?
+- **C3a (Recommended - course default): OpenAI chat model.** Answers, evaluation examples and grades come from an OpenAI chat model. *Pick this when* you have, or can get, an OpenAI API key; the same key also serves the recommended embeddings (C6a). *Setup:* an OpenAI API key, billed per token.
+- **C3b: Another hosted provider.** The same three model roles use a chat model from a provider you already pay for. *Pick this when* your organisation already has a key for another provider and not for OpenAI. *Setup:* that provider's API key and its integration package.
+  - *What to check:* with that provider's key set, the sunblocking sample question returns an answer that names the Breezeway Sun Shirt.
+- **C3c: A local model on your machine.** The model runs on your own computer through a local model server. *Pick this when* your documents must not leave your machine or you have no paid key. *Setup:* a local model server and a model download of several gigabytes; answers are slower on a machine without a strong graphics card.
+  - *What to check:* with no hosted-provider key set, the sunblocking sample question is answered by the local model and names the Breezeway Sun Shirt.
 
-### C4. How will people ask their questions?
-- **C4a (Recommended): From the command line.** `ask "<question>"` prints the answer; `evaluate` prints the evaluation report. *Pick this when* you, or people comfortable with a terminal, will use it. *Setup:* none.
-- **C4b: A small web page served on your machine.** A page with a question box shows the answer below it. *Pick this when* people who do not use a terminal will ask the questions. *Setup:* none beyond a web package.
-  - *What to check:* typing a sample question into the page shows the same answer the command line gives for it, and an empty question is refused with a message instead of being sent to the model.
+### C4. How do you want to ask questions?
+- **C4a (Recommended): From the command line.** You type a question in a terminal command and the answer is printed. *Pick this when* you are the only user and are happy in a terminal. *Setup:* none.
+- **C4b: In a small web page on your machine.** A local page with a question box shows the answer and the pieces it rests on. *Pick this when* someone who does not use a terminal will ask the questions. *Setup:* a small web-framework package; the page runs locally only.
+  - *What to check:* asking the sunblocking sample question in the page shows the same answer and the same four retrieved pieces as the command line does.
 
-### C5. Should long documents be split into smaller pieces before indexing?
-*Ask only when C1 is C1b.*
-- **C5a (Recommended - course default): No splitting; each document is one piece.** *Pick this when* each document is already short (a row, a short note); the course skipped splitting because its documents were already small. *Setup:* none.
-- **C5b: Split each document into smaller pieces.** Each piece is indexed separately. *Pick this when* your documents are long (notes, reports, PDFs): a whole long document may not fit into what the model can read, and smaller pieces let only the relevant parts be sent. *Setup:* none.
+### C5. Should long documents be cut into smaller pieces before they are indexed?
+- **C5a (Recommended - course default): No cutting; each document is one piece.** Every document is embedded and stored whole. *Pick this when* each document is short, like a product entry or a short record; cutting would only split facts that belong together. *Setup:* none.
+- **C5b: Cut long documents into overlapping pieces.** Each document longer than the piece size is cut into overlapping pieces, each embedded and stored on its own. *Pick this when* your documents are long (notes, manuals, reports): a whole long document may not fit in what the model can read at once, and small pieces let only the relevant parts reach the model. *Setup:* none.
   - *What to check:* each piece remembers which document it came from, and the pieces of one document together hold the whole document.
 
-### C6. How is each piece turned into a numeric representation of its meaning (an embedding)?
-- **C6a (Recommended - course default): OpenAI embeddings.** *Pick this when* you already use an OpenAI key; costs: every document and every question is sent to OpenAI and paid per use. *Setup:* OpenAI API key (the same one as C3a).
-- **C6b: A local embedding model on your machine.** *Pick this when* your documents must not leave your machine for indexing, or you do not use OpenAI; costs: a download of a few hundred MB, and its matching quality may differ from the course's. *Setup:* the embedding model download.
-  - *What to check:* indexing and question embedding make no network call, and a question worded differently from a document (e.g. "sunblocking" for "sun protection") still retrieves that document among its pieces.
+### C6. What turns each piece of text into its numeric meaning (its embedding)?
+- **C6a (Recommended - course default): OpenAI embeddings.** Each piece and each question is embedded by OpenAI's embedding service. *Pick this when* you are using an OpenAI key anyway (C3a). *Setup:* the OpenAI API key; billed per token and documents are sent to OpenAI.
+- **C6b: A local embedding model.** An embedding model runs inside the program on your machine. *Pick this when* you have no OpenAI key (for example with C3b or C3c) or your documents must not leave your machine. *Setup:* an embedding package and a model download of a few hundred megabytes.
+  - *What to check:* with no OpenAI key set, indexing the sample catalog and asking the sunblocking question works, and the four retrieved pieces include both the Breezeway Sun Shirt and the Trailmark Hiking Shirt.
 
-### C7. Where are the stored meaning vectors kept?
-- **C7a (Recommended - course default): In memory, rebuilt each time the program starts.** *Pick this when* your collection is small; the course chose an in-memory store because it needs no external database and is easy to start with; cost: every start re-embeds every document (time and paid calls). *Setup:* none.
-- **C7b: A store saved on disk.** *Pick this when* your collection is large or you restart often, so documents are embedded once and reused. *Setup:* an embedded vector-store package (no server).
-  - *What to check:* after a restart, a question is answered without embedding any document again, and a newly added document becomes retrievable after it is indexed.
+### C7. Where are the pieces and their embeddings kept?
+- **C7a (Recommended - course default): In memory, rebuilt at each start.** The store lives inside the running program and is rebuilt from the documents every time it starts. *Pick this when* your collection is small enough to re-embed in seconds; it needs no database of any kind and is the easiest to start with. *Setup:* none.
+- **C7b: Saved to a file on your disk.** The store is written to disk after indexing and loaded at the next start. *Pick this when* your collection is large enough that re-embedding at every start is slow or costs noticeable embedding fees. *Setup:* an embedded vector-store package.
+  - *What to check:* after a restart, questions are answered without embedding the documents again (the embedder is called only for the question), and the loaded store holds the same pieces as before.
+- **C7c: A vector database server or hosted service.** The store lives in a separate database that several programs can share. *Pick this when* several people or programs must query one large collection. *Setup:* a database container or a hosted account and its key.
+  - *What to check:* after indexing, the database holds one entry per piece with its text, embedding and source, and a second program instance answers the sunblocking question without indexing again.
 
-### C8. How are the retrieved pieces combined into one answer?
-- **C8a (Recommended - course default): Stuff — all retrieved pieces in one prompt, one model call.** *Pick this when* the retrieved pieces fit in one prompt; it is the simplest, cheapest and most common method, but for large or many pieces the prompt can grow past what the model can read. *Setup:* none.
-- **C8b: Map-reduce — ask each piece separately, then combine.** One call per piece, then one more call that combines the separate answers. *Pick this when* you retrieve many or large pieces; it works over any number of pieces and its per-piece calls can run in parallel; costs: many more calls, and it treats each piece as independent of the others. *Setup:* none.
-  - *What to check:* for one question with 4 retrieved pieces the model is called once per piece plus once to combine, and the final answer is built only from those per-piece answers.
-- **C8c: Refine — build the answer piece by piece.** The first piece gives a first answer; each next call improves it with the next piece. *Pick this when* an answer must combine information spread across several pieces; costs: generally longer answers, slower because each call waits for the previous one, and about as many calls as map-reduce. *Setup:* none.
-  - *What to check:* for one question with 4 retrieved pieces the model is called 4 times in order, and each call after the first receives the previous answer together with the next piece.
-- **C8d: Map-rerank — one scored answer per piece, keep the best.** Each call answers from one piece and gives a score; the highest-scoring answer is returned. *Pick this when* the answer to a question usually sits in a single piece; costs: the course calls it experimental, it relies on the model scoring well (the scoring instructions need care), and it makes one call per piece. *Setup:* none.
-  - *What to check:* for one question with 4 retrieved pieces the model is called once per piece, each reply carries an answer and a score, and the answer returned is the one with the highest score.
+### C8. How are the retrieved pieces given to the model to write the answer?
+- **C8a (Recommended - course default): All in one prompt ("stuff").** The retrieved pieces are put into a single prompt with the question and the model is called once. *Pick this when* the retrieved pieces are few and short; it is the simplest, cheapest and most common method and the model sees all pieces at once, but a prompt bigger than the model can read will not work. *Setup:* none.
+- **C8b: Answer per piece, then combine ("map-reduce").** The model answers the question from each piece separately, then one more call combines those answers into the final one. *Pick this when* you retrieve many pieces or long ones; it works over any number of pieces and the per-piece calls can run in parallel, but it makes many more calls and treats the pieces as independent. *Setup:* none.
+  - *What to check:* for the sunblocking question the model is called once per retrieved piece and once more to combine, and the answer is the combining call's reply.
+- **C8c: Build the answer piece by piece ("refine").** The model reads the pieces one after another, improving the answer from the previous piece each time. *Pick this when* the answer must combine information spread across pieces; answers tend to be longer, and it is slower because each call waits for the one before, with as many calls as map-reduce. *Setup:* none.
+  - *What to check:* the model is called once per retrieved piece in order, every call after the first receives the previous answer, and the last call's reply is the answer.
+- **C8d: Answer per piece with a score, keep the best ("map-rerank").** The model answers from each piece separately and gives each answer a score; the highest-scoring answer is returned. *Pick this when* one piece is likely to hold the whole answer; it is experimental, depends on telling the model clearly how to score, and makes one call per piece. *Setup:* none.
+  - *What to check:* the model is called once per retrieved piece, each reply carries a numeric score, and the answer is the reply with the highest score.
 
-### C9. How is the program checked against example questions?
-- **C9a (Recommended - course default): Hand-written plus model-generated examples, graded by a model.** You write a few question–answer pairs; the model writes one more pair per document from the first few documents; the program answers them all and a model grades each answer. *Pick this when* you want a repeatable check to see whether a change (another model, store or retrieval setting) makes answers better or worse; costs: extra model calls, and the generated reference answers are themselves model output. *Setup:* none beyond the C3 key.
-- **C9b: Hand-written examples only, graded by a model.** *Pick this when* you want every reference answer written by a person, or your documents do not suit automatic question writing; cost: writing examples by hand does not scale well. *Setup:* none beyond the C3 key.
-  - *What to check:* the evaluation report lists exactly the hand-written examples, each with question, reference answer, predicted answer and a grade from the grading model, and no generation call is made.
-- **C9c: No evaluation step; you judge answers by reading them.** *Pick this when* it is a small personal tool and you will notice bad answers yourself; costs: checking by eye is tedious and leaves no record of whether a change helped. *Setup:* none.
-  - *What to check:* the program has no evaluate command and makes no generation or grading calls, while every question-answering test still passes.
+### C9. How does the program check the quality of its answers?
+- **C9a (Recommended - course default): Hand-written plus model-written examples, graded by a model.** An evaluation command runs a few hand-written question–answer pairs plus pairs a model writes from documents through the program, and a grading model marks each answer correct or incorrect by meaning. *Pick this when* you will change the program (model, retrieval, settings) and want to know whether it got better or worse; writing examples by hand is slow, so a model writes most of them. *Setup:* none beyond the model key; each run costs model calls.
+- **C9b: Hand-written examples only, graded by a model.** The same evaluation, but only with question–answer pairs you write yourself. *Pick this when* you want full control over every test question, or your documents are too few for generated questions to add anything. *Setup:* none beyond the model key.
+  - *What to check:* the evaluation runs exactly the hand-written examples and makes no example-writing model calls.
+- **C9c: No evaluation.** The program only answers questions. *Pick this when* you want a personal question tool and will judge answers yourself as you read them. *Setup:* none.
+  - *What to check:* the program has no evaluation command and every remaining test passes.
 
-### C10. How can you see what happened inside one question?
-- **C10a (Recommended - course default): A step-by-step trace printed on your machine, off by default.** Turned on, it prints the question, the retrieved pieces, the full prompt and the model's reply. *Pick this when* you want to find out why an answer is wrong (often the retrieval step, not the model) without sending runs anywhere. *Setup:* none.
-- **C10b: A hosted run dashboard.** Every run is saved and browsable step by step in a web interface, and runs can be added to an example set for evaluation. *Pick this when* you want a history of runs across sessions and to grow your evaluation examples over time; cost: questions and documents are sent to the hosted service. *Setup:* an account and key for the hosted tracing service.
-  - *What to check:* after one question with tracing on, the run appears in the dashboard showing the retrieved pieces, the prompt and the reply.
+### C10. How do you see what happened inside one answer?
+- **C10a (Recommended - course default): A debug switch that prints every step.** When switched on, the program prints the question, the retrieved pieces, the full prompt sent to the model, the model's reply and the token counts. *Pick this when* you want to find out why an answer is wrong; often the retrieval step, not the model, is at fault. *Setup:* none.
+- **C10b: A hosted run dashboard.** Every run is recorded to a hosted tracing service, where you click down through each step and can save questions and answers into an example set for evaluation. *Pick this when* a team wants runs kept and browsable over time and wants to grow an evaluation set from real questions. *Setup:* a hosted account and its API key; questions and documents are sent to that service.
+  - *What to check:* after one question is asked, the run appears in the dashboard with the question, the retrieved pieces, the prompt and the reply.
 
 ## 2. Departures from the course
 
-| # | Where the recommended build differs | Reason |
-|---|---|---|
-| D1 | Current releases of the libraries instead of the course's pinned `langchain==0.0.179` and `openai==0.27.7`. | Course-era versions often no longer install or work with current models (4.7). |
-| D2 | A command-line program (`ask`, `evaluate`) instead of notebook cells. | The build is a program, not a notebook. *Addition.* |
-| D3 | An 8-item catalog and example questions written for this spec instead of the course's 1000-row outdoor-clothing catalog and its examples. | No course data is copied; small samples make outcomes exact. *Addition.* |
-| D4 | Offline tests use a scripted stand-in model and a scripted stand-in embedder. | Tests must run without a key. *Addition, labelled stand-ins.* |
-| D5 | The build agent picks a current OpenAI chat model; the course used `gpt-3.5-turbo` (and `gpt-3.5-turbo-instruct` for its one-line index query). | Model names go stale (4.6). |
-| D6 | The index is built one way only (load → embed → store) instead of both the course's one-line index creator and its step-by-step version. | The course says both give the same result; one behavior is specified. |
-| D7 | The course's in-memory vector store class is used if the current release still provides it; otherwise the current release's in-memory vector store. | Same behavior; the class may no longer exist (4.7). |
-| D8 | The hosted evaluation platform the course demonstrated is not part of the recommended build (offered as C10b). | It needs a hosted account (4.4). |
-| D9 | Document separator `<<<<>>>>>` between pieces in the answer prompt, from the course's final (evaluation-lesson) app; the question-answering lesson left the framework default. | Picked by 4.2 rule (2), final end-to-end app. |
-| D10 | Grades are exactly `CORRECT` or `INCORRECT`; ties in retrieval order are not asserted. | Makes test outcomes exact. *Addition.* |
-| D11 | Without a key and without stand-ins, `ask` and `evaluate` stop with a message naming `OPENAI_API_KEY`. | A clear failure instead of a crash. *Addition.* |
+| # | Where | Course did | This spec does | Why |
+|---|---|---|---|---|
+| D1 | Library versions | Pinned `langchain==0.0.179` and `openai==0.27.7` | Current releases | Course-era versions often no longer install or work with current models. |
+| D2 | Models | `gpt-3.5-turbo` (`gpt-3.5-turbo-0301` before 2024-06-12); `gpt-3.5-turbo-instruct` for the one-line index query | The build agent picks a current model per role at the checklist | Model names go stale; the course's own note says one of its models was deprecated. |
+| D3 | Program form | Notebook cells, answers rendered as Markdown in the notebook | A command-line program with `ask` and `eval` commands (C4 can change this) | The build is a program, never a notebook. |
+| D4 | Sample data | A 1000-row outdoor clothing catalog CSV | An 8-row outdoor clothing catalog with facts written for this spec | No course data is copied; a small catalog keeps every outcome checkable by hand. |
+| D5 | Offline tests | None; every call went to OpenAI | Scripted stand-in model and a stand-in embedder, labelled as stand-ins (addition) | Tests must run offline with exact outcomes. |
+| D6 | One-line index shortcut | Built the same index two ways: a one-line index creator and step by step | One indexing path | The course says both give the same result; one path is enough. |
+| D7 | Hosted evaluation platform | Shown in the video for viewing runs and building example sets | Left out of the recommended build; offered as C10b | It needs a hosted account; the debug switch already shows each step. |
+| D8 | Grade values | The grader's text was printed as returned | Grades are normalised to `CORRECT` or `INCORRECT` (addition) | A fixed value set makes the report and tests exact. |
+| D9 | Missing-key message, stand-in switch | Not present | Added (R10) | Lets the offline tests run without a key and gives a clear error without one. |
 
 ---
 
 ## 3. Objective
-Answer a person's plain-language questions about their own document collection from the few stored pieces most similar in meaning to each question, say "I don't know" when those pieces lack the answer, and measure answer quality against example questions.
+Index a collection of documents by meaning, then answer each plain-language question from the four stored pieces most similar in meaning to it, saying "I don't know" when those pieces lack the answer, and grade the program on example questions.
 
 ## 4. Tech stack, versions and secrets
-- **Language:** Python 3 (current release). The course's framework is LangChain; the course is about it, so the build uses the current LangChain release (with its OpenAI integration) rather than a stand-in.
-- **Versions:** current releases; no pins invented. The course pinned `langchain==0.0.179` and `openai==0.27.7` (fact about the course; see D1).
-- **Framework behaviour:** where the course leaves behaviour to the framework (how the stuff/map-reduce/refine/map-rerank methods call the model, the answer prompt's wording, retries), keep the current release's behaviour; note in `resolved-decisions.md` how the release provides it.
-- **Package layout:** an importable package `qa_app`; command line `python -m qa_app ask "<question>" [--trace] [--data <path>]` and `python -m qa_app evaluate [--trace] [--data <path>]`. Default data path `data/catalog.csv`.
-- **Secrets:** `OPENAI_API_KEY` read from the environment (a local `.env` file may set it, as the course did); never written to any file the program creates, never printed, never committed.
+- Python 3.11 or newer; the current release of LangChain and its OpenAI integration (the framework the course teaches); pytest for tests. Use current releases throughout; pin nothing that the course pinned (D1).
+- Where this spec leaves a behaviour to the framework (how the one-prompt answer chain formats its prompt, retries, how a parsed reply is produced), keep the current release's behaviour and note in `resolved-decisions.md` how the release provides it.
+- Package name `docqa` (importable). Commands: `python -m docqa ask "<question>" [--debug]`, `python -m docqa eval`.
+- Secrets: `OPENAI_API_KEY` read from the environment or a local `.env` file; never written to code, logs or the debug output. `.env` is listed in `.gitignore`.
+- `DOCQA_STANDINS=1` makes the program use the stand-in model and stand-in embedder of section 8 instead of real providers (addition, for tests and demos).
 
 ## 5. Input/output contracts
 
-```json
-{
-  "$id": "catalog.csv",
-  "description": "UTF-8 CSV with a header row; each data row is one document.",
-  "columns": ["name", "description"],
-  "rowSchema": {"type": "object", "required": ["name", "description"],
-    "properties": {"name": {"type": "string", "minLength": 1}, "description": {"type": "string", "minLength": 1}}}
-}
-```
+**Catalog file (`sample_data/catalog.csv`)**: CSV with header `id,name,description`.
 
+**Piece** (one per document under C5a):
 ```json
 {
-  "$id": "Document",
-  "type": "object", "required": ["text", "source"],
+  "type": "object",
+  "required": ["piece_id", "text", "vector", "source"],
   "properties": {
-    "text": {"type": "string", "description": "For a CSV row: 'name: <name>' newline 'description: <description>'."},
-    "source": {"type": "string", "description": "File path plus row number (1-based, header excluded)."}
-  }
-}
-```
-
-```json
-{
-  "$id": "StoredEntry",
-  "type": "object", "required": ["vector", "text", "source"],
-  "properties": {
+    "piece_id": {"type": "string", "pattern": "^[A-Za-z0-9_-]+$"},
+    "text": {"type": "string", "minLength": 1, "description": "For a CSV row: each column as 'column: value', one per line, in header order"},
     "vector": {"type": "array", "items": {"type": "number"}, "minItems": 1},
-    "text": {"type": "string", "description": "The original text of the piece, unchanged."},
-    "source": {"type": "string"}
+    "source": {
+      "type": "object",
+      "required": ["file", "row"],
+      "properties": {"file": {"type": "string"}, "row": {"type": ["integer", "null"], "minimum": 0}}
+    }
   }
 }
 ```
 
+**Answer record** (what `ask` produces; printed as the answer text, full record available to tests):
 ```json
 {
-  "$id": "Example",
-  "type": "object", "required": ["query", "answer"],
-  "properties": {"query": {"type": "string", "minLength": 1}, "answer": {"type": "string", "minLength": 1}}
+  "type": "object",
+  "required": ["question", "answer", "retrieved"],
+  "properties": {
+    "question": {"type": "string", "minLength": 1},
+    "answer": {"type": "string"},
+    "retrieved": {
+      "type": "array", "maxItems": 4,
+      "items": {"type": "object", "required": ["piece_id", "score"],
+                "properties": {"piece_id": {"type": "string"}, "score": {"type": "number"}}},
+      "description": "Most similar first"
+    }
+  }
 }
 ```
 
+**Evaluation example**: `{"query": string (minLength 1), "answer": string, "origin": "hand" | "generated"}`.
+
+**Evaluation result** (one per example, in `eval` output):
 ```json
 {
-  "$id": "GradedExample",
-  "type": "object", "required": ["query", "answer", "result", "grade"],
+  "type": "object",
+  "required": ["query", "real_answer", "predicted_answer", "grade"],
   "properties": {
-    "query": {"type": "string"}, "answer": {"type": "string", "description": "Reference answer."},
-    "result": {"type": "string", "description": "The program's predicted answer."},
+    "query": {"type": "string"},
+    "real_answer": {"type": "string"},
+    "predicted_answer": {"type": "string"},
     "grade": {"enum": ["CORRECT", "INCORRECT"]}
   }
 }
 ```
+The `eval` output ends with a totals line: `CORRECT: <n>  INCORRECT: <m>`.
 
-- **`ask` output:** the answer text on one line of standard output (with `--trace`, the trace lines come first, the answer last). Exit code 0.
-- **`evaluate` output:** for each example i (1-based) five lines: `Example i:`, `Question: <query>`, `Real Answer: <answer>`, `Predicted Answer: <result>`, `Predicted Grade: <grade>`, then a blank line (the course printed these five labels).
+**Model roles**
+- **Answerer:** writes the answer from the question plus retrieved pieces.
+- **Example writer:** writes one question–answer pair from one document (C9a only).
+- **Grader:** decides whether a predicted answer means the same as the real answer.
+- **Embedder:** turns each piece and each question into a vector (an embedding model, not a chat model).
 
-### Model roles
-| Role | What it does | Course model (fact) |
-|---|---|---|
-| answer | Writes the answer from the question and retrieved pieces. | `gpt-3.5-turbo`, temperature 0 |
-| example-generator | Writes one question–answer pair from one document. | `gpt-3.5-turbo`, temperature not set |
-| grader | Grades a predicted answer against the reference answer. | `gpt-3.5-turbo`, temperature 0 |
-| embedder | Turns each piece and each question into a meaning vector. | OpenAI embeddings (model not named; vectors of "over a thousand" numbers) |
+**Settings**
 
-### Settings
-| Setting | Value | Source | Change this when |
+| Setting | Value | Source | Change this when … |
 |---|---|---|---|
-| Answer temperature | 0.0 | L5 notebook (file L4-QnA) cell 28; L6 notebook (file L5-Evaluation) cell 8; L2 transcript: "set the temperature parameter to be equal to zero … less random". | You want more varied wording; the course raised it (0.9) only for creative naming in the chains lesson. |
-| Pieces retrieved per question (n) | 4 | L5 transcript: similarity search "returns four documents" (the framework default; the course never sets it). | Answers need more pieces, or the prompt grows too long. |
-| Document separator in the answer prompt | `<<<<>>>>>` | L6 notebook cell 8. | Never needed for the sample; any distinctive string works. |
-| Documents used to generate examples | the first 5 | L6 notebook cell 18. | You want generated examples to cover more of the collection. |
-| Grader temperature | 0 | L6 notebook cell 31. | — |
-| Example-generator temperature | not set by the course; keep the framework default | L6 notebook cell 16. | — |
-| Trace | off | L6 notebook cells 25–27 turn it on for one run, then off. | Turn on with `--trace` to see why an answer is wrong. |
+| `top_k` (pieces retrieved per question) | 4 | Course: the similarity search "returns four documents" (L5); the course never set it, this is the framework's default it ran with | your pieces are tiny or answers need more pieces; keep it small enough that the prompt fits the model |
+| `answer_temperature` | 0.0 | Course: answer model built with temperature 0.0 (L5 notebook); instructor: "When I'm building applications, one thing I will often do is set the temperature parameter to be equal to zero" (L2) | you want more varied wording; answers will vary run to run |
+| `grader_temperature` | 0.0 | Course: grading model built with temperature 0 (L6 notebook) | rarely; grades should be repeatable |
+| `example_writer_temperature` | framework default (not set) | Course: the example-writing model was built without a temperature (L6 notebook); the instructor said the default was 0.7 (L2) | you want more or less varied generated questions |
+| `piece_separator` | `<<<<>>>>>` | Course: final question-answering chain in L6 set this separator; L5 left it at the framework default | your documents contain that string |
+| `examples_from_first_n_docs` | 5 | Course: example pairs generated from the first five documents (L6 notebook) | your collection is larger and you want more examples |
+| `debug` | off | Course: debug turned on for one run, then off (L6 notebook) | you are investigating one answer |
+| `chunk_size`, `chunk_overlap` (C5b only) | 1000 characters, 100 characters (addition) | Not set by the course; the course did not cut its short documents | your documents are much shorter or longer than a page |
 
 ## 6. Business rules
 
-### What must stay true (the pattern card)
-Every build, whatever options are chosen, keeps all three:
-- **MST1. The documents are indexed by meaning before any question.** Each piece of text gets a numeric representation of its meaning, stored next to its original text, so pieces with similar meaning can be found later. → T1, T2
-- **MST2. For each question, only the few stored pieces most similar in meaning are retrieved, not the whole collection.** → T3, T4
-- **MST3. A language model writes the answer from the question plus the retrieved pieces, so the answer rests on the person's documents.** → T5, T6
+**What must stay true** (the course's pattern card; every option keeps every item):
+- **M1. The documents are indexed by meaning before any question.** Each piece of text gets a numeric representation of its meaning, stored next to its original text, so pieces with similar meaning can be found later. → T1, T2
+- **M2. For each question, only the few stored pieces most similar in meaning are retrieved, not the whole collection.** → T3, T4, T12
+- **M3. A language model writes the answer from the question plus the retrieved pieces, so the answer rests on the person's documents.** → T5, T12
 
-### Rules of the recommended build
-- **R1.** On start, the program loads every document (one per CSV row), embeds each with the embedder, and stores each vector with its original text and source, before accepting any question. → T1, T2
-- **R2.** Each question is embedded with the same embedder and compared with every stored vector; the n = 4 most similar pieces are retrieved, most similar first. → T3, T4, T12
-- **R3.** The answer model receives one prompt holding the question and exactly the retrieved pieces, separated by `<<<<>>>>>`, and no other document text; one answer-model call per question (stuff). → T4, T5, T12
-- **R4.** The answer prompt tells the model to answer from the given pieces and, if it does not know the answer, to say that it does not know rather than make one up; the program returns the model's reply unchanged. (Course source: the evaluation lesson shows this instruction inside the question-answering prompt.) → T6, T13
-- **R5.** The answer model is called with temperature 0. → T5
-- **R6.** `evaluate` builds its examples as the hand-written examples followed by one generated example per document for the first 5 documents, in catalog order; each generated example is parsed into the Example structure (`query`, `answer`). → T7
-- **R7.** `evaluate` answers every example's `query` through the same path as `ask` (R2–R5). → T8
-- **R8.** Each predicted answer is graded by the grader model, which judges whether it means the same as the reference answer; the program never grades by exact or pattern string comparison. Each grade is `CORRECT` or `INCORRECT`, and the report follows the `evaluate` output contract. → T8, T9
-- **R9.** The trace is off by default; with `--trace` the program prints, before the answer, the question, each retrieved piece's text, the full prompt sent to the answer model, and the model's reply. Without `--trace` it prints only the answer. → T10
-- **R10.** When `OPENAI_API_KEY` is absent and the stand-ins are not in use, `ask` and `evaluate` exit with a non-zero code and a message containing `OPENAI_API_KEY`, and make no network call. *Addition.* → T11
+**Rules of the recommended build**
+- **R1. Indexing.** Before the first question, every document becomes exactly one piece (C5a) whose text is its columns written as `column: value` lines in header order, whose vector comes from the embedder, and whose source names the file and row (0-based). The store starts empty. → T1, T2
+- **R2. Retrieval.** The question is embedded with the same embedder; it is compared with every stored vector by cosine similarity (a zero vector scores 0); the `top_k` most similar pieces are returned most similar first; equal scores keep catalog order. The rest of the collection is never sent to the model. → T3, T4, T6, T12
+- **R3. Answering.** The answerer is called once per question (C8a) with a prompt that contains, in order: the instruction "Use the following pieces of context to answer the user's question. If you don't know the answer, just say that you don't know, don't try to make up an answer.", the retrieved pieces' texts joined by `piece_separator`, and the question. The answer is the model's reply, unchanged. → T4, T5, T12
+- **R4. Saying it does not know.** When the retrieved pieces do not hold the answer, the program returns the model's "don't know" reply as the answer and adds no answer of its own. → T6, T13
+- **R5. Evaluation examples.** The example set is the hand-written examples followed by one generated example per document for the first `examples_from_first_n_docs` documents, in document order. Each generated reply is parsed into a `{query, answer}` record. → T7
+- **R6. Evaluation run.** `eval` runs each example's query through the same ask path as R2–R3 and records the reply as the predicted answer. → T8
+- **R7. Grading by meaning, never by string match.** Each prediction is graded by the grader model given the query, the real answer and the predicted answer. The grade is `CORRECT` when the reply's first word, uppercased, is `CORRECT`, otherwise `INCORRECT`. The program never compares the real and predicted answers as strings. → T8, T9
+- **R8. Report.** `eval` prints, per example: question, real answer, predicted answer, grade; then the totals line. → T8
+- **R9. Debug switch.** With `--debug`, `ask` additionally prints the question, each retrieved piece's id, score and text, the full prompt sent to the answerer, the reply, and the token counts when the provider reports them. Without it, `ask` prints only the answer. → T10
+- **R10. Keys (addition).** With `DOCQA_STANDINS=1` no key is read and no network call is made. Without it and without `OPENAI_API_KEY`, `ask` and `eval` exit with a non-zero status and a message naming `OPENAI_API_KEY`. → T11
 
 ## 7. Tests
 
 ### 7.1 Sample data
-**`data/catalog.csv`** — written for this spec (*addition*; no course data copied). Header `name,description`, then these 8 rows in this order (P1–P8 are the row numbers 1–8):
 
-| Row | name | description |
+**`sample_data/catalog.csv`** (facts written for this spec; quoted CSV, header `id,name,description`):
+
+| id | name | description |
 |---|---|---|
-| P1 | Trailbreeze Sun Shirt | Lightweight long-sleeve shirt rated UPF 50+ for sun protection. One zip chest pocket. Fabric: recycled polyester. |
-| P2 | Harbor Linen Tee | Short-sleeve linen tee for hot days. Relaxed fit. Fabric: linen. |
-| P3 | Summit Shade Hoodie | Hoodie with UPF 40 sun protection and thumb loops. Fabric: nylon blend. |
-| P4 | Glacier Down Parka | Insulated parka from the NorthLoft collection, filled with 700-fill goose down. |
-| P5 | Cedar Trail Pants | Hiking pants with two zippered side pockets. Fabric: stretch nylon. |
-| P6 | Riverstone Rain Jacket | Waterproof, packable rain jacket with a hood. |
-| P7 | Meadow Fleece Pullover | Half-zip fleece pullover. It has no side pockets. |
-| P8 | Coastline Swim Trunks | Quick-dry swim trunks with a mesh liner. |
+| P1 | Breezeway Sun Shirt | Lightweight long-sleeve shirt with UPF 50+ sun protection. Fabric: 100% recycled polyester. Has two chest pockets. |
+| P2 | Trailmark Hiking Shirt | Short-sleeve top with UPF 30 sun protection. Fabric: nylon. Weight: 6 oz. |
+| P3 | Harbor Fleece Pullover | Cozy fleece pullover with side pockets. Fabric: polyester fleece. Weight: 12 oz. |
+| P4 | Summit Down Jacket | Insulated hooded jacket from the Alpine collection. Fill: 800-fill goose down. |
+| P5 | Riverbend Rain Pants | Waterproof pants with taped seams. Fabric: nylon with waterproof coating. |
+| P6 | Canyon Wool Socks | Merino wool hiking socks. Sold in packs of three. |
+| P7 | Meadow Sun Hat | Wide-brim hat with UPF 50 sun protection and a chin strap. |
+| P8 | Lakeside Cotton Tee | Basic cotton t-shirt for everyday wear. |
 
-(Descriptions containing commas are quoted in the CSV.) Each row's Document text is `name: <name>` newline `description: <description>`.
+Piece ids are the `id` values. Piece text example for P1: `id: P1` / `name: Breezeway Sun Shirt` / `description: Lightweight long-sleeve …` on three lines.
 
-**Sample questions:**
-- **Q-A** `Please suggest a shirt with sunblocking`
-- **H1** `Do the Cedar Trail Pants have side pockets?` (also used as a plain question)
-- **H2** `What collection is the Glacier Down Parka from?` (also used as a plain question)
-- **Q-D** `Do you sell kayaks?` (planted: the catalog has no answer)
+**`sample_data/examples.json`** — the hand-written examples:
+- E1: query "Does the Harbor Fleece Pullover have side pockets?", answer "Yes" (planted failure: a correct prediction that does not match this answer as a string).
+- E2: query "What collection is the Summit Down Jacket from?", answer "The Alpine collection".
 
-**Hand-written examples** (`data/examples.json`, a list of Example): H1 → answer `Yes`; H2 → answer `The NorthLoft collection`.
+**Stand-in embedder (stand-in for the embedding service; standard library only).** Lowercase the text, split on every character that is not a letter or digit, map each token through this table, count each concept, and return the 14-number count vector in this order (tokens not in the table are ignored):
 
-**Stand-in embedder** (*stand-in for the OpenAI embeddings*, tier 1, standard library only). Lower-case the text and split it into words on every character that is not a letter or digit. The vector has 9 numbers: one per concept below, 1 if any of the concept's words appears and 0 otherwise, then a final number that is always 1.
-
-| # | Concept | Words |
+| # | Concept | Tokens |
 |---|---|---|
-| 1 | sun | sun, upf, sunblocking, uv |
-| 2 | top | shirt, shirts, tee, tees, hoodie, hoodies |
-| 3 | pocket | pocket, pockets |
-| 4 | warm | down, parka, fleece, insulated |
-| 5 | rain | rain, waterproof |
-| 6 | pants | pants, trousers |
-| 7 | collection | collection |
-| 8 | swim | swim, trunks |
+| 1 | SUN | sun, sunblocking, sunblock, upf, uv |
+| 2 | SHIRT | shirt, shirts, tee |
+| 3 | POCKET | pocket, pockets |
+| 4 | JACKET | jacket, jackets |
+| 5 | DOWN | down |
+| 6 | RAIN | rain, waterproof |
+| 7 | PANTS | pants |
+| 8 | WOOL | wool, merino |
+| 9 | SOCKS | socks |
+| 10 | HAT | hat |
+| 11 | FLEECE | fleece, pullover |
+| 12 | COLLECTION | collection |
+| 13 | KAYAK | kayak, kayaks |
+| 14 | HIKING | hiking |
 
-Similarity is cosine similarity. Resulting document concepts: P1 {sun, top, pocket}; P2 {top}; P3 {sun, top}; P4 {warm, collection}; P5 {pocket, pants}; P6 {rain}; P7 {warm, pocket}; P8 {swim}.
+Resulting non-zero counts: P1 SUN 3, SHIRT 2, POCKET 1 · P2 SUN 2, SHIRT 1, HIKING 1 · P3 FLEECE 5, POCKET 1 · P4 JACKET 2, DOWN 2, COLLECTION 1 · P5 RAIN 3, PANTS 2 · P6 WOOL 3, SOCKS 2, HIKING 1 · P7 SUN 3, HAT 2 · P8 SHIRT 2.
 
-**Scripted stand-in model** (*stand-in for the OpenAI chat model*). It records every call (role, full prompt, temperature).
-- *answer role:* find which question below appears in the prompt; if every listed fact also appears in the prompt, reply with the listed text; otherwise, or for any other prompt, reply `I don't know.`
+**Stand-in model (stand-in for the chat model; scripted).** Every reply is chosen by the first matching row; the answerer matches only against the question part of its prompt.
 
-| Question in prompt | Facts that must be in the prompt | Reply |
+| Role | When the input contains | Reply |
 |---|---|---|
-| Q-A | `UPF 40` and `UPF 50+` | The Summit Shade Hoodie (UPF 40) and the Trailbreeze Sun Shirt (UPF 50+) offer sun protection. |
-| H1 | `two zippered side pockets` | Yes, the Cedar Trail Pants have two zippered side pockets. |
-| H2 | `NorthLoft collection` | The Glacier Down Parka is from the NorthLoft collection. |
-| G1 | `UPF 50+` | The Trailbreeze Sun Shirt is rated UPF 50+. |
-| G2 | `Fabric: linen` | The Harbor Linen Tee is made of linen. |
-| G3 | `thumb loops` | Yes, the Summit Shade Hoodie has thumb loops. |
-| G4 | `700-fill` | The Glacier Down Parka uses 700-fill goose down. |
-| G5 | `two zippered side pockets` | The Cedar Trail Pants have two side pockets. |
+| Answerer | "sunblocking" | "The Breezeway Sun Shirt has UPF 50+ sun protection and the Trailmark Hiking Shirt has UPF 30." |
+| Answerer | "side pockets" | "The Harbor Fleece Pullover does have side pockets." |
+| Answerer | "What collection" | "The Summit Down Jacket is from the Alpine collection." |
+| Answerer | "fabric is the Breezeway" | "The Breezeway Sun Shirt is made of 100% recycled polyester." |
+| Answerer | "UPF rating does the Trailmark" | "The Trailmark Hiking Shirt has UPF 30 sun protection." |
+| Answerer | "weigh" | "The Harbor Fleece Pullover weighs 12 oz." |
+| Answerer | "fill does the Summit" | "The Summit Down Jacket uses 800-fill goose down." |
+| Answerer | "seams do the Riverbend" | "The Riverbend Rain Pants have welded seams." (planted wrong answer) |
+| Answerer | anything else, including "kayaks" | "I don't know." |
+| Example writer | "Breezeway Sun Shirt" | `{"query": "What fabric is the Breezeway Sun Shirt made of?", "answer": "100% recycled polyester"}` (G1) |
+| Example writer | "Trailmark Hiking Shirt" | `{"query": "What UPF rating does the Trailmark Hiking Shirt have?", "answer": "UPF 30"}` (G2) |
+| Example writer | "Harbor Fleece Pullover" | `{"query": "How much does the Harbor Fleece Pullover weigh?", "answer": "12 oz"}` (G3) |
+| Example writer | "Summit Down Jacket" | `{"query": "What fill does the Summit Down Jacket use?", "answer": "800-fill goose down"}` (G4) |
+| Example writer | "Riverbend Rain Pants" | `{"query": "What seams do the Riverbend Rain Pants have?", "answer": "Taped seams"}` (G5) |
+| Grader | query contains "seams do the Riverbend" | "INCORRECT" |
+| Grader | anything else | "CORRECT" |
 
-- *example-generator role:* given one document, returns one question–answer pair (in whatever structure the program's generation step requests) chosen by the product name in the document:
-
-| Document | Generated query | Generated answer |
-|---|---|---|
-| P1 | G1 `What UPF rating does the Trailbreeze Sun Shirt have?` | `UPF 50+` |
-| P2 | G2 `What fabric is the Harbor Linen Tee made of?` | `Linen` |
-| P3 | G3 `Does the Summit Shade Hoodie have thumb loops?` | `Yes` |
-| P4 | G4 `What fill power is the Glacier Down Parka?` | `700-fill` |
-| P5 | G5 `How many side pockets do the Cedar Trail Pants have?` | `Two` |
-
-- *grader role:* given a question, reference answer and predicted answer, replies `CORRECT` if the predicted answer contains the question's key term (ignoring case), otherwise `INCORRECT`. Key terms: H1 `yes`; H2 `NorthLoft`; G1 `50+`; G2 `linen`; G3 `yes`; G4 `700`; G5 `two`.
-
-**Expected retrieval with the stand-in embedder** (replayed; similarity rounded). Pieces tied in similarity may come back in any order; tests never assert the order or identity of tied pieces.
-- Q-A {sun, top}: P3 1.000, P1 0.866, P2 0.816, then P6/P8 0.408 (tied).
-- H1 and G5 {pocket, pants}: P5 1.000, P7 0.667, P1 0.577, then P2/P6/P8 0.408 (tied).
-- H2 {warm, collection}: P4 1.000, P7 0.667, then P2/P6/P8 0.408 (tied).
-- Q-D {}: P2/P6/P8 0.707 (tied), then one of P3/P4/P5/P7 0.577 (tied).
-- G1 {sun, top}: as Q-A (P1 retrieved). G2 and G3 {top}: P2 1.000, P3 0.816, P1 0.707, then P6/P8 0.500 (tied). G4 {warm}: P4/P7 0.816 (tied), then two of P2/P6/P8 0.500.
+The stand-in model records every call (role, prompt, settings) so tests can inspect them. It reports no token counts.
 
 ### 7.2 Test table
-All tests run offline with the stand-ins unless marked `live`.
 
-| Test | Given / When / Then |
-|---|---|
-| **T1** (R1, MST1) | *Given* the sample catalog and a fresh start. *When* the program starts. *Then* the store holds exactly 8 entries, each with a 9-number vector, its original Document text and its source, and the stand-in embedder has embedded 8 documents and no question. |
-| **T2** (R1, MST1) | *Given* T1's started program. *When* H1 is asked. *Then* the embedder has embedded 8 documents and exactly 1 question, the question after all 8 documents. |
-| **T3** (R2, MST2) | *Given* the started program. *When* Q-A is asked. *Then* exactly 4 pieces are retrieved and the first three, in order, are P3, P1, P2. |
-| **T4** (R2, R3, MST2) | *Given* the started program. *When* H1 is asked. *Then* the single answer-model prompt contains H1, the text of P5, P7 and P1, exactly 4 pieces, and exactly 3 occurrences of `<<<<>>>>>`; at least 4 of the 8 product names are absent from it. |
-| **T5** (R3, R5, MST3) | *Given* the sample catalog. *When* `python -m qa_app ask "What collection is the Glacier Down Parka from?"` runs. *Then* exactly one answer-model call is made, at temperature 0, its prompt contains the question and `NorthLoft collection`, and standard output is `The Glacier Down Parka is from the NorthLoft collection.` |
-| **T6** (R4, MST3) | *Given* the started program. *When* Q-D is asked. *Then* the answer prompt contains the retrieved pieces and an instruction to say it does not know when the pieces lack the answer, and the program returns exactly `I don't know.` |
-| **T7** (R6) | *Given* the sample catalog and `data/examples.json`. *When* `evaluate` builds its examples. *Then* there are 7 examples in this order: H1, H2, G1, G2, G3, G4, G5, each with the `query` and `answer` listed in 7.1, and the example-generator was called 5 times, once each for P1–P5. |
-| **T8** (R7, R8) | *Given* T7's examples. *When* `python -m qa_app evaluate` runs. *Then* 7 answer-model calls and 7 grader calls are made, every grader call is at temperature 0, every grade is `CORRECT`, and the output has the five labelled lines for each of examples 1–7 with H1's `Predicted Answer: Yes, the Cedar Trail Pants have two zippered side pockets.` |
-| **T9** (R8) | *Given* example H1 (reference answer `Yes`). *When* the predicted answer `Yes, the Cedar Trail Pants have two zippered side pockets.` is graded, and then `No, they have no pockets.` *Then* the first is `CORRECT` although it does not equal `Yes`, the second is `INCORRECT`, and both grades came from grader-model calls. |
-| **T10** (R9) | *Given* the sample catalog. *When* H2 is asked with `--trace`, then again without it. *Then* the traced output contains H2, the text of P4, `<<<<>>>>>` and the reply, with the reply on the last line; the untraced output is only the reply line. |
-| **T11** (R10) | *Given* no `OPENAI_API_KEY` and the stand-ins not in use. *When* `python -m qa_app ask "Do you sell kayaks?"` runs. *Then* it exits non-zero, its message contains `OPENAI_API_KEY`, and no network call is made. |
-| **T12** `live` (R2, R3) | *Given* `OPENAI_API_KEY` and the sample catalog with the real embedder and model. *When* H2 is asked. *Then* the answer contains `NorthLoft`. |
-| **T13** `live` (R4) | *Given* `OPENAI_API_KEY` and the sample catalog. *When* Q-D is asked. *Then* the answer says it does not know (contains "don't know" or "do not know", ignoring case) and names no kayak product. |
+All tests run with `DOCQA_STANDINS=1` unless marked `live`. Scores are cosine similarities, checked to ±0.001.
+
+| Test | Rules | Given | When | Then |
+|---|---|---|---|---|
+| T1 | R1, M1 | A fresh start | The store is created, then the sample catalog is indexed | Before indexing the store holds 0 pieces; after, 8 pieces with ids P1–P8 |
+| T2 | R1, M1 | The indexed sample catalog | Piece P1 is read | Its text is the three lines `id: P1`, `name: Breezeway Sun Shirt`, `description: Lightweight long-sleeve shirt with UPF 50+ sun protection. Fabric: 100% recycled polyester. Has two chest pockets.`; its vector has 14 numbers with SUN 3, SHIRT 2, POCKET 1 and all others 0; its source is `catalog.csv`, row 0 |
+| T3 | R2, M2 | The indexed sample catalog | `ask "Please suggest a shirt with sunblocking"` | `retrieved` is P1 (0.945), P2 (0.866), P8 (0.707), P7 (0.588), in that order; answer is "The Breezeway Sun Shirt has UPF 50+ sun protection and the Trailmark Hiking Shirt has UPF 30." |
+| T4 | R2, R3, M2 | The same question | The answerer's prompt is inspected | It contains the texts of P1, P2, P8, P7 and none of "Harbor", "Summit", "Riverbend", "Canyon" |
+| T5 | R3, M3 | The same question | The answerer's calls are inspected | Exactly one answerer call; the prompt contains the R3 instruction sentence, then the four piece texts separated by exactly three `<<<<>>>>>`, then the question last; temperature 0.0; the returned answer equals the stand-in reply |
+| T6 | R2, R4 | The indexed sample catalog | `ask "Do you sell kayaks?"` | `retrieved` is P1, P2, P3, P4, each with score 0 (tie, catalog order); the prompt contains the "If you don't know the answer, just say that you don't know" sentence; the answer is "I don't know." |
+| T7 | R5 | The sample catalog and `examples.json` | The evaluation example set is built | 7 examples in order E1, E2, G1, G2, G3, G4, G5; E1–E2 have origin `hand`, G1–G5 origin `generated` with the queries and answers of the stand-in table; the example writer was called 5 times, once each for P1–P5, with no temperature set in its request |
+| T8 | R6, R7, R8 | The 7 examples | `python -m docqa eval` | Each example's predicted answer equals the answerer's scripted reply for its query; grades E1, E2, G1, G2, G3, G4 `CORRECT` and G5 `INCORRECT`; the output ends with `CORRECT: 6  INCORRECT: 1`; the grader was called 7 times at temperature 0.0 |
+| T9 | R7 | E1 (planted) | E1 is graded during `eval` | The real answer "Yes" and the predicted answer "The Harbor Fleece Pullover does have side pockets." are not equal as strings, the grader's prompt contains both, and the grade is `CORRECT` |
+| T10 | R9 | The indexed sample catalog | `ask "Please suggest a shirt with sunblocking"` without and then with `--debug` | Without: the output is only the answer. With: the output also holds the question, the ids P1, P2, P8, P7 with their scores, their texts, the full prompt including the R3 instruction, and the reply |
+| T11 | R10 | No `OPENAI_API_KEY` and no `DOCQA_STANDINS` | `python -m docqa ask "Please suggest a shirt with sunblocking"` | Exit status is non-zero, the message names `OPENAI_API_KEY`, and no network call is made |
+| T12 `live` | R2, R3, M2, M3 | `OPENAI_API_KEY` set; real embedder and model | `ask "Please suggest a shirt with sunblocking"` | The retrieved pieces include P1 and P2, and the answer names the Breezeway Sun Shirt |
+| T13 `live` | R4 | `OPENAI_API_KEY` set | `ask "Do you sell kayaks?"` | The answer says it does not know or that no kayak is listed, and names no product as a kayak |
 
 ## 8. Standing permissions
 - **Always:** run the offline tests after every change; keep every stand-in labelled as a stand-in in its code and output; read secrets from the environment.
-- **Ask First:** changing an answered question or a setting once the build has data; anything that sends data to a third party (for example C10b, or a provider not chosen at the gate).
+- **Ask first:** changing an answered question or a setting once the build has data; anything that sends data to a third party (including turning on C10b's hosted dashboard).
 - **Never:** invent provenance; answer when the program should say it does not know; change sample data to make a test pass; commit secrets.
 
 ## 9. Test plan
-- Offline: `python -m pytest -q` (tests in `tests/`, module names importable, e.g. `tests/test_retrieval.py`). The `live` tests are marked `live` and skipped when `OPENAI_API_KEY` is unset.
-- Live: `OPENAI_API_KEY=… python -m pytest -q -m live`.
-- Adjust the recommended tests for chosen options: tests that assert a behaviour the chosen option replaces (e.g. one answer-model call under C8b–C8d; the evaluate tests under C9b/C9c; R10's key name under C3b/C3c) are rewritten to that option's "what to check" sentence, and the rewrite is reported.
-- For every chosen non-recommended option, turn its "what to check" sentence (copied into `resolved-decisions.md`) into a test and report it.
-- Report one result per test with evidence (test output, file paths). "Should pass" counts as not run. The build is finished when the recommended tests, adjusted for the chosen options, pass and each chosen option's check passes.
-- Finish with a diagram of the built app introduced by the sentence "This is the infra/structure diagram of this app".
-
----
+1. Install: `python -m pip install -e ".[test]"` (dependencies declared in `pyproject.toml`).
+2. Offline tests: `python -m pytest -m "not live"` — T1–T11 must pass.
+3. Live tests: `OPENAI_API_KEY=… python -m pytest -m live` — T12–T13; skipped without the key, which is not a failure.
+4. Manual run: `python -m docqa ask "Please suggest a shirt with sunblocking" --debug` and `python -m docqa eval`.
+5. Adjust for the chosen options: leave out tests whose rules exist only for options not chosen (for C9c, leave out T7–T9; for C8b–C8d, T5's "exactly one answerer call" is replaced by that option's check). For each chosen non-recommended option, turn its "what to check" sentence from `resolved-decisions.md` into a test and run it.
+6. Report one result per test with evidence (test output, file paths). "Should pass" counts as not run. The build is finished when the recommended tests, adjusted for the chosen options, pass and each chosen option's check passes.
+7. Finish with a diagram of the built app, introduced by the sentence "This is the infra/structure diagram of this app".
 
 ## 10. Background notes
-*For the build agent. No code.*
 
 ### The program
 A program that answers a person's plain-language questions about their own collection of documents, using the few pieces of the collection most similar in meaning to the question. Stages:
 `load → (split) → embed → store → retrieve → answer → evaluate`
-- **load** — turns the collection into documents (one per catalog row); the model can only use text it is given.
-- **split** — only for long documents (C5); the course's catalog rows were small enough to skip it.
-- **embed** — gives each piece a numeric representation of its meaning, so similar texts get similar vectors (L5).
-- **store** — keeps each vector beside its original text so pieces can be found and returned later (L5 slides "Vector Database: create").
-- **retrieve** — embeds the question, compares it with every stored vector and picks the n most similar, because the model "can only inspect a few thousand words at a time" (L5).
-- **answer** — passes the question and the retrieved pieces to the model in one prompt (stuff) to get the final answer (L5).
-- **evaluate** — the course's final lesson on this program (L6) adds example questions, runs the program on them and grades the answers with a model, to tell whether a change makes the program better or worse.
-The step trace (L6 "debug") only shows what ran; it is not a stage (C10).
+- **load:** turn the collection into documents with their source, because everything later works on text pieces.
+- **split:** cut long documents into pieces, because a model can read only a few thousand words at a time; the course's documents were short, so it skipped this.
+- **embed:** give each piece a numeric meaning, because pieces with similar content get similar vectors and can then be compared.
+- **store:** keep each vector next to its original text, so a match can return the text.
+- **retrieve:** embed the question and pick the n most similar pieces, so only the relevant few reach the model.
+- **answer:** the model writes the answer from the question plus those pieces, which combines the model with data it was not trained on.
+- **evaluate:** run example questions and grade the answers, so a change (another model, another retrieval setting) can be judged better or worse.
+The debug switch is not a stage; it only shows what ran.
 
 ### Failures
-The course ran no failure of this program live; these were warned about or argued:
-- **Whole collection does not fit in the model** (warned, L5: "Language models can only inspect a few thousand words at a time"). You would see a failed or truncated call on a large collection. Prevented by retrieving only n pieces. Rule R3 (with R2); test T4.
-- **Grading by string matching fails** (argued with a concrete pair, L6: the reference "Yes" and the predicted "The Cozy Comfort Pullover Set, Stripe does have side pockets" are "nothing alike … if we were to try to do some string matching, or exact matching, or even some regexes here, it wouldn't know what to do"). You would see correct answers graded wrong. Prevented by model grading on meaning. Rule R8; test T9. Never offered as an option (5.3).
-- **Wrong answers usually come from retrieval, not the model** (warned, L6: "oftentimes when a wrong result is returned, it's not necessarily the language model itself that's messing up. It's actually the retrieval step"). The trace (R9, T10) shows the retrieved pieces and prompt.
-- **Stuff overflows on large or many pieces** (stated cost, L5 transcript and the "Stuff method" slide: "for large documents or many documents this will not work as it will result in a prompt larger than the context length"). A cost, not a ban: it is carried in C8a's "pick this when", and the other methods are offered.
-- **Deprecated model** (L5 notebook note): the one-line index query defaulted to `text-davinci-003`, deprecated since 1 January 2024, replaced in the notebook by `gpt-3.5-turbo-instruct`. Covered by picking a current model (D5).
-- Failures from other lessons, kept as notes only: a raw model reply that looks like JSON is still a string and cannot be read as a dictionary (L2, shown failing); a window memory of one exchange forgets the user's name (L3, shown); an agent first wrongly concluding that the 2022 World Cup had not happened (L7, shown).
+- **Exact string matching cannot grade answers (demonstrated, L6).** What you see: the real answer "Yes" and the predicted "The Cozy Comfort Pullover Set, Stripe does have side pockets" share no words, yet the answer is right. Why: open-ended answers have many correct wordings. Prevention: a model grades by meaning (R7); planted as E1; tested by T9 (and T8).
+- **Made-up answers when the pieces lack the answer (warned, L6).** The course's chain prompt tells the model "If you don't know the answer, just say that you don't know, don't try to make up an answer." The framework's prompt carries this; the spec requires the outcome (R4) and checks it with an unanswerable question (T6, live T13).
+- **Wrong answers caused by retrieval (warned, L6).** The instructor: when a wrong result is returned, "it's not necessarily the language model itself that's messing up. It's actually the retrieval step". Prevention: the debug switch shows the retrieved pieces and the full prompt (R9, T10).
+- **Results vary between runs (warned, every notebook).** "LLM's do not always produce the same results." Temperature 0 for answering and grading; live tests check content loosely.
+- **A deprecated default model (course-era).** The one-line index query defaulted to a completion model deprecated on 1 January 2024; the course swapped in a replacement. The spec does not use that shortcut (D6) and picks models at the checklist (D2).
 
 ### Why the questions and settings are what they are
-- **C1/C2/C5:** the course's data was a CSV with one product per row (L5); the instructor names other sources ("extracted from a PDF file or from a webpage or from some company's intranet internal document collection", L5). Splitting: "When we get a big incoming document, we're first going to break it up into smaller chunks … because we may not be able to pass the whole document to the language model", and "Because these documents are already so small, we actually don't need to do any chunking here" (L5). Which files to read and whether to split are independent, so they are two questions.
-- **C3/C6:** the course used OpenAI for the model and embeddings throughout. The provider and the embedder are independent choices.
-- **C4:** the course ran notebook cells, so it has no interface choice; the command line is the lightest one (*addition*).
-- **C7:** "it's an in-memory vector store and it doesn't require connecting to an external database of any kind so it makes it really easy to get started", "There are many different types of vector stores", and "we can also swap out the vector store here for a different type of vector store" (L5).
-- **C8:** all four methods with their costs come from L5's transcript and slides: stuff "is the simplest method … quite cheap and it works pretty well. But that doesn't always work okay"; map_reduce "can operate over any number of documents … you can do the individual questions in parallel. But it does take a lot more calls. And it does treat all the documents as independent"; refine "is really good for combining information … will generally lead to longer answers … not as fast … takes just as many calls as Map_reduce"; map_rerank "is a pretty interesting and a bit more experimental one … relies on the language model to know what the score should be … you're making a bunch of language model calls". "The most common … is the stuff method … The second most common is the Map_reduce method."
-- **C9:** hand-written examples "[don't] really scale that well" and model-generated ones save time (L6); manual grading "starts to get a little bit tedious" (L6). The course combined both kinds of examples (L6 notebook cell 22).
-- **C10:** the debug flag prints each step's inputs, the prompt and token usage (L6); the hosted evaluation platform "is a way to do everything that we just did in the notebook, but persisted and show it in a UI", and lets you add runs to a dataset (L6).
-- **Not questions (each fails a 5.2 test or is not a stage):**
-  - Number of pieces retrieved, temperatures, separator: settings (4.3).
-  - The one-line index creator versus the step-by-step build: the course says "these two things equate to the same result"; no learner situation tells them apart (test 3).
-  - Other retrieval methods ("plenty of different methods, some less advanced, some more advanced", L5): none is named; a method that does not compare meaning would break MST1/MST2 (test 1).
-  - Exact-match or regex grading: shown not to work (test 2; 5.3).
-  - The answer prompt's "don't know" instruction: a rule of the recommended build (pattern card), not a choice.
-  - Conversation memory, entity memory and storing conversations in a database (L3): from another lesson and they change no stage; the pattern card lists them as background notes, not offered.
-  - Prompt templates and output parsers (L2), sequential and router chains (L4), agents and tools (L7): other lessons; they change no stage of this program.
-  - Which model the tests run against: never asked (5.8).
-- **Where picked values came from (4.2):**
-  - Answer model: the final end-to-end app (L6 notebook cell 8) uses a chat model at temperature 0 with the stuff method; the L5 one-line `index.query` used a completion model (`gpt-3.5-turbo-instruct`) instead. Picked by rule (2), final end-to-end app.
-  - Separator: L6 sets `<<<<>>>>>`; L5 left the framework default. Rule (2).
-  - Course model id: notebooks pick `gpt-3.5-turbo` after 2024-06-12, else `gpt-3.5-turbo-0301`; the build agent picks a current model anyway (D5).
-  - n = 4: the only value the course shows (L5, framework default).
-- **Course code that looks odd:** in L5's step-by-step demonstration the retrieved documents were joined with no separator at all before being sent to the model (notebook cell 29). It is a by-hand demonstration replaced by the chain; the final app uses the separator above.
+- **C1/C2:** the course's example is one product catalog loaded from a CSV, one row per document; the instructor names other sources (a PDF, a webpage, a company's internal documents). Plain-text and PDF loading are options the learner's data needs.
+- **C3/C6:** the course used OpenAI for both the chat model and embeddings; the same key covers both, so the recommended build keeps OpenAI embeddings and offers a local embedder for learners without that key.
+- **C4:** the course ran in notebooks; a notebook is never the build, so the recommended interface is the command line, with no course default.
+- **C5:** "Because these documents are already so small, we actually don't need to do any chunking here" (L5); chunking is described for big documents "because we may not be able to pass the whole document to the language model" (L5).
+- **C7:** the in-memory store was chosen because "it doesn't require connecting to an external database of any kind so it makes it really easy to get started"; the instructor notes "there are many different types of vector stores" and that the store can be swapped.
+- **C8:** costs are the instructor's: stuff is simplest, cheapest, works well and is the most common, but the slide says for large or many documents "this will not work as it will result in a prompt larger than the context length"; map-reduce is second most common, works over any number of documents and in parallel, but takes more calls and treats documents as independent; refine builds answers over time, gives longer answers and is slower; map-rerank is "a bit more experimental", relies on the model's scoring and is more expensive. The slide's "will not work" is a stated limit of stuff, not a failure shown, so stuff stays recommended.
+- **C9:** hand-written examples "don't really scale that well", so the course generated more with a model; grading uses a model because string matching cannot judge meaning.
+- **C10:** the course used the debug flag in the notebook and showed a hosted evaluation platform in the video; the platform needs a hosted account (D7).
+- **Not questions:**
+  - Exact-string grading — the course shows it failing (5.2 test 2); it is a rule instead (R7).
+  - Sending the whole collection to the model, or retrieving by a method other than meaning (the instructor mentions retrievers "some less advanced, some more advanced") — breaks pattern-card items M1/M2 (5.2 test 1).
+  - The one-line index creator versus building step by step — the instructor says "these two things equate to the same result"; no learner situation changes what the program does (5.2 test 3).
+  - Conversation memory, prompt templates and output parsers, sequential and router chains, agents and tools — other lessons' parts that do not change a stage of this program (background only, per the pattern card).
+  - Which model the tests run against — never asked; tests run on the stand-ins, `live` tests when a key is present.
+  - `top_k`, temperatures, separator, example count, chunk size — settings (section 5), tuned after the build.
+- **Where values came from (course disagreements):** the separator is `<<<<>>>>>` in the L6 final chain and the framework default in L5; picked by the final end-to-end app rule because the instructor never stated one. The course's model id was `gpt-3.5-turbo-0301` before 2024-06-12 and `gpt-3.5-turbo` after (notebook date switch). The example writer had no temperature set; the instructor said the default was 0.7 (L2). The course reports "four documents" retrieved and "seven examples total" (2 hand-written + 5 generated), which the sample data mirrors.
 
 ### Names that go stale
-Treat these as search keywords against current documentation, not guaranteed imports: `langchain.chat_models.ChatOpenAI`, `ChatPromptTemplate`, `RetrievalQA` (`from_chain_type`, `chain_type="stuff"`, `chain_type_kwargs`, `document_separator`), `langchain.document_loaders.CSVLoader`, `langchain.vectorstores.DocArrayInMemorySearch` (needs the `docarray` package), `langchain.indexes.VectorstoreIndexCreator`, `langchain.embeddings.OpenAIEmbeddings` (`embed_query`), `similarity_search`, `as_retriever`, `langchain.evaluation.qa.QAGenerateChain` (`apply_and_parse`), `QAEvalChain` (`evaluate`), `langchain.debug`, `langchain.llms.OpenAI`, the LangChain Evaluation Platform; models `gpt-3.5-turbo`, `gpt-3.5-turbo-0301`, `gpt-3.5-turbo-instruct`, `text-davinci-003` (deprecated); pins `langchain==0.0.179`, `openai==0.27.7`. Some newer model families reject a `temperature` parameter or accept only its default; if the chosen model does, record that in `resolved-decisions.md` and drop the setting for that role.
+Treat these as search keywords against current documentation, not guaranteed imports: `ChatOpenAI` (from `langchain.chat_models`), `OpenAI` (from `langchain.llms`), `OpenAIEmbeddings` (from `langchain.embeddings`), `CSVLoader` (from `langchain.document_loaders`), `DocArrayInMemorySearch` (from `langchain.vectorstores`, with the `docarray` package), `VectorstoreIndexCreator` (from `langchain.indexes`), `RetrievalQA` with `chain_type="stuff"` and `chain_type_kwargs={"document_separator": …}`, `similarity_search`, `as_retriever`, `call_as_llm`, `chain.run` / `chain.apply`, `QAGenerateChain` with `apply_and_parse`, `QAEvalChain` with `evaluate`, `langchain.debug`; models `gpt-3.5-turbo`, `gpt-3.5-turbo-0301`, `gpt-3.5-turbo-instruct`, `text-davinci-003`; versions `langchain==0.0.179`, `openai==0.27.7`. Some current model families reject a `temperature` parameter: if the chosen model does, keep the setting configured, leave it out of that model's request, and record this in `resolved-decisions.md`.
 
 ### Course names
 | Course name | Spec term | Binding? |
 |---|---|---|
-| `OutdoorClothingCatalog_1000.csv` | `data/catalog.csv` (sample catalog) | file name binding in this spec |
-| `query`, `answer` (example keys) | Example `query`, `answer` | yes (Example schema) |
-| `result` (prediction key) | GradedExample `result` (predicted answer) | yes |
-| graded output `text` | GradedExample `grade` | yes |
-| `stuff`, `map_reduce`, `refine`, `map_rerank` | C8a–C8d | no |
-| "Question:", "Real Answer:", "Predicted Answer:", "Predicted Grade:" | `evaluate` report labels | yes |
-| index / vector store / retriever | store and retrieve stages | no |
+| document / chunk | document / piece | no |
+| vector store / vector database / index | store | no |
+| `k` / "n most similar" | `top_k` | the value 4 is binding |
+| "stuff", "map_reduce", "refine", "map_rerank" | C8a–C8d | no |
+| `document_separator` | `piece_separator` | the value is binding |
+| `query`, `answer` (example keys) | `query`, `answer` | yes (example contract) |
+| `result` (predicted answer) | `predicted_answer` | no |
+| `OutdoorClothingCatalog_1000.csv` | `sample_data/catalog.csv` | no |
 
 ### Lesson map
-Transcript numbering (notebook file names count differently):
-- L1 Introduction — framing only.
-- L2 Models, Prompts and parsers (notebook file L1-Model_prompt_parser) — temperature 0 habit; string-not-dictionary failure (other lesson).
-- L3 Memory (file L2-Memory) — conversation and other memory types: background only.
-- L4 Chains (file L3-Chains) — LLM, sequential and router chains: background only; temperature 0.9 for creative naming.
-- L5 Question and Answer (file L4-QnA) — the program: CSV loader, embeddings, in-memory vector store, retrieval of 4, stuff method, the other three methods, chunking, the one-line index; pattern card items 1–3.
-- L6 Evaluation (file L5-Evaluation) — final end-to-end app (separator), hand and generated examples, debug trace, model grading, the "don't know" prompt, hosted platform.
-- L7 Agents (file L6-Agents) — background only.
-- L8 Conclusion — framing only.
-Slides read: question_and_answer 1–7 (counted with L5's transcript, which talks through them; the "Stuff method" slide's pros/cons are used for C8a's cost), chains 1–4 (L4, background), memory 1–2 (L3, background). No slide disagreed with code or transcripts.
-Nothing in this spec requires access to the course.
+Transcript numbering (the notebooks count one lower from lesson 2 on):
+- L1 Introduction — framework overview only.
+- L2 Models, Prompts and parsers — temperature habit and default (settings); output parsing (background).
+- L3 Memory — background only (pattern card).
+- L4 Chains — background only.
+- L5 Question and Answer — the program's stages, in-memory store, OpenAI embeddings, four retrieved pieces, no chunking for short rows, the four combining methods (C5–C8), the one-line index (D6).
+- L6 Evaluation — final end-to-end version: separator, hand-written and generated examples, model grading, the string-matching failure, the "don't know" prompt, debug switch, hosted platform (C9, C10, R4–R9).
+- L7 Agents — background only.
+- L8 Conclusion — nothing used.
+Slides read: question_and_answer 1–7 (L5; talked through by the instructor, counted like the transcript; 6 and 7 show the same slide), chains 1–4 (L4) and memory 1–2 (L3), background only. Nothing in this spec requires access to the course.
 
 ---
-*Spec v2 draft · LangChain for LLM Application Development · Ask Your Documents · when the build agent does something unexpected, add the missing constraint here and re-run.*
+*Spec version 1 · course: LangChain for LLM Application Development · project: Ask your documents · when the build agent does something unexpected, add the missing constraint here and re-run.*
