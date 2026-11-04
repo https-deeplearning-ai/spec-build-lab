@@ -14,6 +14,8 @@
 
 *Reconfirmed by the owner, 2026-10-27, before the v2.8 regeneration: no changes.*
 
+
+*Reconfirmed by the owner, 2026-10-31, before the v2.9 regeneration: no changes.*
 **The one kind of program:** a program that answers a person's plain-language questions about their own collection of documents, using the few pieces of the collection most similar in meaning to the question.
 
 ## What every build keeps
